@@ -9,7 +9,7 @@
 	"reconnectionDelay": 5000,
 	"picfinder": {
 		"debug": false,
-		"admin": 455900696,
+		"admin": ,
 		"autoAddFriend": false,
 		"addFriendAnswers": [],
 		"autoAddGroup": false,
