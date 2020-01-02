@@ -1,5 +1,4 @@
 var axios = require('axios');
-var cheerio = require('cheerio')
 
 function httpHeader(uid = 0, mid = 0) {
     let containerid = "107603" + uid;
