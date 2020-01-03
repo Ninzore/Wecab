@@ -96,11 +96,32 @@ function getWeibo(uid, num = 1, mid = 0) {
                 params : params,
                 headers: headers
             }).then(response => {
-                if (response.data.data.cards[num].card_type == 9) {
-                    resolve(response.data.data.cards[num].mblog);
+                if (num == -1) {
+                    for (let i=0; i<2; i++){
+                        if (response.data.data.cards[i].card_type == 9) {
+                            if ("isTop" in response.data.data.cards[i].mblog && response.data.data.cards[i].mblog.isTop == 1) {
+                                resolve(response.data.data.cards[i].mblog);
+                                return;
+                            }
+                            else{
+                                //console.log("没有置顶微博")
+                            }
+                        }
+                    }
                 }
                 else {
-                    resolve(response.data.data.cards[num + 1].mblog);
+                    let count = 0;
+                    for (let i=0; i<9; i++){
+                        if (response.data.data.cards[i].card_type == 9) {
+                            if ("isTop" in response.data.data.cards[i].mblog && response.data.data.cards[i].mblog.isTop == 1) {
+                                count--;
+                            }
+                            if (count == num) {
+                                resolve(response.data.data.cards[i].mblog)
+                            }
+                            count++;
+                        }
+                    }
                 }
             })
             .catch(() => {
