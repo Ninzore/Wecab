@@ -1,7 +1,9 @@
 # CQ-picfinder-robot-add-on
 
 给Tsuk1ko的CQ-picfinder-robot V2.11做了几个小挂件，基本稳定，至少目前看起来很稳而且从没翻车
-   **注意！！！** main已修改，2.11以外的版本不一定可以直接用
+   **注意！！！** 
+   1. main已修改，2.11以外的版本不一定可以直接用
+   2.需要安装MongoDB，没装的参考官方教程https://docs.mongodb.com/manual/installation/ ，端口是默认端口不要改，然后需要安装mongodb nodejs api，直接在机器人的目录npm install mongodb就行
 
 
 ## 部件列表  
