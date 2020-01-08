@@ -3,7 +3,12 @@
 给Tsuk1ko的CQ-picfinder-robot V2.11做了几个小挂件，基本稳定，至少目前看起来很稳而且从没翻车
    
    **注意！！！**
-1. main已修改，2.11以外的版本不一定可以直接用  
+1. main基于V2.11修改，2.11可以直接复制main.js，2.11版以外的版本需要把main_edit.js里面的东西复制到main的290行左右  
+  并且在开头添加  
+  import weibo from './modules/plugin/weibo';  
+  import dice from './modules/plugin/dice';  
+  然后最末尾添加  
+  weibo.checkWeibo(replyMsg);
   
 2. 需要安装MongoDB，没装的参考官方教程https://docs.mongodb.com/manual/installation/ ，端口是默认端口不要改，然后需要安装mongodb nodejs api，直接在机器人的目录npm install mongodb就行
 
