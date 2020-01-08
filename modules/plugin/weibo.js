@@ -83,8 +83,8 @@ function getUserId(user_name = "", choose = 0) {
 
 
 //choose 选择需要查找的人
-//num 选择需要获取的微博，0为置顶，1为最新，2是次新，以此类推，只允许0到9
-function getWeibo(uid, num = 1, mid = 0) {
+//num 选择需要获取的微博，0为置顶或者最新，1是次新，以此类推，只允许0到9
+function getWeibo(uid, num = 0, mid = 0) {
     if (mid != 0) {
         headers = httpHeader(uid, mid).headers;
         params = httpHeader(uid, mid).params;
@@ -143,85 +143,118 @@ function getWeibo(uid, num = 1, mid = 0) {
     });
 }
 
+//增加订阅
 async function addSubscribe(context, replyFunc, choose = null, name = null) {
     let uid = false;
     let group_id = context.group_id;
-    let user_id = context.user_id;
     if (choose > 0) uid = await getUserId("", choose);
     else if (name.length > 1) uid = await getUserId(name, 0);
-    else replyFunc(context, "你名字写了吗", true);
-    if (!uid) replyFunc(context, "你名字写对了吗", true);
+    else replyFunc(context, "你名字写对了吗", true);
+    if (!uid) replyFunc(context, "查无此人", true);
     else {
-        let mblog = await getWeibo(uid);
-        let mid = mblog.mid;
-        let screen_name = mblog.user.screen_name;
-        mongodb(db_path, {useUnifiedTopology: true}).connect((err, mongo) => {
+        mongodb(db_path, {useUnifiedTopology: true}).connect(async (err, mongo) => {
             if (err) replyFunc(context, "database openning error", true);
-            else {
-                let text = "";
-                let coll = mongo.db('bot').collection('weibo');
-                coll.updateOne({weibo_uid : uid},
-                               {$set : {mid : mid},
-                                $addToSet : {groups : {group_id : group_id, user_id : user_id}}},
-                               {upsert:true}, (err) => {
-                                    if (err) text = "database subscribes update error";
-                                    else text = "已订阅" + screen_name;
-                                    replyFunc(context, text, true);
-                                });
-                mongo.close();
+            let coll = mongo.db('bot').collection('weibo');
+            let weibo = await coll.find({weibo_uid : uid}).toArray();
+            if (weibo.length == 0) {
+                let mblog = await getWeibo(uid);
+                let mid = mblog.mid;
+                let screen_name = mblog.user.screen_name;
+                coll.insertOne({weibo_uid : uid,
+                                name : screen_name,
+                                mid : mid,
+                                groups : [group_id]},
+                    (err) => {
+                        if (err) replyFunc(context, "database subscribes update error", true);
+                        else {
+                            let text = "已订阅" + screen_name + "的微博";
+                            replyFunc(context, text, true);
+                        }
+                    });
             }
+            else {
+                coll.findOneAndUpdate({weibo_uid : uid},
+                                      {$addToSet : {groups : group_id}},
+                    (err, result) => {
+                        if (err) console.log("database subscribes update error");
+                        else {
+                            // console.log(result)
+                            if (result.value.groups.includes(group_id)) text = "多次订阅有害我的身心健康";
+                            else text = "已订阅" + result.value.name + "的微博";
+                            replyFunc(context, text, true);
+                         }
+                     });
+            }
+            mongo.close();
         });
     }
 }
 
+//取消订阅
 async function rmSubscribe(context, replyFunc, choose = null, name = null) {
     let uid = false;
+    let group_id = context.group_id;
     if (choose > 0) uid = await getUserId("", choose);
     else if (name.length > 1) uid = await getUserId(name, 0);
-    else replyFunc(context, "你名字写了吗", true);
-    if (!uid) replyFunc(context, "你名字写对了吗", true);
+    else console.log("你名字写了吗");
+    if (!uid) console.log("你名字写对了吗");
     else {
         let mblog = await getWeibo(uid);
         let screen_name = mblog.user.screen_name;
         mongodb(db_path, {useUnifiedTopology: true}).connect((err, mongo) => {
             if (err) replyFunc(context, "database openning error", true);
             else {
-                let text = "";
                 let coll = mongo.db('bot').collection('weibo');
-                coll.findOneAndDelete({weibo_uid : uid}, (err) => {
-                                    if (err) text = "database subscribes update error";
-                                    else text = "已取消订阅" + screen_name;
-                                    replyFunc(context, text, true);
-                                });
+                coll.findOneAndUpdate({weibo_uid : uid},
+                                      {$pull : {groups : {$in : [group_id]}}},
+                    (err, result) => {
+                        if (err) replyFunc(context, "database subscribes delete error", true);
+                        else {
+                            let text = "";
+                            if (!result.value.groups.includes(group_id)) text = "小火汁你压根就没订阅嗷";
+                            else text = "已取消订阅" + screen_name + "的微博";
+                            replyFunc(context, text, true);
+                        }
+                });
                 mongo.close();
             }
         });
     }
 }
 
+
+//每过x分钟检查一次订阅列表，如果订阅一个微博账号的群的数量是0就删除
 function checkWeibo(replyFunc) {
     setInterval(() => {
         mongodb(db_path, {useUnifiedTopology: true}).connect(async function(err, mongo) {
-            if (err) console.log("error");
+            if (err) console.log("database openning error during checkWeibo");
             else {
                 let coll = mongo.db('bot').collection('weibo');
-                let subscribes = await coll.find({}, {projection: {_id: 0}}).toArray();
+                let subscribes = await coll.find({}).toArray();
                 for (let i = 0; i < subscribes.length; i++) {
-                    let mblog = await getWeibo(subscribes[i].weibo_uid);
-                    let last_mid = subscribes[i].mid;
-                    let current_mid = mblog.mid;
-                    if (current_mid > last_mid) {
-                        let groups = subscribes[i].groups;
-                        groups.forEach(group => {
-                            weiboSender(group, replyFunc, mblog);
-                        });
-                        coll.updateOne({weibo_uid : subscribes[i].weibo_uid},
-                                       {$set : {mid : current_mid}}, 
-                                       (err) => {
-                                           if (err) replyFunc(group, "database update error during checkWeibo", true);
-                                       });
-                        // console.log(current_mid);
+                    let id = subscribes[i]._id;
+                    if (subscribes[i].groups.length > 0) {
+                        let mblog = await getWeibo(subscribes[i].weibo_uid);
+                        let last_mid = subscribes[i].mid;
+                        let current_mid = mblog.mid;
+                        if (current_mid > last_mid) {
+                            let groups = subscribes[i].groups;
+                            let send_target = {};
+                            groups.forEach(group_id => {
+                                send_target = {group_id : group_id}
+                                weiboSender(send_target, replyFunc, mblog);
+                            });
+                            coll.updateOne({weibo_uid : subscribes[i].weibo_uid},
+                                           {$set : {mid : current_mid}}, 
+                                (err, result) => {
+                                    if (err) console.log("database update error during checkWeibo");
+                                });
+                        }
                     }
+                    else coll.findOneAndDelete({_id : id}, (err, result) => {
+                        if (err) console.log("database delete error during checkWeibo");
+                        else;
+                    });
                 }
                 mongo.close();
             }
@@ -229,6 +262,30 @@ function checkWeibo(replyFunc) {
     }, 5 * 60000);
 }
 
+//输出该群订阅的所有微博名称
+function checkSubscribes(context, replyFunc) {
+    let group_id = context.group_id;
+    mongodb(db_path, {useUnifiedTopology: true}).connect(async function(err, mongo) {
+        if (err) replyFunc(context, "database openning error during checkSubscribes", true);
+        else {
+            let coll = mongo.db('bot').collection('weibo');
+            coll.find({groups : {$elemMatch : {$eq : group_id}}}, {projection: {_id : 0, name : 1}})
+                .toArray().then(result => {
+                    // console.log(result);
+                    if (result.length > 0) {
+                        let name_list = [];
+                        result.forEach(name_obj => {
+                            name_list.push(name_obj.name);
+                        });
+                        let names = "本群已订阅: " + name_list.join(", ");
+                        replyFunc(context, names, true);
+                    }
+                    else replyFunc(context, "你一无所有", true);
+                })
+            mongo.close();
+        }
+    });
+}
 
 function textFilter(text) {
     // console.log(text)
@@ -304,14 +361,16 @@ async function weiboSender(send_target, replyFunc, mblog) {
             replyFunc(send_target, media_src);
         }
     }
-        if ("retweeted_status" in mblog) {
-            let rt_user_info = mblog.retweeted_status.user.screen_name;
-            rtWeiboDetail(send_target, replyFunc, mblog.retweeted_status.id, rt_user_info);
-            if ("page_info" in mblog.retweeted_status) {
-                let rt_page_info = mblog.retweeted_status.page_info;
-                if ("media_info" in rt_page_info){
-                let rt_media = mblog.retweeted_status.page_info.media_info;
-                let rt_media_src = "";
+
+    if ("retweeted_status" in mblog) {
+        let rt_user_info = mblog.retweeted_status.user.screen_name;
+        rtWeiboDetail(send_target, replyFunc, mblog.retweeted_status.id, rt_user_info);
+
+        if ("page_info" in mblog.retweeted_status) {
+            let rt_page_info = mblog.retweeted_status.page_info;
+            if ("media_info" in rt_page_info){
+            let rt_media = mblog.retweeted_status.page_info.media_info;
+            let rt_media_src = "";
             if ("mp4_720p_mp4" in rt_media) {
                 rt_media_src = " 转发视频地址: " + rt_media.mp4_720p_mp4;
             }
@@ -324,18 +383,18 @@ async function weiboSender(send_target, replyFunc, mblog) {
             let payload = "[CQ:image,cache=0,file=" + rt_page_info.retweet_video_pic_url + "]";
             replyFunc(send_target, payload);
             replyFunc(send_target, rt_media_src);
+            }
         }
-    }
     
-    if ("pics" in mblog.retweeted_status) {
-        for (var pic of mblog.retweeted_status.pics) {
-            pid = pic.pid;
-            pic_url = pic.large.url;
-            let payload = "[CQ:image,cache=0,file=" + pic_url + "]";
-            replyFunc(send_target, payload);
+        if ("pics" in mblog.retweeted_status) {
+            for (var pic of mblog.retweeted_status.pics) {
+                pid = pic.pid;
+                pic_url = pic.large.url;
+                let payload = "[CQ:image,cache=0,file=" + pic_url + "]";
+                replyFunc(send_target, payload);
+            }
         }
     }
-        }
         
     if (/\.\.\.全文/.exec(text)) {
         //console.log(查看全文);
@@ -381,4 +440,4 @@ function rtWeiboByUrl(context, replyFunc, url){
     rtWeibo(context, replyFunc, choose = 0, name = "", num = 0, uid = user_id, mid = mid);
 }
 
-module.exports = {rtWeibo, rtWeiboByUrl, addSubscribe, rmSubscribe, checkWeibo};
+module.exports = {rtWeibo, rtWeiboByUrl, addSubscribe, rmSubscribe, checkWeibo, checkSubscribes};
