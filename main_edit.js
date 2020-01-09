@@ -1,4 +1,4 @@
-if (/^看看.+?微博$/g.exec(context.message))
+if (/^看看.+?(微博|B站)$/g.exec(context.message))
 	{	
 		var num = 1;
         var choose = 0;
@@ -22,16 +22,16 @@ if (/^看看.+?微博$/g.exec(context.message))
             else if (temp==9 || temp=="九") (num = 8);
         }
         else (num = 0);       
-	if (/(烧钱|少前)/.exec(context.message)) (choose = 1);
-	else if (/(方舟|明日方舟)/.exec(context.message)) (choose = 2);
-	else if (/(邦邦)/.exec(context.message)) (choose = 3);
+        if (/(烧钱|少前)/.exec(context.message)) (choose = 1);
+        else if (/(方舟|明日方舟)/.exec(context.message)) (choose = 2);
+        else if (/(邦邦)/.exec(context.message)) (choose = 3);
         else if (/(FF|狒狒|菲菲)/.exec(context.message)) (choose = 4);
-        else{
-            choose = 0;
-            name = /看看(.+?)的?((第[0-9]?[一二三四五六七八九]?条)|(上*条)|(置顶)|(最新))?微博/.exec(context.message)[1]; 
-        }
-        //replyMsg(context, name.toString());
-		weibo.rtWeibo(context, replyMsg, choose, name, num);
+        else choose = 0;
+
+        name = /看看(.+?)的?((第[0-9]?[一二三四五六七八九]?条)|(上*条)|(置顶)|(最新))?(微博|B站)/.exec(context.message)[1];
+        
+        if (/B站/g.exec(context)) bilibili.rtBilibili(context, replyMsg, name, num)
+        else weibo.rtWeibo(context, replyMsg, choose, name, num);
 	}
     
     else  if (/^看看微博\s?https:\/\/m.weibo.cn\/\d+\/\d+$/g.exec(context.message)) {
@@ -39,6 +39,11 @@ if (/^看看.+?微博$/g.exec(context.message))
         let url = /https:\/\/m.weibo.cn\/\d+\/\d+/.exec(context.message)[0];
 	   // replyMsg(context, url);
         weibo.rtWeiboByUrl(context, replyMsg, url);
+    }
+
+    else  if (/^看看B站\s?https:\/\/t.bilibili.com\/(\d+)$/g.exec(context.message)) {
+            let url = /https:\/\/t.bilibili.com\/\d+/.exec(context.message)[0];
+            bilibili.rtBiliByUrl(context, replyMsg, url);
     }
 
     else if (/^订阅.+?微博$/g.exec(context.message)) {
