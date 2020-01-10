@@ -113,8 +113,7 @@ function dynamicProcess(dynamic) {
         rt_dynamic = dynamicProcess({card : origin});
         // console.log(rt_dynamic)
     }
-    if ("pic" in card) pics += card.pic;
-
+    if ("pic" in card) pics += "[CQ:image,cache=0,file=" + card.pic + "]"; 
     if ("item" in card) {
         //小视频
         if ("video_playurl" in card.item) {
