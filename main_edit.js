@@ -1,4 +1,4 @@
-if (/^看看.+?(微博|B站)$/g.exec(context.message))
+if (/^看看.+?(微博|B站)$/gi.exec(context.message))
 	{	
 		var num = 1;
         var choose = 0;
@@ -28,11 +28,14 @@ if (/^看看.+?(微博|B站)$/g.exec(context.message))
         else if (/(FF|狒狒|菲菲)/.exec(context.message)) (choose = 4);
         else choose = 0;
 
-        name = /看看(.+?)的?((第[0-9]?[一二三四五六七八九]?条)|(上*条)|(置顶)|(最新))?(微博|B站)/.exec(context.message)[1];
+        name = /看看(.+?)的?((第[0-9]?[一二三四五六七八九]?条)|(上*条)|(置顶)|(最新))?(微博|B站)/i.exec(context.message)[1];
         
-        if (/B站/g.exec(context)) bilibili.rtBilibili(context, replyMsg, name, num)
-        else weibo.rtWeibo(context, replyMsg, choose, name, num);
+        if (/B站/i.exec(context.message)) {
+	    if (num < 0) num = 0;
+	    bilibili.rtBilibili(context, replyMsg, name, num);
 	}
+        else weibo.rtWeibo(context, replyMsg, choose, name, num);
+    }
     
     else  if (/^看看微博\s?https:\/\/m.weibo.cn\/\d+\/\d+$/g.exec(context.message)) {
 	// replyMsg(context, "pass1")
@@ -41,8 +44,7 @@ if (/^看看.+?(微博|B站)$/g.exec(context.message))
         weibo.rtWeiboByUrl(context, replyMsg, url);
     }
 
-    else  if (/^看看B站\s?https:\/\/t.bilibili.com\/(\d+)$/g.exec(context.message)) {
-            let url = /https:\/\/t.bilibili.com\/\d+/.exec(context.message)[0];
+    else  if (/^看看B站https:\/\/t.bilibili.com\/(\d+).+?/g.exec(context.message)) {
             bilibili.rtBiliByUrl(context, replyMsg, url);
     }
 
@@ -68,7 +70,7 @@ if (/^看看.+?(微博|B站)$/g.exec(context.message))
         weibo.rmSubscribe(context, replyMsg, choose, name);
     }
 
-    else if (/^查看订阅微博$/g.exec(context.message)) {
+    else if (/^查看(订阅微博|微博订阅)$/g.exec(context.message)) {
         weibo.checkSubscribes(context, replyMsg);
     }
 
