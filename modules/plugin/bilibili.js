@@ -1,4 +1,8 @@
 var axios = require('axios');
+var mongodb = require('mongodb').MongoClient;
+
+var db_port = 27017;
+var db_path = "mongodb://127.0.0.1:" + db_port;
 
 function httpHeader(uid = 0, dynamic_id = 0, keyword = "") {
     let url = "";
@@ -109,9 +113,8 @@ function dynamicProcess(dynamic) {
         rt_dynamic = dynamicProcess({card : origin});
         // console.log(rt_dynamic)
     }
-    //投稿视频封面
-    if ("pic" in card) pics += "[CQ:image,cache=0,file=" + card.pic + "]";
-    //通常处理
+    if ("pic" in card) pics += card.pic;
+
     if ("item" in card) {
         //小视频
         if ("video_playurl" in card.item) {
@@ -119,6 +122,7 @@ function dynamicProcess(dynamic) {
             text = card.item.description;
             video = video_playurl;
         }
+        //通常
         else {
             if ("content" in card.item) text = card.item.content;
             if ("pictures" in card.item) {
@@ -140,44 +144,223 @@ function dynamicProcess(dynamic) {
     return dynamicObj;
 }
 
-function sender(context, replyFunc, dynamicObj = {}, others = "") {
+
+function addBiliSubscribe(context, replyFunc, name = "") {
+    var text = "";
+    let group_id = context.group_id;
+    searchName(name).then(name_card => {
+        if (name_card == undefined) sender(context, replyFunc, {}, "你名字写对了吗", true);
+        else getDynamicList(name_card.mid, 0).then(dynamic => {
+            addData(dynamic.desc)
+        });
+    });
+
+    function addData(desc = {}) {
+        mongodb(db_path, {useUnifiedTopology: true}).connect(async (err, mongo) => {
+            if (err) text = "database openning error";
+            let coll = mongo.db('bot').collection('bilibili');
+            let name = desc.user_profile.info.uname;
+            let uid = desc.uid;
+            let dynamic_id = desc.dynamic_id_str;
+            let timestamp = desc.timestamp;
+            let people = await coll.find({uid : uid}).toArray();
+
+            if (people.length == 0) {
+                coll.insertOne({uid : uid,
+                                name : name,
+                                dynamic_id : dynamic_id,
+                                timestamp : timestamp,
+                                groups : [group_id]},
+                    (err) => {
+                        if (err) text = "database subscribes update error";
+                        else text = "已订阅" + name + "的微博";
+                        sender(context, replyFunc, {}, text, true);
+                    });
+            }
+            else {
+                coll.findOneAndUpdate({uid : uid},
+                                      {$addToSet : {groups : group_id}},
+                    (err, result) => {
+                        if (err) text = "database subscribes update error";
+                        else {
+                            // console.log(result)
+                            if (result.value.groups.includes(group_id)) text = "多次订阅有害我的身心健康";
+                            else text = "已订阅" + result.value.name + "的微博";
+                         }
+                         sender(context, replyFunc, {}, text, true);
+                     });
+            }
+            mongo.close();
+        });
+    }
+}
+
+function rmBiliSubscribe(context, replyFunc, name = "") {
+    let group_id = context.group_id;
+    var text = "";
+    searchName(name).then(name_card => {
+        if (name_card == undefined) sender(context, replyFunc, {}, "你名字写对了吗", true);
+        else getDynamicList(name_card.mid, 0).then(dynamic => {
+            rmData(dynamic.desc)
+        });
+    });
+    function rmData(desc) {
+        let uid = desc.uid;
+        let name = desc.user_profile.info.uname;
+        mongodb(db_path, {useUnifiedTopology: true}).connect((err, mongo) => {
+            if (err) text = "database openning error";
+            else {
+                let coll = mongo.db('bot').collection('bilibili');
+                coll.findOneAndUpdate({uid : uid},
+                                      {$pull : {groups : {$in : [group_id]}}},
+                    (err, result) => {
+                        if (err) text = "database subscribes delete error";
+                        else {
+                            // console.log(result)
+                            if (!result.value.groups.includes(group_id)) text = "小火汁你压根就没订阅嗷";
+                            else text = "已取消订阅" + name + "的B站动态";
+                        }
+                    sender(context, replyFunc, {}, text, true);
+                });
+                mongo.close();
+            }
+        });
+    }
+}
+
+function checkBiliDynamic(replyFunc) {
+    setInterval(() => {
+        mongodb(db_path, {useUnifiedTopology: true}).connect(async function(err, mongo) {
+            if (err) console.log("error");
+            else {
+                let coll = mongo.db('bot').collection('bilibili');
+                let subscribes = await coll.find({}).toArray();
+
+                for (let i = 0; i < subscribes.length; i++) {
+                    let id = subscribes[i]._id;
+                    if (subscribes[i].groups.length > 0) {
+                        getDynamicList(subscribes[i].uid, 0).then(dynamic => {
+                            let last_timestamp = subscribes[i].timestamp;
+                            let curr_timestamp = dynamic.desc.timestamp;
+                            if (curr_timestamp > last_timestamp) {
+                                update(subscribes[i], dynamic)
+                            }
+                        });
+                    }
+                    else {
+                        deleteEmpty(id);
+                    }
+                }
+            }
+            mongo.close();
+        });
+    }, 5 * 60000);
+
+    function update(subscribe, dynamic) {
+        mongodb(db_path, {useUnifiedTopology: true}).connect(async function(err, mongo) {
+            if (err) console.log("error");
+            else {
+                let coll = mongo.db('bot').collection('bilibili');
+                let clean_dynamic = dynamicProcess(dynamic);
+                let dynamic_id = dynamic.desc.dynamic_id_str;
+                let curr_timestamp = dynamic.desc.timestamp;
+                let groups = subscribe.groups;
+                groups.forEach(group_id => {
+                    sender({group_id:group_id}, replyFunc, clean_dynamic, "");
+                });
+                coll.updateOne({uid : subscribe.uid},
+                            {$set : {timestamp : curr_timestamp, dynamic_id : dynamic_id}}, 
+                    (err, result) => {
+                        // if (err) console.log("database update error during checkWeibo");
+                        if (err) console.log(err);
+                        // else console.log(result);
+                    });
+            }
+            mongo.close();
+        });
+    }
+
+    function deleteEmpty(id) {
+        mongodb(db_path, {useUnifiedTopology: true}).connect(async function(err, mongo) {
+            if (err) console.log("error");
+            else {
+                let coll = mongo.db('bot').collection('bilibili');
+                coll.findOneAndDelete({_id : id}, (err, result) => {
+                    if (err) console.log("database delete error during checkWeibo");
+                    // else console.log("delete bilibili subsctibe:" + result.value.name);
+                });
+            }
+            mongo.close();
+        });
+    }
+}
+
+function checkBiliSubs(context, replyFunc) {
+    let group_id = context.group_id;
+    var text = "";
+    mongodb(db_path, {useUnifiedTopology: true}).connect((err, mongo) => {
+        if (err) console.log("database openning error during checkBiliSubs");
+        else {
+            let coll = mongo.db('bot').collection('bilibili');
+            coll.find({groups : {$elemMatch : {$eq : group_id}}}, {projection: {_id : 0, name : 1}})
+                .toArray().then(result => {
+                    // console.log(result);
+                    if (result.length > 0) {
+                        let name_list = [];
+                        result.forEach(name_obj => {
+                            name_list.push(name_obj.name);
+                        });
+                        text = "本群已订阅: " + name_list.join(", ");
+                    }
+                    else text = "你一无所有";
+                    sender(context, replyFunc, {}, text, true);
+                });
+            mongo.close();
+        }
+    });
+}
+
+function sender(context, replyFunc, dynamicObj = {}, others = "", at = false) {
     let payload = "";
     // console.log(dynamicObj)
-    if (dynamicObj == {}) {
-        payload = dynamicObj.name + ":\n" + dynamicObj.text + "\n"  + dynamicObj.video + dynamicObj.pics;
+    if (Object.keys(dynamicObj).length != 0) {
+        payload = dynamicObj.name + "\n" + dynamicObj.text + "\n"  + dynamicObj.video + dynamicObj.pics;
         if (dynamicObj.rt_dynamic != 0) {
             let rt_dynamic = dynamicObj.rt_dynamic
-            payload += "\n转发自:" + rt_dynamic.name + "\n" + rt_dynamic.text  + "\n" +rt_dynamic.video + rt_dynamic.pics;
+            payload += "\n转发自 " + rt_dynamic.name + "\n" + rt_dynamic.text  + "\n" +rt_dynamic.video + rt_dynamic.pics;;
         }
-        replyFunc(context, payload);
+        replyFunc(context, payload, at);
     }
     else {
-        replyFunc(context, others);
+        replyFunc(context, others, at);
     }
 }
 
 function rtBilibili(context, replyFunc, name = "", num = 0, dynamic_id = "") {
+    // getUserId(name, choose).then(uid => {
+    //     console.log(uid)
     if (dynamic_id != "") {
         getDynamicDetail(dynamic_id).then(dynamic => {
-            if (dynamic == undefined) sender(context, 0, "你码输错了");
+            if (dynamic == undefined) sender(context, replyFunc, 0, "你码输错了", true);
             else {
                 let clean_dynamic = dynamicProcess(dynamic);
-                sender(context, replyFunc, clean_dynamic, "");
+                sender(context, replyFunc,clean_dynamic, "");
             }
         })
     }
+ 
     else if (name != "") {
         searchName(name).then(name_card => {
-            if (name_card == undefined) sender(context, 0, "弟弟，没找着这人啊");
+            if (name_card == undefined) sender(context, replyFunc, 0, "没这人", true);
             else getDynamicList(name_card.mid, num).then(dynamic => {
                 // console.log(dynamic)
                 let clean_dynamic = dynamicProcess(dynamic);
-                sender(context, replyFunc, clean_dynamic, "");
+                sender(context, replyFunc, clean_dynamic)
             });
         });
     }
     else {
-        console.log("error")
+        console.log("error rtBilibili")
     }
 }
 
@@ -186,4 +369,4 @@ function rtBiliByUrl(context, replyFunc){
     rtBilibili(context, replyFunc, "", 0, dynamic_id);
 }
 
-module.exports = {rtBilibili, rtBiliByUrl};
+module.exports = {rtBilibili, rtBiliByUrl, addBiliSubscribe, rmBiliSubscribe, checkBiliDynamic, checkBiliSubs};
