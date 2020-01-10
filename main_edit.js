@@ -30,12 +30,12 @@ if (/^看看.+?(微博|B站)$/gi.exec(context.message))
 
         name = /看看(.+?)的?((第[0-9]?[一二三四五六七八九]?条)|(上*条)|(置顶)|(最新))?(微博|B站)/i.exec(context.message)[1];
         
-        if (/B站/i.exec(context.message)) {
-	    if (num < 0) num = 0;
-	    bilibili.rtBilibili(context, replyMsg, name, num);
-	}
+        if (/B站/i.exec(context.message)){
+            if (num < 0) num = 0;
+            bilibili.rtBilibili(context, replyMsg, name, num);
+        } 
         else weibo.rtWeibo(context, replyMsg, choose, name, num);
-    }
+	}
     
     else  if (/^看看微博\s?https:\/\/m.weibo.cn\/\d+\/\d+$/g.exec(context.message)) {
 	// replyMsg(context, "pass1")
@@ -45,33 +45,40 @@ if (/^看看.+?(微博|B站)$/gi.exec(context.message))
     }
 
     else  if (/^看看B站https:\/\/t.bilibili.com\/(\d+).+?/g.exec(context.message)) {
-            bilibili.rtBiliByUrl(context, replyMsg, url);
+            bilibili.rtBiliByUrl(context, replyMsg);
     }
 
-    else if (/^订阅.+?微博$/g.exec(context.message)) {
+    else if (/^订阅.+?(微博|B站)$/gi.exec(context.message)) {
         let choose = 0;
         let name = "";
         if (/(烧钱|少前)/.exec(context.message)) (choose = 1);
         else if (/(方舟|明日方舟)/.exec(context.message)) (choose = 2);
         else if (/(邦邦)/.exec(context.message)) (choose = 3);
         else if (/(FF|狒狒|菲菲)/.exec(context.message)) (choose = 4);
-        else name = /^订阅(.+?)微博$/g.exec(context.message)[1];
-        weibo.addSubscribe(context, replyMsg, choose, name);
+        else name = /^订阅(.+?)(微博|B站)$/gi.exec(context.message)[1];
+
+        if (/B站/i.exec(context.message)) bilibili.addBiliSubscribe(context, replyMsg, name);
+        else weibo.addSubscribe(context, replyMsg, choose, name);
     }
 
-    else if (/^取消订阅.+?微博$/g.exec(context.message)) {
+    else if (/^取消订阅.+?(微博|B站)$/g.exec(context.message)) {
         let choose = 0;
         let name = "";
         if (/(烧钱|少前)/.exec(context.message)) (choose = 1);
         else if (/(方舟|明日方舟)/.exec(context.message)) (choose = 2);
         else if (/(邦邦)/.exec(context.message)) (choose = 3);
         else if (/(FF|狒狒|菲菲)/.exec(context.message)) (choose = 4);
-        else name = /^取消订阅(.+?)微博$/g.exec(context.message)[1];
-        weibo.rmSubscribe(context, replyMsg, choose, name);
+        else name = /^取消订阅(.+?)(微博|B站)$/gi.exec(context.message)[1];
+        if (/B站/i.exec(context.message)) bilibili.rmBiliSubscribe(context, replyMsg, name)
+        else weibo.rmSubscribe(context, replyMsg, choose, name);
     }
 
     else if (/^查看(订阅微博|微博订阅)$/g.exec(context.message)) {
         weibo.checkSubscribes(context, replyMsg);
+    }
+
+    else if (/^查看(订阅B站|B站订阅)$/gi.exec(context.message)) {
+        bilibili.checkBiliSubs(context, replyMsg);
     }
 
     if (/^\.dice.+/g.exec(context.message)) {
