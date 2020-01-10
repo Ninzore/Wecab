@@ -86,7 +86,7 @@ function dynamicProcess(dynamic) {
     let card = JSON.parse(dynamic.card);
     let text = "";
     let name = "";
-    let pics = [];
+    let pics = "";
     let video = "";
     let rt_dynamic = 0;
     // console.log(card)
@@ -102,26 +102,29 @@ function dynamicProcess(dynamic) {
         // console.log(card)
         video = "发布视频:\n" + card.title
     }
-    else if ("item" in card) {
+    //转发
+    if ("origin" in card) {
+        let origin = card.origin
+        // console.log(origin)
+        rt_dynamic = dynamicProcess({card : origin});
+        // console.log(rt_dynamic)
+    }
+    //投稿视频封面
+    if ("pic" in card) pics += "[CQ:image,cache=0,file=" + card.pic + "]";
+    //通常处理
+    if ("item" in card) {
         //小视频
         if ("video_playurl" in card.item) {
             video = card.item.video_playurl;
             text = card.item.description;
-            console.log(video_playurl);
+            video = video_playurl;
         }
-        //通常
-        else{
+        else {
             if ("content" in card.item) text = card.item.content;
             if ("pictures" in card.item) {
                 if ("description" in card.item) text = card.item.description;
                 let pictures = card.item.pictures;
-                for (let pic of pictures) pics.push(pic.img_src);    
-            }
-            if ("origin" in card) {
-                let origin = card.origin
-                // console.log(origin)
-                rt_dynamic = dynamicProcess({card : origin}, 0);
-                // console.log(rt_dynamic)
+                for (let pic of pictures) pics += "[CQ:image,cache=0,file=" + pic.img_src + "]";  
             }
         }
     }
@@ -140,32 +143,33 @@ function dynamicProcess(dynamic) {
 function sender(context, replyFunc, dynamicObj = {}, others = "") {
     let payload = "";
     // console.log(dynamicObj)
-    if (dynamicObj != {}) {
-        let pics = dynamicObj.pics.join("\n");
-        payload = dynamicObj.name + ":\n" + dynamicObj.text + ":\n" + pics + ":\n" +dynamicObj.video;
+    if (dynamicObj == {}) {
+        payload = dynamicObj.name + ":\n" + dynamicObj.text + "\n"  + dynamicObj.video + dynamicObj.pics;
         if (dynamicObj.rt_dynamic != 0) {
             let rt_dynamic = dynamicObj.rt_dynamic
-            pics = rt_dynamic.pics.join("\n");
-            payload += "\n转发自 " + rt_dynamic.name + ":\n" + rt_dynamic.text + ":\n" + pics + ":\n" +rt_dynamic.video;
+            payload += "\n转发自:" + rt_dynamic.name + "\n" + rt_dynamic.text  + "\n" +rt_dynamic.video + rt_dynamic.pics;
         }
-        replyFunc(context, payload)
+        replyFunc(context, payload);
     }
     else {
-        console.log(others)
+        replyFunc(context, others);
     }
 }
 
 function rtBilibili(context, replyFunc, name = "", num = 0, dynamic_id = "") {
     if (dynamic_id != "") {
         getDynamicDetail(dynamic_id).then(dynamic => {
-            let clean_dynamic = dynamicProcess(dynamic);
-            sender(context, replyFunc, clean_dynamic, "");
+            if (dynamic == undefined) sender(context, 0, "你码输错了");
+            else {
+                let clean_dynamic = dynamicProcess(dynamic);
+                sender(context, replyFunc, clean_dynamic, "");
+            }
         })
     }
     else if (name != "") {
         searchName(name).then(name_card => {
-            // console.log(name_card)
-            getDynamicList(name_card.mid, num).then(dynamic => {
+            if (name_card == undefined) sender(context, 0, "弟弟，没找着这人啊");
+            else getDynamicList(name_card.mid, num).then(dynamic => {
                 // console.log(dynamic)
                 let clean_dynamic = dynamicProcess(dynamic);
                 sender(context, replyFunc, clean_dynamic, "");
@@ -177,8 +181,8 @@ function rtBilibili(context, replyFunc, name = "", num = 0, dynamic_id = "") {
     }
 }
 
-function rtBiliByUrl(context, replyFunc, url){
-    let dynamic_id = /https:\/\/t.bilibili.com\/(\d+)/.exec(url)[1];
+function rtBiliByUrl(context, replyFunc){
+    let dynamic_id = /https:\/\/t.bilibili.com\/(\d+)/.exec(context.message)[1];
     rtBilibili(context, replyFunc, "", 0, dynamic_id);
 }
 
