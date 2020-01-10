@@ -5,10 +5,12 @@
    **注意！！！**
 1. main基于V2.11修改，2.11可以直接复制main.js，2.11版以外的版本需要把main_edit.js里面的东西复制到main的290行左右  
   并且在开头添加  
-  import weibo from './modules/plugin/weibo';  
+  import weibo from './modules/plugin/weibo';
+  import bilibili from './modules/plugin/bilibili'
   import dice from './modules/plugin/dice';  
-  然后最末尾添加  
+  然后最末尾添加两行  
   weibo.checkWeibo(replyMsg);
+  setTimeout(() => bilibili.checkBiliDynamic(replyMsg), 10000);
   
 2. 需要安装MongoDB，没装的参考官方教程https://docs.mongodb.com/manual/installation/ ，端口是默认端口不要改，然后需要安装mongodb nodejs api，直接在机器人的目录npm install mongodb就行
 
