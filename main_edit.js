@@ -81,6 +81,21 @@ if (/^看看.+?(微博|B站)$/gi.exec(context.message))
         bilibili.checkBiliSubs(context, replyMsg);
     }
 
-    if (/^\.dice.+/g.exec(context.message)) {
+    else if (/^\.dice.+/g.exec(context.message)) {
   	    dice(context, replyMsg, rand);
+    }
+    else if (/^旅行$/.exec(context.message)) {
+        pokemon.travel(context, replyMsg);
+    }
+    
+    else if (/^旅行团在哪$/.exec(context.message)) {
+        pokemon.checkLocation(context, replyMsg);
+    }
+    
+    else if (/^捕捉$/.exec(context.message)) {
+        pokemon.gacha(context, replyMsg);
+    }
+    
+    else if (/^对战/.exec(context.message)) {
+        pokemon.fight(context, replyMsg);
     }
