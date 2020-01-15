@@ -1,6 +1,6 @@
-if (/^看看.+?(微博|B站)$/gi.exec(context.message))
+else if (/^看看.+?(微博|B站)$/gi.exec(context.message))
 	{	
-		var num = 1;
+	var num = 1;
         var choose = 0;
         var name = "";
         if (/置顶/.exec(context.message)) (num = -1);
@@ -80,22 +80,36 @@ if (/^看看.+?(微博|B站)$/gi.exec(context.message))
     else if (/^查看(订阅B站|B站订阅)$/gi.exec(context.message)) {
         bilibili.checkBiliSubs(context, replyMsg);
     }
-
     else if (/^\.dice.+/g.exec(context.message)) {
   	    dice(context, replyMsg, rand);
     }
     else if (/^旅行$/.exec(context.message)) {
         pokemon.travel(context, replyMsg);
     }
-    
-    else if (/^旅行团在哪$/.exec(context.message)) {
+    else if (/^我现在在哪$/.exec(context.message)) {
         pokemon.checkLocation(context, replyMsg);
     }
-    
     else if (/^捕捉$/.exec(context.message)) {
         pokemon.gacha(context, replyMsg);
     }
-    
-    else if (/^对战/.exec(context.message)) {
+    else if (/^(对战\[CQ:at,qq=\d+\]|\[CQ:at,qq=\d+\]对战)$/.exec(context.message)) {
         pokemon.fight(context, replyMsg);
+    }
+    else if (/^(设定|设置)宵禁时间为\d{1,2}点$/.exec(context.message)) {
+        pokemon.setCurfew(context, replyMsg);
+    }
+    else if (/^查看对战列表$/.exec(context.message)) {
+        pokemon.checkList(context, replyMsg);
+    }
+    else if (/^查看电脑$/.exec(context.message)) {
+        pokemon.checkStorage(context, replyMsg);
+    }
+    else if (/^用?.+?换掉.+?$/.exec(context.message)) {
+        pokemon.checkList(context, replyMsg);
+    }
+    else if (/^进入友好商店$/.exec(context.message)) {
+        pokemon.shop(context, replyMsg);
+    }
+    else if (/^我要买\d{1,2}个精灵球$/.exec(context.message)) {
+        pokemon.buy(context, replyMsg);
     }
