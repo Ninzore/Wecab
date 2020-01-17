@@ -79,27 +79,61 @@ const chart = {
             rock : 1, ghost : 1, dragon : 2, dark : 2, steel : 0.5, fairy : 1}
 }
 
-function locationName(num = 6) {
+function locationName(num = 0) {
     let location = "";
     switch (num) {
-        case 0: location = "狩猎地带"; break;
-        case 1: location = "橙华森林"; break;
-        case 2: location = "石之洞窟"; break;
-        case 3: location = "新紫堇"; break;
-        case 4: location = "烟囱山"; break;
-        case 5: location = "海底洞窟"; break;
-        case 6: location = "弃船"; break;
-        case 7: location = "流星瀑布"; break;
-        case 8: location = "浅滩洞穴"; break;
+        case 0: location = "橙华森林"; break;
+        case 1: location = "石之洞窟"; break;
+        case 2: location = "卡绿隧道"; break;
+        case 3: location = "弃船"; break;
+        case 4: location = "沙漠"; break;
+        case 5: location = "热焰小径"; break;
+        case 6: location = "凹凸山道"; break;
+        case 7: location = "新紫堇"; break;
+        case 8: location = "流星瀑布 "; break;
         case 9: location = "送神山"; break;
-        case 10: location = "凹凸山道"; break;
-        case 11: location = "沙漠"; break;
-        case 12: location = "茵郁"; break;
-        case 13: location = "101号道路"; break;
-        case 14: location = "102号道路"; break;
-        case 15: location = "117号道路"; break;
-        case 16: location = "120号道路"; break;
-        case 17: location = "123号道路"; break;
+        case 10: location = "浅滩洞穴"; break;
+        case 11: location = "觉醒祠堂"; break;
+        case 12: location = "冠军之路"; break;
+        case 13: location = "天空之柱"; break;
+        case 14: location = "101号道路"; break;
+        case 15: location = "102号道路"; break;
+        case 16: location = "103号道路"; break;
+        case 17: location = "104号道路"; break;
+        case 18: location = "105号水路"; break;
+        case 19: location = "106号水路"; break;
+        case 20: location = "107号水路"; break;
+        case 21: location = "108号水路"; break;
+        case 22: location = "109号水路"; break;
+        case 23: location = "110号道路"; break;
+        case 24: location = "111号道路"; break;
+        case 25: location = "112号道路"; break;
+        case 26: location = "113号道路"; break;
+        case 27: location = "114号道路"; break;
+        case 28: location = "115号道路"; break;
+        case 29: location = "116号道路"; break;
+        case 30: location = "117号道路"; break;
+        case 31: location = "118号道路"; break;
+        case 32: location = "119号道路"; break;
+        case 33: location = "120号道路"; break;
+        case 34: location = "121号道路"; break;
+        case 35: location = "122号水路"; break;
+        case 36: location = "123号道路"; break;
+        case 37: location = "124号水路"; break;
+        case 38: location = "125号水路"; break;
+        case 39: location = "126号水路"; break;
+        case 40: location = "127号水路"; break;
+        case 41: location = "128号水路"; break;
+        case 42: location = "129号水路"; break;
+        case 43: location = "132号水路"; break;
+        case 44: location = "133号水路"; break;
+        case 45: location = "134号水路"; break;
+        case 46: location = "狩猎地带-区域1"; break;
+        case 47: location = "狩猎地带-区域2"; break;
+        case 48: location = "狩猎地带-区域3"; break;
+        case 49: location = "狩猎地带-区域4"; break;
+        case 50: location = "狩猎地带-区域5"; break;
+        case 51: location = "狩猎地带-区域6"; break;
     }
     return location;
 }
@@ -135,40 +169,39 @@ function gacha(context, replyFunc) {
     let rand = 0;
     let choice_list = [];
     let text = "";
-
+    
     mongodb(db_path, {useUnifiedTopology: true}).connect().then(async (mongo) => {
         let coll_loc = mongo.db('bot').collection('pokemon_location');
         let coll_pkm_stg = mongo.db('bot').collection('pokemon_storage');
-        
         let user_profile = await coll_pkm_stg.findOne({player_id : context.user_id});
+        let time = new Date().getTime();
         if (user_profile == undefined) {
             let location_list = [];
             let pokemon_list = [];
-            let centre = random(0, 17, true);
-            //扔6次骰子，确定6块地形
+            let init_location = [14, 15, 0, 2, 16, 17];
             for (let i=0; i<6; i++){
-                rand = loadedDice(centre, 0, 17);
+                rand = init_location[i]
                 // console.log(location_choice):
                 location = locationName(rand);
                 location_list.push(location);
-
                 choice_list = (await coll_loc.findOne({location:location},
-                            {projection: {_id : 0, pokemon_list : 1}})).pokemon_list;
+                            {projection: {_id : 0, pokemons : 1}})).pokemons;
                 rand = random(0, choice_list.length, true);
                 // pokemon_list.push(choice_list[rand]);
-                pokemon_list.push(choice_list[rand]);
+                pokemon_list.push(choice_list[rand].name);
             }
             // console.log(location_list);
             // console.log(pkm_name);
-            
+
             coll_pkm_stg.insertOne({player_id : context.user_id, player_name : context.nickname,
                                     list : pokemon_list, storage : [], last_win : 0,
-                                    money : 500, pokeball : 3, centre : 0, curfew : 24});
+                                    last_capture : time, last_travel : time, last_fight : 0,
+                                    money : 500, pokeball : 3, centre : 14});
             
             for (let i=0; i<6; i++) {
                 if (i != 2 || i != 5){
-                    location_list[i] = location_list[i].padEnd(6, " ");
-                    pokemon_list[i] = pokemon_list[i].padEnd(6, " ");
+                    location_list[i] = location_list[i].padEnd(8, " ");
+                    pokemon_list[i] = pokemon_list[i].padEnd(8, " ");
                 }
             }
             location_list.splice(3 ,0, "\n");
@@ -178,22 +211,31 @@ function gacha(context, replyFunc) {
         else if(user_profile.pokeball <= 0) {
             text = `已经...没球了, 但是你还有${user_profile.money}元`;
         }
+        else if(time - user_profile.last_capture < 3600000) {
+            text = `还需要${Math.round((3600000 - time + user_profile.last_capture)/60000)}分钟才能再次捕捉`;
+        }
         else {
             centre = user_profile.centre;
             location = locationName(centre);
             choice_list = (await coll_loc.findOne({location:location},
-                        {projection: {_id : 0, pokemon_list : 1}})).pokemon_list;
+                            {projection: {_id : 0, pokemons : 1}})).pokemons;
             rand = random(0, choice_list.length, true);
-            let pkm_name = choice_list[rand];
-            let pokeball = user_profile.pokeball-1;
-            coll_pkm_stg.updateOne({player_id : context.user_id}, 
-                                    {$set : {pokeball : pokeball},
-                                    $push : {storage : pkm_name}});
+            let pkm_name = choice_list[rand].name;
+            if (user_profile.storage.indexOf(pkm_name) != -1  && user_profile.list.indexOf(pkm_name) != -1) {
+                text = `你在${location}找到了一只${pkm_name}，因为你已经有一只相同了所以放生了,等一小时再来吧`
+                coll_pkm_stg.updateOne({player_id : context.user_id}, 
+                                        {$set : {pokeball : pokeball, last_capture : time}});
+            }
+            else {
+                let pokeball = user_profile.pokeball-1;
+                coll_pkm_stg.updateOne({player_id : context.user_id}, 
+                                        {$set : {pokeball : pokeball, last_capture : time},
+                                        $push : {storage : pkm_name}});
             
-            text = `你在${location}抓住了一只${pkm_name}，存进电脑了，剩余${pokeball}个精灵球`;
+                text = `你在${location}抓住了一只${pkm_name}，存进电脑了，剩余${pokeball}个精灵球`;
+            }
         }
         mongo.close();
-        // console.log(text);
         replyFunc(context, text, true);
     }).catch();
 }
@@ -211,10 +253,8 @@ function fight(context, replyFunc) {
         if (player_data_a == undefined) text = "你必须先捕捉才能对战";
         else if (player_data_b == undefined) text = "训练家不能对普通人出手！";
         else {
-            let time = new Date();
-            let hour = time.getHours() - 1;
-            if (hour < 4) hour += 24;
-            if (player_data_b.curfew > hour) text = "对方已宵禁，明天再打";
+            let time = new Date().getTime();
+            if (time - player_data_a.last_fight < 3600000) text = `还需要${Math.round((3600000 - time + player_data_a.last_fight)/60000)}分钟才能再次对战`;
             else {
                 if (player_data_a.last_win == player_b || player_data_b.last_win == player_a) {
                     text = "不能重复打一个人哦";
@@ -237,7 +277,7 @@ function fight(context, replyFunc) {
                     for (let i=0; i<6; i++) {
                         pkm_a = await coll_pokedex.findOne({name : pokemon_list_a[i]}, {projection: {_id : 0}});
                         pkm_b = await coll_pokedex.findOne({name : pokemon_list_b[i]}, {projection: {_id : 0}});
-                        console.log(pkm_b)
+                        // console.log(pkm_a)
                         // console.log(pokemon_list_a[i])
                         type_a = pkm_a.type_id;
                         type_b = pkm_b.type_id;
@@ -265,6 +305,12 @@ function fight(context, replyFunc) {
                             coll_pkm_stg.updateOne({player_id : player_a}, {$set : {last_win : player_b}});
                             coll_pkm_stg.updateOne({player_id : player_b}, {$set : {money : 0}});
                         }
+                        else if (player_data_b.money - count*100 <= 0) {
+                            match_result = `赢了，获得${count*100}, 对方余额全部白给了`;
+                            coll_pkm_stg.updateOne({player_id : player_a}, {$inc : {money : player_data_b.money},
+                                                                            $set : {last_win : player_b}});
+                            coll_pkm_stg.updateOne({player_id : player_b}, {$set : {money : 0}});
+                        }
                         else {
                             match_result = `赢了，获得了${count*100}元，对方失去${count*100}元`;
                             coll_pkm_stg.updateOne({player_id : player_a}, {$inc : {money : count*100},
@@ -278,14 +324,22 @@ function fight(context, replyFunc) {
                             coll_pkm_stg.updateOne({player_id : player_a}, {$set : {money : 0}});
                             coll_pkm_stg.updateOne({player_id : player_b}, {$set : {last_win : player_a}});
                         }
+                        else if (player_data_a.money + count*100 <= 0) {
+                            match_result = `输了，失去${count*100}，余额全部白给`;
+                            coll_pkm_stg.updateOne({player_id : player_b}, {$set : {last_win : player_a},
+                                                                            $inc : {money : player_data_a.money}});
+                            coll_pkm_stg.updateOne({player_id : player_a}, {$set : {money : 0}});
+                        }
                         else {
                             match_result = `输了，失去了${count*100}元，对方获得了${count*100}元`;
-                            coll_pkm_stg.updateOne({player_id : player_a}, {$inc : {money : -count*100}});
-                            coll_pkm_stg.updateOne({player_id : player_b}, {$inc : {money : count*100},
+                            coll_pkm_stg.updateOne({player_id : player_a}, {$inc : {money : count*100}});
+                            coll_pkm_stg.updateOne({player_id : player_b}, {$inc : {money : -count*100},
                                                                             $set : {last_win : player_a}});
                         }
                     }
                     else  match_result = "平局";
+                    coll_pkm_stg.updateOne({player_id : player_a}, {$set : {last_fight : time}});
+                    coll_pkm_stg.updateOne({player_id : player_b}, {$set : {last_fight : time}});
 
                     for (let i=0; i<6; i++) {
                         if (i != 2 || i != 6){
@@ -303,7 +357,7 @@ function fight(context, replyFunc) {
         }
         replyFunc(context, text);
         mongo.close();
-    }).catch();
+    }).catch(err => console.log(err));
 
     function calculator(type_a = [], type_b = []) {
         let result = 1;
@@ -331,8 +385,7 @@ function checkList(context, replyFunc) {
         }
         pokemon_list.splice(3 ,0, "\n");
         let text = "当前对战列表为\n" + pokemon_list.join("");
-        // console.log(text);
-        replyFunc(context, text);
+        replyFunc(context, text, true);
     }).catch((err) => {console.log(err)});
 }
 
@@ -343,8 +396,9 @@ function checkStorage(context, replyFunc) {
         let coll_pkm_stg = mongo.db('bot').collection('pokemon_storage');
         let storage = (await coll_pkm_stg.findOne({player_id : player_a}, {projection: {_id : 0}})).storage;
         mongo.close();
-        let text = "你的电脑中储存有\n" + storage.join(" ");
-        // console.log(text);
+        let text = "";
+        if (storage.length == 0) text = "你的电脑里没有宝可梦";
+        else text = "你的电脑中储存有\n" + storage.join(" ");
         replyFunc(context, text, true);
     }).catch((err) => {console.log(err)});
 }
@@ -362,6 +416,7 @@ function changeList(context, replyFunc) {
         let storage = player_data.storage;
         let list_position = list.indexOf(pokemon_origin);
         
+        // console.log(list)
         // console.log(list)
         if (list_position == -1) text = "你的对战列表里面没有" + pokemon_origin;
         else if (storage.indexOf(pokemon_change) == -1) text = "你的储存箱里面没有" + pokemon_change;
@@ -385,7 +440,6 @@ function changeList(context, replyFunc) {
             text = `用${pokemon_change}换掉了${pokemon_origin}\n当前对战列表为\n` + list.join("");
         }
         mongo.close();
-        // console.log(text);
         replyFunc(context, text, true);
     }).catch((err) => {console.log(err)});
 }
@@ -402,8 +456,7 @@ function shop(context, replyFunc) {
                     "元和" + player_data.pokeball + "个精灵球\n" +
                     "请问你要买什么?\n精灵球(100元)"
                     
-        // console.log(text);
-        replyFunc(context, text);
+        replyFunc(context, text, true);
     }).catch((err) => {console.log(err)});
 }
 
@@ -423,47 +476,91 @@ function buy(context, replyFunc) {
                     + `剩余${player_data.money-pokeball_buy*100}元`;
         }
         mongo.close();
-        // console.log(text);
         replyFunc(context, text, true);
     }).catch((err) => {console.log(err)});
 }
 
-function travel(context, replyFunc){
-    centre = random(0, 17, true);
+function travel(context, replyFunc) {
+    centre = random(0, 51, true);
     mongodb(db_path, {useUnifiedTopology: true}).connect().then(async (mongo) => {
         // if (err) console.log("database connection error during checkList")
         let coll_pkm_stg = mongo.db('bot').collection('pokemon_storage');
-        coll_pkm_stg.updateOne({player_id : context.user_id}, {$set : {centre : centre}});
+        let text = "";
+        let time = new Date().getTime();
+        let user_profile = await coll_pkm_stg.findOne({player_id : context.user_id});
+        if (time - user_profile.last_travel < 3600000) text = 
+            `还需要${Math.round((3600000 - time + user_profile.last_travel)/60000)}分钟才能再次旅行`;
+        else {
+            coll_pkm_stg.updateOne({player_id : context.user_id}, {$set : {centre : centre, last_travel : time}});
+            mongo.close();
+            text = "你旅行到了" +locationName(centre);
+        }
         mongo.close();
-        let text = "你旅行到了" +locationName(centre) + "附近";
-        // console.log(text);
         replyFunc(context, text, true);
     }).catch((err) => {console.log(err)});
 }
 
-function checkLocation(context, replyFunc){
+function checkLocation(context, replyFunc) {
     mongodb(db_path, {useUnifiedTopology: true}).connect().then(async (mongo) => {
         // if (err) console.log("database connection error during checkList")
         let coll_pkm_stg = mongo.db('bot').collection('pokemon_storage');
         let {centre} = (await coll_pkm_stg.findOne({player_id : context.user_id}, {projection : {centre : 1}}));
         mongo.close();
-        let text = "你现在在" +locationName(centre) + "附近";
-        // console.log(text);
+        let text = "你现在在" +locationName(centre);
         replyFunc(context, text, true);
     }).catch((err) => {console.log(err)});
 }
 
-function setCurfew(context, replyFunc){
-    let hour = /(\d{1,2})点/.exec(context.message)[1];
+function selfRepair(context, replyFunc) {
     mongodb(db_path, {useUnifiedTopology: true}).connect().then(async (mongo) => {
         // if (err) console.log("database connection error during checkList")
         let coll_pkm_stg = mongo.db('bot').collection('pokemon_storage');
-        coll_pkm_stg.updateOne({player_id : context.user_id}, {$set : {curfew : hour}});
+        let user_profile = (await coll_pkm_stg.findOne({player_id : context.user_id}));
+        let list = user_profile.list;
+        let storage = user_profile.storage;
+        for (let i = list.length; i<6; i++) list.push(storage.shift());
+        coll_pkm_stg.updateOne({player_id : context.user_id}, {$set : {list : list, storage : storage}});
         mongo.close();
-        let text = `你的宵禁时间是${hour}点`;
-        // console.log(text);
+        let text = "可能好了";
         replyFunc(context, text, true);
     }).catch((err) => {console.log(err)});
 }
 
-module.exports = {gacha, fight, travel, checkLocation, checkList, checkStorage, changeList, shop, buy, setCurfew};
+function help(context, replyFunc) {
+    let text = "首先一切操作都需要‘捕捉’后才能进行，所有首先进行‘捕捉’吧\n" +
+                "旅行：使用旅行可以在丰源地区的52个区域中随机旅行到一个地方\n" +
+                "对战：有了宝可梦之后首先就想要对战呢，@一个人然后说对战就可以对战了，获胜可以得到战利品哦\n" +
+                "我现在在哪：检查当前自己的所在位置，忘了自己在什么地方的时候用吧\n" +
+                "查看对战列表：可以查看当前用来对战的6只宝可梦\n" +
+                "查看电脑：查看电脑来检查自己所拥有的不在列表中的宝可梦吧\n" +
+                "用xxx换掉xxx：可以把电脑中的宝可梦和对战列表中的对换，用它来变化自己的对战列表吧" +
+                "进入友好商店：进入商店可以查看自己持有的物品，查看当前商品价格\n" +
+                "我要买x个xxx：进商店当然就是要买东西啦，说这句话来买东西吧，是要花钱的哦，用对战来赚取金钱吧\n" +
+                "自助修复：有时抽风了的话，可以用这条指令尝试修复，说不定能好\n" +
+                "除了战斗必须在群内使用，其他的建议全部私聊";
+    replyFunc(context, text)
+}
+
+// function setCurfew(context){
+//     let hour = /(\d{1,2})点/.exec(context.message)[1];
+//     mongodb(db_path, {useUnifiedTopology: true}).connect().then(async (mongo) => {
+//         // if (err) console.log("database connection error during checkList")
+//         let coll_pkm_stg = mongo.db('bot').collection('pokemon_storage');
+//         coll_pkm_stg.updateOne({player_id : context.user_id}, {$set : {curfew : hour}});
+//         mongo.close();
+//         let text = `你的宵禁时间是${hour}点`;
+//         console.log(text);
+//     }).catch((err) => {console.log(err)});
+// }
+
+// let context = {user_id:123, message:"对战[CQ:at,qq=1234]", nickname :　"test"};
+// let context = {user_id:123, message:"用信使鸟换掉恰雷姆", nickname :　"test"};
+// let context = {user_id:123, message:"设置宵禁时间为12点", nickname :　"test"};
+// let context = {user_id:123, message:"查看电脑", nickname :　"test"};
+// let context = {user_id:123, message:"进入友好商店", nickname :　"test"};
+// let context = {user_id:123, message:"我要买10个精灵球", nickname :　"test"};
+// let context = {user_id:1234, message:"捕捉", nickname :　"test"};
+// let context = {user_id:123, message:"我现在在哪", nickname :　"test"};
+// let context = {user_id:123, message:"旅行", nickname :　"test"};
+
+module.exports = {gacha, fight, travel, checkLocation, checkList, checkStorage, changeList, shop, buy, selfRepair, help};
