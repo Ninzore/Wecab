@@ -7,13 +7,15 @@
   并且在开头添加  
   import weibo from './modules/plugin/weibo';
   import bilibili from './modules/plugin/bilibili'
+  import pokemon from './modules/plugin/pokemon'
   import dice from './modules/plugin/dice';  
   然后最末尾添加两行  
   weibo.checkWeibo(replyMsg);
   setTimeout(() => bilibili.checkBiliDynamic(replyMsg), 10000);
   
-2. 需要安装MongoDB，没装的参考官方教程https://docs.mongodb.com/manual/installation/ ，端口是默认端口不要改，然后需要安装mongodb nodejs api，直接在机器人的目录npm install mongodb就行
-
+2. 需要安装MongoDB，没装的参考官方教程https://docs.mongodb.com/manual/installation/ ，端口是默认端口不要改，
+     然后需要npm install mongodb和seedrandom  
+3. 把别的东西放到module/plugin里
 
 ## 部件列表  
 正在缓慢更新中
