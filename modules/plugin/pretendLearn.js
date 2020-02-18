@@ -3,7 +3,7 @@ var mongodb = require('mongodb').MongoClient;
 var db_path = "mongodb://127.0.0.1:27017";
 
 function teach(context, replyFunc) {
-        let qa = /^\s?我教你\s?(.+?)\s?[＞>]\s?(.+)/i.exec(context.message);
+        let qa = /\s?我教你\s?(.+?)\s?[＞>]\s?(.+)/i.exec(context.message);
         if (qa == null);
         else {
             let qes = qa[1];
@@ -22,7 +22,7 @@ function teach(context, replyFunc) {
 }
 
 function forget(context, replyFunc) {
-        let match = /^\s?(忘记|忘掉)\s?(.+)/i.exec(context.message);
+        let match = /\s?(忘记|忘掉)\s?(.+)/i.exec(context.message);
         if (match == null);
         else {
             mongodb(db_path, {useUnifiedTopology: true}).connect().then((mongo) => {
