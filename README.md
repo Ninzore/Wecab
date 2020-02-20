@@ -3,7 +3,7 @@
 给Tsuk1ko的CQ-picfinder-robot V2.11做了几个小挂件，基本稳定，至少目前看起来很稳而且从没翻车
    
    **注意！！！**
-1. main基于V2.11修改，2.11可以直接复制main.js，2.11版以外的版本需要把main_edit.js里面的东西复制到main的290行左右  
+1. main基于V2.11.6修改，2.11.6可以直接复制main.js，2.11/6版以外的版本需要把main_edit.js里面的东西复制到main的290行左右  
   并且在开头添加  
   import weibo from './modules/plugin/weibo';
   import bilibili from './modules/plugin/bilibili'
@@ -13,6 +13,7 @@
   weibo.checkWeibo(replyMsg);
   setTimeout(() => bilibili.checkBiliDynamic(replyMsg), 10000);
   
+  改的地方有点多所以还是直接复制main比较好....  
 2. 需要安装MongoDB，没装的参考官方教程https://docs.mongodb.com/manual/installation/ ，端口是默认端口不要改，
      然后需要npm install mongodb和seedrandom  
 3. 把别的东西放到module/plugin里
