@@ -234,7 +234,7 @@ function checkBiliDynamic(replyFunc) {
             else {
                 let coll = mongo.db('bot').collection('bilibili');
                 let subscribes = await coll.find({}).toArray();
-
+                mongo.close();
                 for (let i = 0; i < subscribes.length; i++) {
                     let id = subscribes[i]._id;
                     if (subscribes[i].groups.length > 0) {
@@ -251,7 +251,6 @@ function checkBiliDynamic(replyFunc) {
                     }
                 }
             }
-            mongo.close();
         });
     }, 5 * 60000);
 
@@ -267,15 +266,15 @@ function checkBiliDynamic(replyFunc) {
                 groups.forEach(group_id => {
                     sender({group_id:group_id}, replyFunc, clean_dynamic, "");
                 });
-                coll.updateOne({uid : subscribe.uid},
+                await coll.updateOne({uid : subscribe.uid},
                             {$set : {timestamp : curr_timestamp, dynamic_id : dynamic_id}}, 
                     (err, result) => {
                         // if (err) console.log("database update error during checkWeibo");
                         if (err) console.log(err);
                         // else console.log(result);
+                        mongo.close();
                     });
             }
-            mongo.close();
         });
     }
 
@@ -284,7 +283,7 @@ function checkBiliDynamic(replyFunc) {
             if (err) console.log("error");
             else {
                 let coll = mongo.db('bot').collection('bilibili');
-                coll.findOneAndDelete({_id : id}, (err, result) => {
+                await coll.findOneAndDelete({_id : id}, (err, result) => {
                     if (err) console.log("database delete error during checkWeibo");
                     // else console.log("delete bilibili subsctibe:" + result.value.name);
                 });
@@ -313,8 +312,8 @@ function checkBiliSubs(context, replyFunc) {
                     }
                     else text = "你一无所有";
                     sender(context, replyFunc, {}, text, true);
+                    mongo.close();
                 });
-            mongo.close();
         }
     });
 }
