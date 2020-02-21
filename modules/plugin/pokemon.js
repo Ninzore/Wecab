@@ -563,4 +563,54 @@ function help(context, replyFunc) {
 // let context = {user_id:123, message:"我现在在哪", nickname :　"test"};
 // let context = {user_id:123, message:"旅行", nickname :　"test"};
 
-module.exports = {gacha, fight, travel, checkLocation, checkList, checkStorage, changeList, shop, buy, selfRepair, help};
+function pokemonCheck(context, replyMsg) {
+    if (/^旅行$/.test(context.message)) {
+        travel(context, replyMsg);
+        return true;
+    }
+    else if (/^我现在在哪$/.test(context.message)) {
+        checkLocation(context, replyMsg);
+        return true;
+    }
+    else if (/^捕捉$/.test(context.message)) {
+        gacha(context, replyMsg);
+        return true;
+    }
+    else if (/^(对战\[CQ:at.+?]\s?|\[CQ:at.+?\]\s?对战)$/.test(context.message)) {
+        fight(context, replyMsg);
+        return true;
+    }
+    // else if (/^(设定|设置)宵禁时间为\d{1,2}点$/.exec(context.message)) {
+    //     pokemon.setCurfew(context, replyMsg);
+    // }
+    else if (/^查看对战列表$/.test(context.message)) {
+        checkList(context, replyMsg);
+        return true;
+    }
+    else if (/^查看电脑$/.test(context.message)) {
+        checkStorage(context, replyMsg);
+        return true;
+    }
+    else if (/^用.+?换掉.+?$/.test(context.message)) {
+        changeList(context, replyMsg);
+        return true;
+    }
+    else if (/^进入友好商店$/.test(context.message)) {
+        shop(context, replyMsg);
+        return true;
+    }
+    else if (/^我要买\d{1,2}个精灵球$/.test(context.message)) {
+        buy(context, replyMsg);
+        return true;
+    }
+    else if (/^自助修复$/.test(context.message)) {
+        selfRepair(context, replyMsg);
+        return true;
+    }
+    else if (/^宝可梦帮助$/.test(context.message)) {
+        help(context, replyMsg);
+        return true;
+    }
+}
+
+module.exports = {pokemonCheck};
