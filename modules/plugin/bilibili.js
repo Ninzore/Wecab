@@ -213,15 +213,18 @@ function rmBiliSubscribe(context, replyFunc, name = "") {
                 coll.findOneAndUpdate({uid : uid},
                                       {$pull : {groups : {$in : [group_id]}}},
                     (err, result) => {
-                        if (err) text = "database subscribes delete error";
+                        if (err) {
+                            text = "database subscribes delete error";
+                            console.log(err);
+                        }
                         else {
                             // console.log(result)
                             if (!result.value.groups.includes(group_id)) text = "小火汁你压根就没订阅嗷";
                             else text = "已取消订阅" + name + "的B站动态";
                         }
                     sender(context, replyFunc, {}, text, true);
+                    mongo.close();
                 });
-                mongo.close();
             }
         });
     }
@@ -269,7 +272,7 @@ function checkBiliDynamic(replyFunc) {
                 await coll.updateOne({uid : subscribe.uid},
                             {$set : {timestamp : curr_timestamp, dynamic_id : dynamic_id}}, 
                     (err, result) => {
-                        // if (err) console.log("database update error during checkWeibo");
+                        // if (err) console.log("database update error when checking bilibili");
                         if (err) console.log(err);
                         // else console.log(result);
                         mongo.close();
@@ -284,11 +287,11 @@ function checkBiliDynamic(replyFunc) {
             else {
                 let coll = mongo.db('bot').collection('bilibili');
                 await coll.findOneAndDelete({_id : id}, (err, result) => {
-                    if (err) console.log("database delete error during checkWeibo");
+                    if (err) console.log("database delete error when checking bilibili");
                     // else console.log("delete bilibili subsctibe:" + result.value.name);
+                    mongo.close();
                 });
             }
-            mongo.close();
         });
     }
 }
@@ -367,4 +370,54 @@ function rtBiliByUrl(context, replyFunc){
     rtBilibili(context, replyFunc, "", 0, dynamic_id);
 }
 
-module.exports = {rtBilibili, rtBiliByUrl, addBiliSubscribe, rmBiliSubscribe, checkBiliDynamic, checkBiliSubs};
+function bilibiliCheck (context, replyFunc) {
+    if (/^看看.+?B站$/gi.test(context.message)) {	
+		var num = 1;
+        var name = "";
+        if (/置顶/.test(context.message)) (num = -1);
+        else if (/最新/.test(context.message)) (num = 0);
+        else if (/上上上条/.test(context.message)) (num = 3);
+        else if (/上上条/.test(context.message)) (num = 2);
+        else if (/上条/.test(context.message)) (num = 1);
+	    else if (/第.+?条/.test(context.message)) {
+            let temp = /第([0-9]?[一二三四五六七八九]?)条/.exec(context.message)[1];
+            if (temp==0 || temp=="零") (num = -1);
+            else if (temp==1 || temp=="一") (num = 0);
+            else if (temp==2 || temp=="二") (num = 1);
+            else if (temp==3 || temp=="三") (num = 2);
+            else if (temp==4 || temp=="四") (num = 3);
+            else if (temp==5 || temp=="五") (num = 4);
+            else if (temp==6 || temp=="六") (num = 5);
+            else if (temp==7 || temp=="七") (num = 6);
+            else if (temp==8 || temp=="八") (num = 7);
+            else if (temp==9 || temp=="九") (num = 8);
+        }
+        else (num = 0);       
+        name = /看看(.+?)的?((第[0-9]?[一二三四五六七八九]?条)|(上*条)|(置顶)|(最新))?B站/i.exec(context.message)[1];
+        rtBilibili(context, replyFunc, name, num);
+        return true;
+	}
+    else if (/^看看B站https:\/\/t.bilibili.com\/(\d+).+?/gi.test(context.message)) {
+        rtBiliByUrl(context, replyFunc);
+        return true;
+    }
+    else if (/^订阅.+?B站$/gi.test(context.message)) {
+        let name = /^订阅(.+?)B站$/gi.exec(context.message)[1];
+        console.log(name + " B站订阅");
+        addBiliSubscribe(context, replyFunc, name);
+        return true;
+    }
+    else if (/^取消订阅.+?B站$/gi.test(context.message)) {
+        let name = /^取消订阅(.+?)B站$/gi.exec(context.message)[1];
+        console.log(name + " B站订阅取消");
+        rmBiliSubscribe(context, replyFunc, name);
+        return true;
+    }
+    else if (/^查看(订阅B站|B站订阅)$/gi.test(context.message)) {
+        checkBiliSubs(context, replyFunc);
+        return true;
+    }
+    else return false;
+}
+
+module.exports = {bilibiliCheck, checkBiliDynamic};
