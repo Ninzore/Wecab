@@ -251,7 +251,7 @@ function checkWeiboDynamic(replyFunc) {
                                 });
                         }
                     }
-                    else coll.findOneAndDelete({_id : id}, (err, result) => {
+                    else await coll.findOneAndDelete({_id : id}, (err, result) => {
                         if (err) console.log("database delete error during checkWeibo");
                         else;
                     });
