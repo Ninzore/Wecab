@@ -232,48 +232,6 @@ function commonHandle(e, context) {
 //私聊以及群组@的处理
 function privateAndAtMsg(e, context) {
     if (commonHandle(e, context)) return;
-    else if (/^旅行$/.exec(context.message)) {
-        pokemon.travel(context, replyMsg);
-        return
-    }
-    else if (/^我现在在哪$/.exec(context.message)) {
-        pokemon.checkLocation(context, replyMsg);
-        return
-    }
-    else if (/^捕捉$/.exec(context.message)) {
-        pokemon.gacha(context, replyMsg);
-        return
-    }
-    // else if (/^(设定|设置)宵禁时间为\d{1,2}点$/.exec(context.message)) {
-    //     pokemon.setCurfew(context, replyMsg);
-    // }
-    else if (/^查看对战列表$/.exec(context.message)) {
-        pokemon.checkList(context, replyMsg);
-        return
-    }
-    else if (/^查看电脑$/.exec(context.message)) {
-        pokemon.checkStorage(context, replyMsg);
-        return
-    }
-    else if (/^用.+?换掉.+?$/.exec(context.message)) {
-        pokemon.changeList(context, replyMsg);
-        return
-    }
-    else if (/^进入友好商店$/.exec(context.message)) {
-        pokemon.shop(context, replyMsg);
-        return
-    }
-    else if (/^我要买\d{1,2}个精灵球$/.exec(context.message)) {
-        pokemon.buy(context, replyMsg);
-        return
-    }
-    else if (/^自助修复$/.exec(context.message)) {
-        pokemon.selfRepair(context, replyMsg);
-        return
-    }
-    else if (/^宝可梦帮助$/.exec(context.message)) {
-        pokemon.help(context, replyMsg);
-    }
     if (hasImage(context.message)) {
         //搜图
         e.stopPropagation();
@@ -300,7 +258,9 @@ function privateAndAtMsg(e, context) {
     } else {
         //其他指令
         learn.teach(context, replyMsg);
+        learn.remember(context, replyMsg);
         learn.forget(context, replyMsg);
+	pokemon.pokemonCheck(context, replyMsg);
         return setting.replys.default;
     }
 }
@@ -368,134 +328,12 @@ function groupMsg(e, context) {
             e.stopPropagation();
             searchImg(context, smStatus);
         }
-    } 
-    else if (/^看看.+?(微博|B站)$/gi.exec(context.message)) {	
-		var num = 1;
-        var choose = 0;
-        var name = "";
-        if (/置顶/.exec(context.message)) (num = -1);
-        else if (/最新/.exec(context.message)) (num = 0);
-        else if (/上上上条/.exec(context.message)) (num = 3);
-        else if (/上上条/.exec(context.message)) (num = 2);
-        else if (/上条/.exec(context.message)) (num = 1);
-	    else if (/第.+?条/.exec(context.message)) {
-            let temp = /第([0-9]?[一二三四五六七八九]?)条/.exec(context.message)[1];
-            if (temp==0 || temp=="零") (num = -1);
-            else if (temp==1 || temp=="一") (num = 0);
-            else if (temp==2 || temp=="二") (num = 1);
-            else if (temp==3 || temp=="三") (num = 2);
-            else if (temp==4 || temp=="四") (num = 3);
-            else if (temp==5 || temp=="五") (num = 4);
-            else if (temp==6 || temp=="六") (num = 5);
-            else if (temp==7 || temp=="七") (num = 6);
-            else if (temp==8 || temp=="八") (num = 7);
-            else if (temp==9 || temp=="九") (num = 8);
-        }
-        else (num = 0);       
-        if (/(烧钱|少前)/.exec(context.message)) (choose = 1);
-        else if (/(方舟|明日方舟)/.exec(context.message)) (choose = 2);
-        else if (/(邦邦)/.exec(context.message)) (choose = 3);
-        else if (/(FF|狒狒|菲菲)/.exec(context.message)) (choose = 4);
-        else choose = 0;
-
-        name = /看看(.+?)的?((第[0-9]?[一二三四五六七八九]?条)|(上*条)|(置顶)|(最新))?(微博|B站)/i.exec(context.message)[1];
-        
-        if (/B站/i.exec(context.message)){
-            if (num < 0) num = 0;
-            bilibili.rtBilibili(context, replyMsg, name, num);
-        } 
-        else weibo.rtWeibo(context, replyMsg, choose, name, num);
-	}
-    
-    else  if (/^看看微博\s?https:\/\/m.weibo.cn\/\d+\/\d+$/g.exec(context.message)) {
-	// replyMsg(context, "pass1")
-        let url = /https:\/\/m.weibo.cn\/\d+\/\d+/.exec(context.message)[0];
-	   // replyMsg(context, url);
-        weibo.rtWeiboByUrl(context, replyMsg, url);
     }
-
-    else  if (/^看看B站https:\/\/t.bilibili.com\/(\d+).+?/g.exec(context.message)) {
-            bilibili.rtBiliByUrl(context, replyMsg);
-    }
-
-    else if (/^订阅.+?(微博|B站)$/gi.exec(context.message)) {
-        let choose = 0;
-        let name = "";
-        if (/(烧钱|少前)/.exec(context.message)) (choose = 1);
-        else if (/(方舟|明日方舟)/.exec(context.message)) (choose = 2);
-        else if (/(邦邦)/.exec(context.message)) (choose = 3);
-        else if (/(FF|狒狒|菲菲)/.exec(context.message)) (choose = 4);
-        else name = /^订阅(.+?)(微博|B站)$/gi.exec(context.message)[1];
-
-        if (/B站/i.exec(context.message)) bilibili.addBiliSubscribe(context, replyMsg, name);
-        else weibo.addSubscribe(context, replyMsg, choose, name);
-    }
-
-    else if (/^取消订阅.+?(微博|B站)$/g.exec(context.message)) {
-        let choose = 0;
-        let name = "";
-        if (/(烧钱|少前)/.exec(context.message)) (choose = 1);
-        else if (/(方舟|明日方舟)/.exec(context.message)) (choose = 2);
-        else if (/(邦邦)/.exec(context.message)) (choose = 3);
-        else if (/(FF|狒狒|菲菲)/.exec(context.message)) (choose = 4);
-        else name = /^取消订阅(.+?)(微博|B站)$/gi.exec(context.message)[1];
-        if (/B站/i.exec(context.message)) bilibili.rmBiliSubscribe(context, replyMsg, name)
-        else weibo.rmSubscribe(context, replyMsg, choose, name);
-    }
-
-    else if (/^查看(订阅微博|微博订阅)$/g.exec(context.message)) {
-        weibo.checkSubscribes(context, replyMsg);
-    }
-
-    else if (/^查看(订阅B站|B站订阅)$/gi.exec(context.message)) {
-        bilibili.checkBiliSubs(context, replyMsg);
-    }
+    else if (weibo.weiboCheck(context, replyMsg));
+    else if (bilibili.bilibiliCheck(context, replyMsg));
+    else if (pokemon.pokemonCheck(context, replyMsg));
     else if (/^\.dice.+/g.exec(context.message)) {
   	    dice(context, replyMsg, rand);
-    }
-    else if (/^旅行$/.exec(context.message)) {
-        pokemon.travel(context, replyMsg);
-    }
-    else if (/^我现在在哪$/.exec(context.message)) {
-        pokemon.checkLocation(context, replyMsg);
-    }
-    else if (/^捕捉$/.exec(context.message)) {
-        pokemon.gacha(context, replyMsg);
-    }
-    else if (/^(对战\[CQ:at.+?]\s?|\[CQ:at.+?\]\s?对战)$/.exec(context.message)) {
-        pokemon.fight(context, replyMsg);
-    }
-    // else if (/^(设定|设置)宵禁时间为\d{1,2}点$/.exec(context.message)) {
-    //     pokemon.setCurfew(context, replyMsg);
-    // }
-    else if (/^查看对战列表$/.exec(context.message)) {
-        pokemon.checkList(context, replyMsg);
-    }
-    else if (/^查看电脑$/.exec(context.message)) {
-        pokemon.checkStorage(context, replyMsg);
-    }
-    else if (/^用.+?换掉.+?$/.exec(context.message)) {
-        pokemon.changeList(context, replyMsg);
-    }
-    else if (/^进入友好商店$/.exec(context.message)) {
-        pokemon.shop(context, replyMsg);
-    }
-    else if (/^我要买\d{1,2}个精灵球$/.exec(context.message)) {
-        pokemon.buy(context, replyMsg);
-    }
-    else if (/^自助修复$/.exec(context.message)) {
-        pokemon.selfRepair(context, replyMsg);
-    }
-    else if (/^宝可梦帮助$/.exec(context.message)) {
-        pokemon.help(context, replyMsg);
-    }
-    else if (/^(来干我啊|口我|我超勇的).?$/.exec(context.message)) {
-        bot('set_group_ban', 
-        {group_id : context.group_id, user_id : context.user_id, duration : 60*rand.intBetween(1, 10)});
-    }
-    else if (/^(我要睡了|睡了).?$/.exec(context.message)) {
-        bot('set_group_ban', 
-        {group_id : context.group_id, user_id : context.user_id, duration : 60*60*rand.intBetween(1, 7)});
     }
     else if (setting.repeat.enable) {
         //复读（
@@ -511,7 +349,9 @@ function groupMsg(e, context) {
             setTimeout(() => {
                 replyMsg(context, context.message);
             }, 1000);
-        } else learn.talk(context, replyMsg);
+        } else {
+            learn.talk(context, replyMsg);
+        }
     }
 }
 
@@ -776,5 +616,5 @@ function parseArgs(str, enableArray = false, _key = null) {
     return m;
 }
 
-weibo.checkWeibo(replyMsg);
+weibo.checkWeiboDynamic(replyMsg);
 setTimeout(() => bilibili.checkBiliDynamic(replyMsg), 10000);
