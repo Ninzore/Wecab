@@ -40,6 +40,8 @@ function teach(context, replyFunc) {
                     break;
                 case "正则": 
                     mode = "regexp"; 
+                    //处理CQ自带的转义
+                    qes = qes.replace("&amp;", "&").replace("&#91;", "[").replace("&#93;", "]");
                     try {
                         new RegExp(qes);
                     } catch(err) {
@@ -102,7 +104,9 @@ function forget(context, replyFunc) {
                     case "模糊": mode = "fuzzy";
                     case "正则": mode = "regexp";
                 }
-                if (mode == "regexp" && !(/^([?/.+*]|\.\*)$/.test(qes))) {
+                if (mode == "regexp" && !(/^(\.|\.\*)$/.test(qes))) {
+                    //处理CQ自带的转义
+                    qes = qes.replace("&amp;", "&").replace("&#91;", "[").replace("&#93;", "]");
                     let reg_exp = new RegExp(qes);
                     result = await coll.findOneAndDelete({question : reg_exp, mode : mode});
                 }
@@ -127,7 +131,7 @@ function talk(context, replyFunc) {
         let result = [];
         let answers = [];
         let reg_exp = "";
-
+        let cplt_flag = false;
         //按照order的顺序，循环检测匹配项
         for (let i = 0; i < order.length; i++) {
             result = await coll.find({mode : order[i]}).toArray();
@@ -150,15 +154,17 @@ function talk(context, replyFunc) {
                         }
                     }
 
+                    //如果有回应，发送并标记已发送flag;
                     if (answers.length > 0) {
                         let rand = Math.floor(Math.random() * answers.length);
                         sender(replyFunc, context, answers[rand]);
                         // console.log(answers[rand]);
+                        cplt_flag = true;
                         break;
                     }
                 }
             }
-            else continue;
+            if (cplt_flag) break;
         }
         mongo.close();
     }).catch((err) => {console.log(err)});
