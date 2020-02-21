@@ -79,6 +79,54 @@ function teach(context, replyFunc) {
     }
 }
 
+function remember(context, replyFunc) {
+    let common = new RegExp(/\s?(?:想一?想|回忆)\s?(?<ans>.+)/i);
+    let specific = new RegExp(/\s?(?:想一?想|回忆)\s?(?<ans>.+?)\s?[＞>]\s?(?<mode_name>精确|模糊|正则)/i);
+
+    let match_result = context.message.match(specific);
+    if (match_result == undefined) {
+        match_result = context.message.match(common);
+    }
+
+    if (match_result != null) {
+        let {groups : {ans, mode_name}} = match_result;
+        let text = "";
+        let result = "";
+        let mode = "exact";
+        mongodb(db_path, {useUnifiedTopology: true}).connect().then(async mongo => {
+            let coll = mongo.db('qa_set').collection("qa" + String(context.group_id));
+            if (mode_name != undefined) {
+                switch (mode_name) {
+                    case "精确": mode = "exact";
+                    case "模糊": mode = "fuzzy";
+                    case "正则": mode = "regexp";
+                }
+                result = await coll.find({answers : ans, mode : mode});
+            }
+            else result = await coll.find({answers : ans}).toArray();
+            // console.log(result)
+            if (result.length < 1) text = "从来没学过啊";
+            else {
+                let qes_and_mode = [];
+                let mode_name = "";
+                result.forEach(element => {
+                    switch (element.mode) {
+                        case "exact": mode_name = "精确"; break;
+                        case "fuzzy": mode_name = "模糊"; break;
+                        case "regexp": mode_name = "正则"; break;
+                        default: mode_name = "不明"; break;
+                    }
+                    qes_and_mode.push(`${element.question}，模式为${mode_name}`);
+                });
+                let result_text = qes_and_mode.join("\n");
+                text = `我想想，我有学过\n${result_text}`;
+            }
+            sender(replyFunc, context, text);
+            // console.log(text);
+            mongo.close();
+        }).catch((err) => {console.log(err)});
+    }
+}
 
 function forget(context, replyFunc) {
     let common = new RegExp(/\s?(?:忘记|忘掉)\s?(?<qes>.+)/i);
@@ -175,4 +223,4 @@ function sender(replyFunc, context, text) {
     replyFunc(context, text);
 }
 
-module.exports = {teach, talk, forget};
+module.exports = {teach, talk, forget, remember};
