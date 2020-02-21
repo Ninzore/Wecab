@@ -57,7 +57,7 @@ function teach(context, replyFunc) {
         //如果没有指定模式，使用这里的配置
         else {
             if (qes.length < 2) {
-                qes_err = false;
+                qes_err = true;
                 text = "太短了";
             }
             else if (qes.length < 5) mode = "fuzzy";
