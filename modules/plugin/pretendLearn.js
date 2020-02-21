@@ -18,7 +18,7 @@ function teach(context, replyFunc) {
         let {groups : {qes, ans, mode_name}} = result;
         // console.log(qes)
         // console.log(groups)
-        let err = false;
+        let qes_err = false;
         let text = "";
         //匹配模式选择
         let mode = "exact";
@@ -26,14 +26,14 @@ function teach(context, replyFunc) {
             switch (mode_name) {
                 case "精确": 
                     if (qes.length < 2) {
-                        err = true;
+                        qes_err = true;
                         text = "太短了";
                     } 
                     break;
                 case "模糊": 
                     mode = "fuzzy";
                     if (qes.length < 3) {
-                        err = true;
+                        qes_err = true;
                         text = "太短了";
                         return;
                     }
@@ -43,12 +43,13 @@ function teach(context, replyFunc) {
                     try {
                         new RegExp(qes);
                     } catch(err) {
-                        err = true;
+                        qes_err = true;
                         text = "正则都写错了，重修去吧";
+                    } finally {
+                        break;
                     }
-                    break;
                 default : 
-                    err = true;
+                    qes_err = true;
                     text = "哇你会不会写啊？";
                     break;
             }
@@ -56,7 +57,7 @@ function teach(context, replyFunc) {
         //如果没有指定模式，使用这里的配置
         else {
             if (qes.length < 2) {
-                err = false;
+                qes_err = false;
                 text = "太短了";
             }
             else if (qes.length < 5) mode = "fuzzy";
@@ -64,7 +65,7 @@ function teach(context, replyFunc) {
         }
         //console.log(mode)
         //如果没有错误就写入数据库
-        if (!err) {
+        if (!qes_err) {
             mongodb(db_path, {useUnifiedTopology: true}).connect().then(async (mongo) => {
                 let qa_set = mongo.db('qa_set').collection("qa" + String(context.group_id));
                 await qa_set.updateOne({question : qes, mode : mode}, {$addToSet : {answers : ans}}, {upsert : true});
