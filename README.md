@@ -1,6 +1,8 @@
 # CQ-picfinder-robot-add-on
 
-给Tsuk1ko的CQ-picfinder-robot V2.11做了几个小挂件，基本稳定，至少目前看起来很稳而且从没翻车
+给Tsuk1ko的CQ-picfinder-robot V2.11做了几个小挂件，基本稳定，至少目前看起来很稳而且从没翻车  
+  
+[更新日志](https://github.com/Ninzore/CQ-picfinder-robot-add-on/blob/master/CHANGELOG.md)
    
    **注意！！！**
 1. main基于V2.11.6修改，2.11.6可以直接复制main.js，2.11/6版以外的版本需要把main_edit.js里面的东西复制到main的290行左右  
