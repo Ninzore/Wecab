@@ -215,8 +215,8 @@ async function rmSubscribe(context, replyFunc, choose = null, name = null) {
                             else text = "已取消订阅" + screen_name + "的微博";
                             replyFunc(context, text, true);
                         }
+                    mongo.close();
                 });
-                mongo.close();
             }
         });
     }
@@ -224,7 +224,7 @@ async function rmSubscribe(context, replyFunc, choose = null, name = null) {
 
 
 //每过x分钟检查一次订阅列表，如果订阅一个微博账号的群的数量是0就删除
-function checkWeibo(replyFunc) {
+function checkWeiboDynamic(replyFunc) {
     setInterval(() => {
         mongodb(db_path, {useUnifiedTopology: true}).connect(async function(err, mongo) {
             if (err) console.log("database openning error during checkWeibo");
@@ -440,4 +440,70 @@ function rtWeiboByUrl(context, replyFunc, url){
     rtWeibo(context, replyFunc, choose = 0, name = "", num = 0, uid = user_id, mid = mid);
 }
 
-module.exports = {rtWeibo, rtWeiboByUrl, addSubscribe, rmSubscribe, checkWeibo, checkSubscribes};
+function weiboCheck(context, replyMsg) {
+    if (/^看看.+?微博$/gi.test(context.message)) {	
+		var num = 1;
+        var choose = 0;
+        var name = "";
+        if (/置顶/.test(context.message)) (num = -1);
+        else if (/最新/.test(context.message)) (num = 0);
+        else if (/上上上条/.test(context.message)) (num = 3);
+        else if (/上上条/.test(context.message)) (num = 2);
+        else if (/上条/.test(context.message)) (num = 1);
+	    else if (/第.+?条/.test(context.message)) {
+            let temp = /第([0-9]?[一二三四五六七八九]?)条/.exec(context.message)[1];
+            if (temp==0 || temp=="零") (num = -1);
+            else if (temp==1 || temp=="一") (num = 0);
+            else if (temp==2 || temp=="二") (num = 1);
+            else if (temp==3 || temp=="三") (num = 2);
+            else if (temp==4 || temp=="四") (num = 3);
+            else if (temp==5 || temp=="五") (num = 4);
+            else if (temp==6 || temp=="六") (num = 5);
+            else if (temp==7 || temp=="七") (num = 6);
+            else if (temp==8 || temp=="八") (num = 7);
+            else if (temp==9 || temp=="九") (num = 8);
+        }
+        else (num = 0);       
+        if (/(烧钱|少前)/.test(context.message)) (choose = 1);
+        else if (/(方舟|明日方舟)/.test(context.message)) (choose = 2);
+        else if (/(邦邦)/.test(context.message)) (choose = 3);
+        else if (/(FF|狒狒|菲菲)/.test(context.message)) (choose = 4);
+        else choose = 0;
+
+        name = /看看(.+?)的?((第[0-9]?[一二三四五六七八九]?条)|(上*条)|(置顶)|(最新))?微博/i.exec(context.message)[1];
+
+        rtWeibo(context, replyMsg, choose, name, num);
+	}
+    else if (/^看看微博\s?https:\/\/m.weibo.cn\/\d+\/\d+$/g.test(context.message)) {
+	// replyMsg(context, "pass1")
+        let url = /https:\/\/m.weibo.cn\/\d+\/\d+/.exec(context.message)[0];
+	   // replyMsg(context, url);
+        rtWeiboByUrl(context, replyMsg, url);
+    }
+    else if (/^订阅.+?(微博|B站)$/gi.exec(context.message)) {
+        let choose = 0;
+        let name = "";
+        if (/(烧钱|少前)/.exec(context.message)) (choose = 1);
+        else if (/(方舟|明日方舟)/.exec(context.message)) (choose = 2);
+        else if (/(邦邦)/.exec(context.message)) (choose = 3);
+        else if (/(FF|狒狒|菲菲)/.exec(context.message)) (choose = 4);
+        else name = /^订阅(.+?)(微博|B站)$/gi.exec(context.message)[1];
+
+        addSubscribe(context, replyMsg, choose, name);
+    }
+    else if (/^取消订阅.+?(微博|B站)$/g.test(context.message)) {
+        let choose = 0;
+        let name = "";
+        if (/(烧钱|少前)/.test(context.message)) (choose = 1);
+        else if (/(方舟|明日方舟)/.test(context.message)) (choose = 2);
+        else if (/(邦邦)/.test(context.message)) (choose = 3);
+        else if (/(FF|狒狒|菲菲)/.test(context.message)) (choose = 4);
+        else name = /^取消订阅(.+?)(微博|B站)$/gi.exec(context.message)[1];
+        rmSubscribe(context, replyMsg, choose, name);
+    }
+    else if (/^查看(订阅微博|微博订阅)$/g.exec(context.message)) {
+        checkSubscribes(context, replyMsg);
+    }
+}
+
+module.exports = {weiboCheck, checkWeiboDynamic};
