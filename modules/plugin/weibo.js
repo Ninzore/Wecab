@@ -328,13 +328,13 @@ async function weiboSender(send_target, replyFunc, mblog) {
     // console.log(mblog)
     // let text = textFilter(mblog.page_info.content2);
     let id = mblog.id;
+    let payload = "";
     if ("pics" in mblog) {
         let pics = mblog.pics;
         for (let pic of pics) {
             pid = pic.pid;
             pic_url = pic.large.url;
-            payload = "[CQ:image,cache=0,file=" + pic_url + "]";
-            replyFunc(send_target, payload);
+            payload += "[CQ:image,cache=0,file=" + pic_url + "]";
         }
     }
     if ("page_info" in mblog) {
@@ -356,8 +356,7 @@ async function weiboSender(send_target, replyFunc, mblog) {
             else {
                 media_src = "视频地址: " + media.stream_url;
             }
-            let payload = "[CQ:image,cache=0,file=" + mblog.page_info.page_pic.url + "]";
-            replyFunc(send_target, payload);
+            payload = "[CQ:image,cache=0,file=" + mblog.page_info.page_pic.url + "]";
             replyFunc(send_target, media_src);
         }
     }
@@ -380,8 +379,7 @@ async function weiboSender(send_target, replyFunc, mblog) {
             else {
                 rt_media_src = " 转发视频地址: " + rt_media.stream_url;
             }
-            let payload = "[CQ:image,cache=0,file=" + rt_page_info.retweet_video_pic_url + "]";
-            replyFunc(send_target, payload);
+            payload = "[CQ:image,cache=0,file=" + rt_page_info.retweet_video_pic_url + "]";
             replyFunc(send_target, rt_media_src);
             }
         }
@@ -390,18 +388,17 @@ async function weiboSender(send_target, replyFunc, mblog) {
             for (var pic of mblog.retweeted_status.pics) {
                 pid = pic.pid;
                 pic_url = pic.large.url;
-                let payload = "[CQ:image,cache=0,file=" + pic_url + "]";
-                replyFunc(send_target, payload);
+                payload += ("[CQ:image,cache=0,file=" + pic_url + "]");
             }
         }
     }
-        
     if (/\.\.\.全文/.exec(text)) {
         //console.log(查看全文);
         rtWeiboDetail(send_target, replyFunc, id);
+        replyFunc(send_target, payload);
         return 0;
     }
-    text = mblog.user.screen_name + ":\n" + text;
+    text = mblog.user.screen_name + ":\n" + text + payload;
     replyFunc(send_target, text);
 }
 
