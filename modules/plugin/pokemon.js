@@ -224,7 +224,7 @@ function gacha(context, replyFunc) {
             if (user_profile.storage.indexOf(pkm_name) != -1  && user_profile.list.indexOf(pkm_name) != -1) {
                 text = `你在${location}找到了一只${pkm_name}，因为你已经有一只相同了所以放生了,等一小时再来吧`
                 coll_pkm_stg.updateOne({player_id : context.user_id}, 
-                                        {$set : {pokeball : pokeball, last_capture : time}});
+                                        {$set : {last_capture : time}});
             }
             else {
                 let pokeball = user_profile.pokeball-1;
