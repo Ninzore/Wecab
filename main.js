@@ -21,7 +21,6 @@ import bilibili from './modules/plugin/bilibili'
 import dice from './modules/plugin/dice';
 import pokemon from './modules/plugin/pokemon';
 import learn from "./modules/plugin/pretendLearn";
-import recordMsg from "./modules/plugin/recordMsg";
 import pixivImage from "./modules/plugin/pixivImage"
 
 //常量
