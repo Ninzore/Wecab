@@ -23,7 +23,6 @@ import pokemon from './modules/plugin/pokemon';
 import learn from "./modules/plugin/pretendLearn";
 import recordMsg from "./modules/plugin/recordMsg";
 import pixivImage from "./modules/plugin/pixivImage"
-// var Client = require('ssh2').Client;
 
 //常量
 const setting = config.picfinder;
@@ -234,30 +233,10 @@ function commonHandle(e, context) {
 
 //私聊以及群组@的处理
 function privateAndAtMsg(e, context) {
-    if (commonHandle(e, context)) return;
-    // else if (/^MC服务器炸了$/i.exec(context.message)) {
-    //     var conn = new Client();
-    //     conn.on('ready', function() {
-    //         conn.exec('cd /usr/local/paperMC && ./start.sh', function(err, stream) {
-    //             if (err) throw err;
-    //             stream.on('close', function(code, signal) {
-    //                 conn.end();
-    //             }).on('data', function(data) {
-    //                 }).stderr.on('data', function(data) {
-    //             });
-    //         });
-    //     }).connect({
-    //         host: '',
-    //         port: ,
-    //         username: ',
-    //         password: ""
-    //     });
-    //     replyMsg(context, "OK等一下马上就好");
-    //     return
-    // }
-    learn.teach(context, replyMsg);
-    learn.remember(context, replyMsg);
-    learn.forget(context, replyMsg);
+    if (commonHandle(e, context)) {
+        e.stopPropagation();
+        return;
+    }
     pixivImage.pixivCheck(context, replyMsg, bot);
     pokemon.pokemonCheck(context, replyMsg);
     if (hasImage(context.message)) {
@@ -295,15 +274,16 @@ function debugRrivateAndAtMsg(e, context) {
         e.stopPropagation();
         return setting.replys.debug;
     } else {
-        learn.teach(context, replyMsg);
-        learn.forget(context, replyMsg);
         privateAndAtMsg(e, context);
     }
 }
 
 //群组消息处理
 function groupMsg(e, context) {
-    if (commonHandle(e, context)) return;
+    if (commonHandle(e, context)) {
+        e.stopPropagation();
+        return;
+    }
 
     //进入或退出搜图模式
     const { group_id, user_id } = context;
@@ -351,30 +331,14 @@ function groupMsg(e, context) {
             });
             e.stopPropagation();
             searchImg(context, smStatus);
-        }
+        }  
     }
     else if (pixivImage.pixivCheck(context, replyMsg, bot));
     else if (weibo.weiboCheck(context, replyMsg));
     else if (bilibili.bilibiliCheck(context, replyMsg));
     else if (pokemon.pokemonCheck(context, replyMsg));
-    else if (recordMsg.response(context, replyMsg));
-    
-    else if (/^说的是呢$/.test(context.message)) {
-        replyMsg(context, "[CQ:image,file=1.jpg]");
-    }
-    else if (/^咳咳咳$/i.test(context.message)) {
-        replyMsg(context, "[CQ:image,file=2.jpg]");
-    }
     else if (/^\.dice.+/g.exec(context.message)) {
-  	    dice(context, replyMsg, rand);
-    }
-    else if (/^(来干我啊|口我|我超勇的).?$/.exec(context.message)) {
-        bot('set_group_ban', 
-        {group_id : context.group_id, user_id : context.user_id, duration : 60*rand.intBetween(1, 10)});
-    }
-    else if (/^(我要睡了|睡了).?$/.exec(context.message)) {
-        bot('set_group_ban', 
-        {group_id : context.group_id, user_id : context.user_id, duration : 60*60*rand.intBetween(1, 7)});
+        dice(context, replyMsg, rand);
     }
     else if (setting.repeat.enable) {
         //复读（
@@ -389,7 +353,7 @@ function groupMsg(e, context) {
             //平时发言下的随机复读
             setTimeout(() => {
                 replyMsg(context, context.message);
-            }, 1000);
+            }, 2000);
         } else {
             learn.talk(context, replyMsg);
         }
