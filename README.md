@@ -5,12 +5,14 @@
 [更新日志](https://github.com/Ninzore/CQ-picfinder-robot-add-on/blob/master/CHANGELOG.md)
    
    **注意！！！**
-1. main基于V2.11.6修改，2.11.6可以直接复制main.js，2.11/6版以外的版本需要把main_edit.js里面的东西复制到main的290行左右  
+1. main基于V2.11.7修改，2.11.7可以直接复制main.js，2.11.7版以外的版本需要把main_edit.js里面的东西复制到main的337行左右  
   并且在开头添加  
   import weibo from './modules/plugin/weibo';
   import bilibili from './modules/plugin/bilibili'
-  import pokemon from './modules/plugin/pokemon'
-  import dice from './modules/plugin/dice';  
+  import dice from './modules/plugin/dice';
+  import pokemon from './modules/plugin/pokemon';
+  import learn from "./modules/plugin/pretendLearn";
+  import pixivImage from "./modules/plugin/pixivImage"
   然后最末尾添加两行  
   weibo.checkWeibo(replyMsg);
   setTimeout(() => bilibili.checkBiliDynamic(replyMsg), 10000);
