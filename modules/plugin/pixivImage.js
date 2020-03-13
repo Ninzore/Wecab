@@ -3,7 +3,7 @@ var axios = require("axios");
 var deleteMsg = true;
 
 function pixivCheck(context, replyFunc, bot) {
-    if (/^看看p站.*/i.test(context.message)) {
+    if (/^看看p站.?/i.test(context.message)) {
         pic_id = /(\d+)/.exec(context.message)[1];
         singleImage(pic_id, replyFunc, context, bot);
         return true;
@@ -12,34 +12,44 @@ function pixivCheck(context, replyFunc, bot) {
 }
 
 function checkImage(url) {
-    return axios.head(url).then(ret => parseInt(ret.headers['content-length'])).catch(err => {return err.response.status});
+    return axios.get(url).then(res => parseInt(res.headers['content-length'])).catch(err => {return err.response});
 }
 
 function imageCQcode(pic_id) {
-    return `[CQ:image,file=https://pixiv.cat/${pic_id}.jpg]`;
+    return `[CQ:image,,cache=0,file=https://pixiv.cat/${pic_id}.jpg]`;
 }
 
 async function singleImage(pic_id, replyFunc, context, bot) {
     let payload = "";
     let url = `https://pixiv.cat/${pic_id}.jpg`
-    let size = await checkImage(url);
-    let flag = true;
-    if (size == 404) {
-        payload = "图被删了";
-        flag = false;
+    let res = await checkImage(url);
+    let delete_flag = true;
+    if (res.status == 404) {
+        if (/這個作品ID中有/.test(res.data)) {
+            let num_img = parseInt(/這個作品ID中有 (\d{1,2}) 張圖片/.exec(res.data)[1]);
+            for (let i=1; i<num_img+1; i++) {
+                url = `https://pixiv.cat/${pic_id}-${i}.jpg`
+                res = await checkImage(url);
+                if (res > 4194304) payload += "图太大发不出来，原图看这里" + url;
+                else payload += imageCQcode(`${pic_id}-${i}`);
+            }
+        }
+        else {
+            payload = "图可能被删了";
+            delete_flag = false;
+        }
     }
-    else if (size > 3600000) {
+    else if (res > 4194304) {
         payload = "图太大发不出来，原图看这里" + url;
-        flag = false;
+        delete_flag = false;
     }
     else payload = imageCQcode(pic_id);
-
-    sender(replyFunc, context, payload, bot, flag);
+    sender(replyFunc, context, payload, bot, delete_flag);
 }
 
-function sender(replyFunc, context, text, bot, flag) {
-    replyFunc(context, text).then(res => {
-        if (deleteMsg && flag && res && res.data && res.data.message_id)
+function sender(replyFunc, context, payload, bot, delete_flag) {
+    replyFunc(context, payload).then(res => {
+        if (deleteMsg && delete_flag && res && res.data && res.data.message_id)
             setTimeout(() => {
                 bot('delete_msg', {
                     message_id : res.data.message_id,
