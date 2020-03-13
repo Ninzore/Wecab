@@ -4,8 +4,8 @@ var deleteMsg = true;
 
 function pixivCheck(context, replyFunc, bot) {
     if (/^看看p站.?/i.test(context.message)) {
-        pic_id = /(\d+)/.exec(context.message)[1];
-        singleImage(pic_id, replyFunc, context, bot);
+        let pic_id = /\d+/.exec(context.message);
+        if (pic_id != null) singleImage(pic_id[0], replyFunc, bot);
         return true;
     }
     else return false;
