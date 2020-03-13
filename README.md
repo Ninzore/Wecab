@@ -1,6 +1,7 @@
 # CQ-picfinder-robot-add-on
 
 给Tsuk1ko的CQ-picfinder-robot V2.11做了几个小挂件，基本稳定，至少目前看起来很稳而且从没翻车  
+如果有bug请复制pm2log中的错误信息并提交issus，我会尽快解决（可能）
   
 [更新日志](https://github.com/Ninzore/CQ-picfinder-robot-add-on/blob/master/CHANGELOG.md)
    
@@ -45,7 +46,7 @@ TODO:  Pixiv订阅，小游戏更新
 ^123$只需要输入123就行了  
   
 ### 4. Pixiv看图  
-***看看p站***后接p站图片id或者包含id的url，  
+***看看p站***后接p站图片id或者包含id的url，如果该id有多图会自动合并发送  
   由于酷Q限制无法发送4M以上大小的图，此时会发送图片链接
   
 
