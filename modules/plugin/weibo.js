@@ -218,7 +218,7 @@ async function rmSubscribe(context, replyFunc, choose = null, name = null) {
                     mongo.close();
                 });
             }
-        });
+        }).catch(err => console.log(err));
     }
 }
 
@@ -269,7 +269,7 @@ function checkSubscribes(context, replyFunc) {
         if (err) replyFunc(context, "database openning error during checkSubscribes", true);
         else {
             let coll = mongo.db('bot').collection('weibo');
-            coll.find({groups : {$elemMatch : {$eq : group_id}}}, {projection: {_id : 0, name : 1}})
+            await coll.find({groups : {$elemMatch : {$eq : group_id}}}, {projection: {_id : 0, name : 1}})
                 .toArray().then(result => {
                     // console.log(result);
                     if (result.length > 0) {
@@ -357,7 +357,6 @@ async function weiboSender(send_target, replyFunc, mblog) {
                 media_src = "视频地址: " + media.stream_url;
             }
             payload = "[CQ:image,cache=0,file=" + mblog.page_info.page_pic.url + "]";
-            replyFunc(send_target, media_src);
         }
     }
 
@@ -380,7 +379,6 @@ async function weiboSender(send_target, replyFunc, mblog) {
                 rt_media_src = " 转发视频地址: " + rt_media.stream_url;
             }
             payload = "[CQ:image,cache=0,file=" + rt_page_info.retweet_video_pic_url + "]";
-            replyFunc(send_target, rt_media_src);
             }
         }
     
@@ -398,7 +396,7 @@ async function weiboSender(send_target, replyFunc, mblog) {
         replyFunc(send_target, payload);
         return 0;
     }
-    text = mblog.user.screen_name + ":\n" + text + payload;
+    text = mblog.user.screen_name + ":\n" + text + payload + media_src + rt_media_src;
     replyFunc(send_target, text);
 }
 
@@ -466,16 +464,16 @@ function weiboCheck(context, replyMsg) {
         else if (/(邦邦)/.test(context.message)) (choose = 3);
         else if (/(FF|狒狒|菲菲)/.test(context.message)) (choose = 4);
         else choose = 0;
-
         name = /看看(.+?)的?((第[0-9]?[一二三四五六七八九]?条)|(上*条)|(置顶)|(最新))?微博/i.exec(context.message)[1];
-
         rtWeibo(context, replyMsg, choose, name, num);
+        return true;
 	}
     else if (/^看看微博\s?https:\/\/m.weibo.cn\/\d+\/\d+$/g.test(context.message)) {
 	// replyMsg(context, "pass1")
         let url = /https:\/\/m.weibo.cn\/\d+\/\d+/.exec(context.message)[0];
 	   // replyMsg(context, url);
         rtWeiboByUrl(context, replyMsg, url);
+        return true;
     }
     else if (/^订阅.+?(微博|B站)$/gi.exec(context.message)) {
         let choose = 0;
@@ -485,8 +483,8 @@ function weiboCheck(context, replyMsg) {
         else if (/(邦邦)/.exec(context.message)) (choose = 3);
         else if (/(FF|狒狒|菲菲)/.exec(context.message)) (choose = 4);
         else name = /^订阅(.+?)(微博|B站)$/gi.exec(context.message)[1];
-
         addSubscribe(context, replyMsg, choose, name);
+        return true;
     }
     else if (/^取消订阅.+?(微博|B站)$/g.test(context.message)) {
         let choose = 0;
@@ -497,10 +495,13 @@ function weiboCheck(context, replyMsg) {
         else if (/(FF|狒狒|菲菲)/.test(context.message)) (choose = 4);
         else name = /^取消订阅(.+?)(微博|B站)$/gi.exec(context.message)[1];
         rmSubscribe(context, replyMsg, choose, name);
+        return true;
     }
     else if (/^查看(订阅微博|微博订阅)$/g.exec(context.message)) {
         checkSubscribes(context, replyMsg);
+        return true;
     }
+    else return false;
 }
 
 module.exports = {weiboCheck, checkWeiboDynamic};
