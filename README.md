@@ -19,9 +19,9 @@
   setTimeout(() => bilibili.checkBiliDynamic(replyMsg), 10000);
   
   改的地方有点多所以还是直接复制main比较好....  
-2. 需要安装MongoDB，没装的参考官方教程https://docs.mongodb.com/manual/installation/ ，端口是默认端口不要改，
-     然后需要npm install mongodb和seedrandom  
-3. 把别的东西放到module/plugin里
+2. 需要安装MongoDB，没装的参考官方教程https://docs.mongodb.com/manual/installation/ ，端口是默认端口不要改  
+3. 需要npm install mongodb和seedrandom  
+4. 把别的东西放到module/plugin里
 
 ## 部件列表  
 正在缓慢更新中
@@ -48,7 +48,6 @@ TODO:  Pixiv订阅，小游戏更新
 ### 4. Pixiv看图  
 ***看看p站***后接p站图片id或者包含id的url，如果该id有多图会自动合并发送  
   由于酷Q限制无法发送4M以上大小的图，此时会发送图片链接
-  
 
 ### 5. 骰子  
 可以扔出任意面数（<1000），任意个数(<10)的骰子，可以指定最小值，自动统计总分  
@@ -70,8 +69,13 @@ TODO:  Pixiv订阅，小游戏更新
    进入友好商店：进入商店可以查看自己持有的物品，查看当前商品价格  
    我要买x个xxx：进商店当然就是要买东西啦，说这句话来买东西吧，是要花钱的哦，用对战来赚取金钱吧  
    自助修复：有时抽风了的话，可以用这条指令尝试修复，说不定能好   
- 除了对战，其他功能都可以私聊进行，使用***宝可梦帮助***就能查看帮助(废话   
- 
+   除了对战，其他功能都可以私聊进行，使用***宝可梦帮助***就能查看帮助(废话   
+  
+## Extra   
+基于各种奇怪需求开发的部件，需要把extra文件夹中除了main的放到plugin里，并且替换之前的main  
+1. 匹配句子发送音频，参考recordMsg文件  
+2. 指挥机器人禁言，解除禁言，触发关键词禁言，参考zen文件  
+
 ## 以下内容因为版本更迭暂不支持  
 ### 2. 图片分类  
 可以请求不同种类的P站图片，数据库为本地储存的MongoDB，setu_database里是我自己扒了10多个tag并手工删减了一些不太行的，可以用MongoDB恢复到数据库，不需要的话可以自己用pxer扒  
