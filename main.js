@@ -21,7 +21,7 @@ import bilibili from './modules/plugin/bilibili'
 import dice from './modules/plugin/dice';
 import pokemon from './modules/plugin/pokemon';
 import learn from "./modules/plugin/pretendLearn";
-import pixivImage from "./modules/plugin/pixivImage"
+import pixivImage from "./modules/plugin/pixivImage";
 
 //常量
 const setting = config.picfinder;
@@ -236,8 +236,7 @@ function privateAndAtMsg(e, context) {
         e.stopPropagation();
         return;
     }
-    pixivImage.pixivCheck(context, replyMsg, bot);
-    pokemon.pokemonCheck(context, replyMsg);
+
     if (hasImage(context.message)) {
         //搜图
         e.stopPropagation();
@@ -263,6 +262,8 @@ function privateAndAtMsg(e, context) {
         } else return setting.replys.default;
     } else {
         //其他指令
+        pixivImage.pixivCheck(context, replyMsg, bot);
+        pokemon.pokemonCheck(context, replyMsg);
         return setting.replys.default;
     }
 }
@@ -330,14 +331,14 @@ function groupMsg(e, context) {
             });
             e.stopPropagation();
             searchImg(context, smStatus);
-        }  
-    }
+        }
+    } 
     else if (pixivImage.pixivCheck(context, replyMsg, bot));
     else if (weibo.weiboCheck(context, replyMsg));
     else if (bilibili.bilibiliCheck(context, replyMsg));
     else if (pokemon.pokemonCheck(context, replyMsg));
     else if (/^\.dice.+/g.exec(context.message)) {
-        dice(context, replyMsg, rand);
+  	    dice(context, replyMsg, rand);
     }
     else if (setting.repeat.enable) {
         //复读（
