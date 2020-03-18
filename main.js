@@ -236,8 +236,9 @@ function privateAndAtMsg(e, context) {
         e.stopPropagation();
         return;
     }
-
-    if (hasImage(context.message)) {
+    if (pixivImage.pixivCheck(context, replyMsg, bot));
+    else if(pokemon.pokemonCheck(context, replyMsg));
+    else if (hasImage(context.message)) {
         //搜图
         e.stopPropagation();
         searchImg(context);
@@ -262,8 +263,6 @@ function privateAndAtMsg(e, context) {
         } else return setting.replys.default;
     } else {
         //其他指令
-        pixivImage.pixivCheck(context, replyMsg, bot);
-        pokemon.pokemonCheck(context, replyMsg);
         return setting.replys.default;
     }
 }
