@@ -6,7 +6,7 @@
 [更新日志](https://github.com/Ninzore/CQ-picfinder-robot-add-on/blob/master/CHANGELOG.md)
    
    **注意！！！**
-1. main基于V2.11.7修改，2.11.7可以直接复制main.js，2.11.7版以外的版本需要把main_edit.js里面的东西复制到main的337行左右  
+1. main基于V2.11.10修改，2.11.10可以直接复制main.js，2.11.10版以外的版本需要把main_edit.js里面的东西复制到main的337行左右  
   并且在开头添加  
   import weibo from './modules/plugin/weibo';
   import bilibili from './modules/plugin/bilibili'
