@@ -236,12 +236,10 @@ function privateAndAtMsg(e, context) {
         e.stopPropagation();
         return;
     }
-    if ("group_id" in context) {
-        learn.teach(context, replyMsg);
-        learn.remember(context, replyMsg);
-        learn.forget(context, replyMsg);
-    }
-    if (pixivImage.pixivCheck(context, replyMsg, bot));
+    else if (learn.teach(context, replyMsg));
+    else if (learn.remember(context, replyMsg));
+    else if (learn.forget(context, replyMsg));
+    else if (pixivImage.pixivCheck(context, replyMsg, bot));
     else if(pokemon.pokemonCheck(context, replyMsg));
     else if (hasImage(context.message)) {
         //搜图
