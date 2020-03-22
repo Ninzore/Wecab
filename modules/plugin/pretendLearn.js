@@ -14,7 +14,7 @@ function teach(context, replyFunc) {
     if (result == undefined) {
         result = context.message.match(qa_common);
     }
-    if (result != null) {
+    if (result != null && "group_id" in context) {
         let {groups : {qes, ans, mode_name}} = result;
         // console.log(qes)
         // console.log(groups)
@@ -72,11 +72,17 @@ function teach(context, replyFunc) {
                 let qa_set = mongo.db('qa_set').collection("qa" + String(context.group_id));
                 await qa_set.updateOne({question : qes, mode : mode}, {$addToSet : {answers : ans}}, {upsert : true});
                 mongo.close();
-            }).catch((e) => {console.log(e)});
-            text = "好我会了";
+                text = "好我会了";
+                sender(replyFunc, context, text);
+            }).catch((e) => {
+                console.log(e);
+                text = "脑子不够用，没学会";
+                sender(replyFunc, context, text);
+            });
         }
-        sender(replyFunc, context, text);
+        return true;
     }
+    else return false;
 }
 
 function remember(context, replyFunc) {
@@ -88,7 +94,7 @@ function remember(context, replyFunc) {
         match_result = context.message.match(common);
     }
 
-    if (match_result != null) {
+    if (match_result != null && "group_id" in context) {
         let {groups : {ans, mode_name}} = match_result;
         let text = "";
         let result = "";
@@ -125,7 +131,9 @@ function remember(context, replyFunc) {
             // console.log(text);
             mongo.close();
         }).catch((err) => {console.log(err)});
+        return true;
     }
+    else return false;
 }
 
 function forget(context, replyFunc) {
@@ -137,7 +145,7 @@ function forget(context, replyFunc) {
         match_result = context.message.match(common);
     }
 
-    if (match_result != null) {
+    if (match_result != null && "group_id" in context) {
         let {groups : {qes, mode_name}} = match_result;
         let text = "";
         let result = "";
@@ -168,7 +176,9 @@ function forget(context, replyFunc) {
             // console.log(text);
             mongo.close();
         }).catch((err) => {console.log(err)});
+        return true;
     }
+    else return false;
 }
 
 function talk(context, replyFunc) {
