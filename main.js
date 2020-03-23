@@ -20,7 +20,7 @@ import weibo from './modules/plugin/weibo';
 import bilibili from './modules/plugin/bilibili'
 import dice from './modules/plugin/dice';
 import pokemon from './modules/plugin/pokemon';
-import learn from "./modules/plugin/pretendLearn";
+import pretendLearn from "./modules/plugin/pretendLearn";
 import pixivImage from "./modules/plugin/pixivImage";
 
 //常量
@@ -236,11 +236,17 @@ function privateAndAtMsg(e, context) {
         e.stopPropagation();
         return;
     }
-    else if (learn.teach(context, replyMsg));
-    else if (learn.remember(context, replyMsg));
-    else if (learn.forget(context, replyMsg));
-    else if (pixivImage.pixivCheck(context, replyMsg, bot));
-    else if(pokemon.pokemonCheck(context, replyMsg));
+    else if (pixivImage.pixivCheck(context, replyMsg, bot)) {
+        e.stopPropagation();
+
+    }
+    else if (pokemon.pokemonCheck(context, replyMsg)) {
+        e.stopPropagation();
+
+    }
+    else if (pretendLearn.learn(context, replyMsg)) {
+        e.stopPropagation();
+    }
     else if (hasImage(context.message)) {
         //搜图
         e.stopPropagation();
@@ -357,7 +363,7 @@ function groupMsg(e, context) {
                 replyMsg(context, context.message);
             }, 2000);
         } else {
-            learn.talk(context, replyMsg);
+            pretendLearn.talk(context, replyMsg);
         }
     }
 }
