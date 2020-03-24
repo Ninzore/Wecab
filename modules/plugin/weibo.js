@@ -475,25 +475,25 @@ function weiboCheck(context, replyMsg) {
         rtWeiboByUrl(context, replyMsg, url);
         return true;
     }
-    else if (/^订阅.+?(微博|B站)$/gi.exec(context.message)) {
+    else if (/^订阅.+?微博$/gi.exec(context.message)) {
         let choose = 0;
         let name = "";
         if (/(烧钱|少前)/.exec(context.message)) (choose = 1);
         else if (/(方舟|明日方舟)/.exec(context.message)) (choose = 2);
         else if (/(邦邦)/.exec(context.message)) (choose = 3);
         else if (/(FF|狒狒|菲菲)/.exec(context.message)) (choose = 4);
-        else name = /^订阅(.+?)(微博|B站)$/gi.exec(context.message)[1];
+        else name = /^订阅(.+?)微博$/gi.exec(context.message)[1];
         addSubscribe(context, replyMsg, choose, name);
         return true;
     }
-    else if (/^取消订阅.+?(微博|B站)$/g.test(context.message)) {
+    else if (/^取消订阅.+?微博$/g.test(context.message)) {
         let choose = 0;
         let name = "";
         if (/(烧钱|少前)/.test(context.message)) (choose = 1);
         else if (/(方舟|明日方舟)/.test(context.message)) (choose = 2);
         else if (/(邦邦)/.test(context.message)) (choose = 3);
         else if (/(FF|狒狒|菲菲)/.test(context.message)) (choose = 4);
-        else name = /^取消订阅(.+?)(微博|B站)$/gi.exec(context.message)[1];
+        else name = /^取消订阅(.+?)微博$/gi.exec(context.message)[1];
         rmSubscribe(context, replyMsg, choose, name);
         return true;
     }
