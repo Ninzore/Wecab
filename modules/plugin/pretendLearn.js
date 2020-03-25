@@ -284,7 +284,7 @@ function learn(context) {
         else if (remember(context)) {
             return true
         }
-        else if (rememberAll(context) && /owner|admin/.test(context.sender.role)) {
+        else if (/owner|admin/.test(context.sender.role) && rememberAll(context)) {
             return true
         }
         else return false;
