@@ -1,12 +1,16 @@
 var mongodb = require('mongodb').MongoClient;
 
 var db_path = "mongodb://127.0.0.1:27017";
+var replyFunc = (context, msg, at = false) => {};
 
+function learnReply(replyMsg) {
+    replyFunc = replyMsg;
+}
 /**
  * 教学环节
  * @param {object} context
  */
-function teach(context, replyFunc) {
+function teach(context) {
     let qa_with_mode = RegExp(/我教你\s?(?<qes>.+?)\s?[＞>]\s?(?<ans>.+?)\s?[＞>]\s?(?<mode_name>精确|模糊|正则)/i);
     let qa_common = RegExp(/我教你\s?(?<qes>.+?)\s?[＞>]\s?(?<ans>.+)/i);
     
@@ -32,7 +36,7 @@ function teach(context, replyFunc) {
                     break;
                 case "模糊": 
                     mode = "fuzzy";
-                    if (qes.length < 3) {
+                    if (qes.length < 2) {
                         qes_err = true;
                         text = "太短了";
                         return;
@@ -42,7 +46,13 @@ function teach(context, replyFunc) {
                     mode = "regexp"; 
                     //处理CQ自带的转义
                     qes = qes.replace("&amp;", "&").replace("&#91;", "[").replace("&#93;", "]");
-                    try {
+                    let test_reg = qes.replace(/"[CQ:.+?]"/g, "");
+                    if (!/[\[\]\^\$\\d\\w\\s\\b\.\{\}\|]/i.test(test_reg)) {
+                        text = "吾日三省吾身\n1. 我真的会正则吗？\n2. 精确和模糊不够用，必须要正则吗\n3. 这正则写对了吗？";
+                        qes_err = true;
+                        break;
+                    }
+                    else try {
                         new RegExp(qes);
                     } catch(err) {
                         qes_err = true;
@@ -62,8 +72,8 @@ function teach(context, replyFunc) {
                 qes_err = true;
                 text = "太短了";
             }
-            else if (qes.length < 5) mode = "fuzzy";
-            else mode = "exact";
+            else if (qes.length < 5) mode = "exact";
+            else mode = "fuzzy";
         }
         //console.log(mode)
         //如果没有错误就写入数据库
@@ -75,13 +85,13 @@ function teach(context, replyFunc) {
             }).catch((e) => {console.log(e)});
             text = "好我会了";
         }
-        sender(replyFunc, context, text);
+        sender(context, text);
         return true;
     }
     else return false;
 }
 
-function remember(context, replyFunc) {
+function remember(context) {
     let common = new RegExp(/\s?(?:想一?想|回忆)\s?(?<ans>.+)/i);
     let specific = new RegExp(/\s?(?:想一?想|回忆)\s?(?<ans>.+?)\s?[＞>]\s?(?<mode_name>精确|模糊|正则)/i);
 
@@ -123,7 +133,7 @@ function remember(context, replyFunc) {
                 let result_text = qes_and_mode.join("\n");
                 text = `我想想，我有学过\n${result_text}`;
             }
-            sender(replyFunc, context, text);
+            sender(context, text);
             // console.log(text);
             mongo.close();
         }).catch((err) => {console.log(err)});
@@ -132,7 +142,46 @@ function remember(context, replyFunc) {
     else return false;
 }
 
-function forget(context, replyFunc) {
+function rememberAll(context) {
+    let common = new RegExp(/\s?你学过什么/i);
+
+    let match_result = context.message.match(common);
+
+    if (match_result != null) {
+        let text = "";
+        let result = "";
+        // console.log(mode_name);
+        // console.log(ans);
+        mongodb(db_path, {useUnifiedTopology: true}).connect().then(async mongo => {
+            let coll = mongo.db('qa_set').collection("qa" + String(context.group_id));
+            result = await coll.find({}).toArray();
+            // console.log(result)
+            
+            if (result.length < 1) text = "脑袋空空的啊";
+            else {
+                let qes_and_mode = [];
+                let mode_name = "";
+                result.forEach(element => {
+                    switch (element.mode) {
+                        case "exact": mode_name = "精确"; break;
+                        case "fuzzy": mode_name = "模糊"; break;
+                        case "regexp": mode_name = "正则"; break;
+                        default: mode_name = "不明"; break;
+                    }
+                    qes_and_mode.push(`${element.question}，模式为${mode_name}`);
+                });
+                let result_text = qes_and_mode.join("\n");
+                text = `我想想，我有学过\n${result_text}`;
+            }
+            sender(context, text);
+            mongo.close();
+        }).catch((err) => {console.log(err)});
+        return true;
+    }
+    else return false;
+}
+
+function forget(context) {
     let common = new RegExp(/\s?(?:忘记|忘掉)\s?(?<qes>.+)/i);
     let specific = new RegExp(/\s?(?:忘记|忘掉)\s?(?<qes>.+?)\s?[＞>]\s?(?<mode_name>精确|模糊|正则)/i);
 
@@ -168,7 +217,7 @@ function forget(context, replyFunc) {
             // console.log(result)
             if (result.value == null) text = "我都还没记住呢";
             else text = `我已经完全忘记了${result.value.question}和它的${result.value.answers.length}个回应`;
-            sender(replyFunc, context, text);
+            sender(context, text);
             // console.log(text);
             mongo.close();
         }).catch((err) => {console.log(err)});
@@ -177,7 +226,7 @@ function forget(context, replyFunc) {
     else return false;
 }
 
-function talk(context, replyFunc) {
+function talk(context) {
     mongodb(db_path, {useUnifiedTopology: true}).connect().then(async mongo => {
         let coll = mongo.db('qa_set').collection("qa" + String(context.group_id));
         let order = ["exact", "regexp", "fuzzy"];
@@ -211,7 +260,7 @@ function talk(context, replyFunc) {
                     //如果有回应，发送并标记已发送flag;
                     if (answers.length > 0) {
                         let rand = Math.floor(Math.random() * answers.length);
-                        sender(replyFunc, context, answers[rand]);
+                        sender(context, answers[rand]);
                         // console.log(answers[rand]);
                         cplt_flag = true;
                         break;
@@ -224,15 +273,18 @@ function talk(context, replyFunc) {
     }).catch((err) => {console.log(err)});
 }
 
-function learn(context, replyFunc) {
+function learn(context) {
     if ("group_id" in context) {
-        if (teach(context, replyFunc)) {
+        if (teach(context)) {
             return true;
         }
-        else if (forget(context, replyFunc)) {
+        else if (forget(context)) {
             return true;
         }
-        else if (remember(context, replyFunc)) {
+        else if (remember(context)) {
+            return true
+        }
+        else if (rememberAll(context) && /owner|admin/.test(context.sender.role)) {
             return true
         }
         else return false;
@@ -240,9 +292,9 @@ function learn(context, replyFunc) {
     else return false;
 }
 
-function sender(replyFunc, context, text) {
+function sender(context, text) {
     // console.log(text);
     replyFunc(context, text);
 }
 
-module.exports = {learn, talk};
+module.exports = {learn, talk, learnReply};
