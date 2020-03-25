@@ -6,22 +6,12 @@
 [更新日志](https://github.com/Ninzore/CQ-picfinder-robot-add-on/blob/master/CHANGELOG.md)
    
    **注意！！！**
-1. main基于V2.11.10修改，2.11.10可以直接复制main.js，2.11.10版以外的版本需要把main_edit.js里面的东西复制到main的337行左右  
-  并且在开头添加  
-  import weibo from './modules/plugin/weibo';
-  import bilibili from './modules/plugin/bilibili'
-  import dice from './modules/plugin/dice';
-  import pokemon from './modules/plugin/pokemon';
-  import learn from "./modules/plugin/pretendLearn";
-  import pixivImage from "./modules/plugin/pixivImage"
-  然后最末尾添加两行  
-  weibo.checkWeibo(replyMsg);
-  setTimeout(() => bilibili.checkBiliDynamic(replyMsg), 10000);
-  
-  改的地方有点多所以还是直接复制main比较好....  
+1. main基于V2.11.11修改，2.11.11可以直接复制main.js，~~2.11.11版以外的版本需要把main_edit.js里面的东西复制到main的337行左右~~
+  改的地方太多了直接复制吧
+
 2. 需要安装MongoDB，没装的参考官方教程https://docs.mongodb.com/manual/installation/ ，端口是默认端口不要改  
 3. 需要npm install mongodb和seedrandom  
-4. 把别的东西放到module/plugin里
+4. 把别的东西放到module/plugin里  
 
 ## 部件列表  
 正在缓慢更新中
@@ -38,8 +28,9 @@ TODO:  Pixiv订阅，小游戏更新
 ### 3. 教说话  
 ***注意*** 每个群的问答库都是分卡的，私聊教说话暂时无效以后可能会有这方面的更新，可以学习图片   
 基础操作1. @bot 并说 **我教你**xxx > yyy，就可以学会一个问答，一个关键词可以关联多个回应词，随机抽取  
-基础操作2. @bot 并说 **忘记/忘掉** xxx 就能删除关键词以及所有回应
-基础操作3. @bot 并说 **回忆/想一想/想想** xxx 就能根据回应反查提问
+基础操作2. @bot 并说 **忘记/忘掉** xxx 就能删除关键词以及所有回应  
+基础操作3. @bot 并说 **回忆/想一想/想想** xxx 就能根据回应反查提问  
+基础操作4. @bot 并说 **你学过什么** 会返回所有学过的句子和匹配模式，目前设置的仅有管理员和群主可用  
   
 进阶操作1. 教学的格式可变为 @bot 我教你xxx>yyy>精确/模糊/正则  
 进阶操作2. 遗忘的格式同上，也可变为 @bot忘掉/忘记xxx > 精确/模糊/正则，注意在模式为正则时为模糊匹配，  
