@@ -18,9 +18,10 @@ import { rmdInit, rmdHandler } from './modules/plugin/reminder';
 import broadcast from './modules/broadcast';
 import weibo from './modules/plugin/weibo';
 import bilibili from './modules/plugin/bilibili'
+import twitter from './modules/plugin/twitter'
 import dice from './modules/plugin/dice';
 import pokemon from './modules/plugin/pokemon';
-import learn from "./modules/plugin/pretendLearn";
+import pretendLearn from "./modules/plugin/pretendLearn";
 import pixivImage from "./modules/plugin/pixivImage";
 import recordMsg from "./modules/plugin/recordMsg";
 import helpZen from "./modules/plugin/zen";
@@ -43,6 +44,8 @@ if (config.mysql.enable)
         });
 if (setting.akhr.enable) Akhr.init();
 if (setting.reminder.enable) rmdInit(replyMsg);
+
+pretendLearn.learnReply(replyMsg);
 
 const bot = new CQWebsocket(config);
 const logger = new Logger();
@@ -238,13 +241,19 @@ function privateAndAtMsg(e, context) {
         e.stopPropagation();
         return;
     }
-    if ("group_id" in context) {
-        learn.teach(context, replyMsg);
-        learn.remember(context, replyMsg);
-        learn.forget(context, replyMsg);
+    else if (pixivImage.pixivCheck(context, replyMsg, bot)) {
+        e.stopPropagation();
+        return;
     }
-    if (pixivImage.pixivCheck(context, replyMsg, bot));
-    else if(pokemon.pokemonCheck(context, replyMsg));
+    else if (pokemon.pokemonCheck(context, replyMsg)) {
+        e.stopPropagation();
+        return;
+
+    }
+    else if (pretendLearn.learn(context)) {
+        e.stopPropagation();
+        return;
+    }
     else if (hasImage(context.message)) {
         //搜图
         e.stopPropagation();
@@ -339,12 +348,15 @@ function groupMsg(e, context) {
             searchImg(context, smStatus);
         }
     } 
-    else if (helpZen(context, replyMsg, bot, rand));
-    else if (pixivImage.pixivCheck(context, replyMsg, bot));
-    else if (weibo.weiboCheck(context, replyMsg));
-    else if (bilibili.bilibiliCheck(context, replyMsg));
-    else if (pokemon.pokemonCheck(context, replyMsg));
-    else if (recordMsg.response(context, replyMsg));
+    else if (helpZen(context, replyMsg, bot, rand)) e.stopPropagation();
+    else if (weibo.weiboCheck(context, replyMsg) ||
+             bilibili.bilibiliCheck(context, replyMsg)) {
+        e.stopPropagation();
+        return;
+    }
+    else if (pixivImage.pixivCheck(context, replyMsg, bot)) e.stopPropagation();
+    else if (pokemon.pokemonCheck(context, replyMsg)) e.stopPropagation();
+    else if (recordMsg.response(context, replyMsg)) e.stopPropagation();
     else if (/^说的是呢$/.test(context.message)) {
         replyMsg(context, "[CQ:image,file=1.jpg]");
     }
@@ -362,14 +374,14 @@ function groupMsg(e, context) {
             //延迟2s后复读
             setTimeout(() => {
                 replyMsg(context, context.message);
-            }, 2000);
+            }, 1000);
         } else if (getRand() <= setting.repeat.commonProb) {
             //平时发言下的随机复读
             setTimeout(() => {
                 replyMsg(context, context.message);
-            }, 2000);
+            }, 1000);
         } else {
-            learn.talk(context, replyMsg);
+            pretendLearn.talk(context);
         }
     }
 }
@@ -636,4 +648,4 @@ function parseArgs(str, enableArray = false, _key = null) {
 }
 
 weibo.checkWeiboDynamic(replyMsg);
-setTimeout(() => bilibili.checkBiliDynamic(replyMsg), 10000);
+setTimeout(() => bilibili.checkBiliDynamic(replyMsg), 20000);
