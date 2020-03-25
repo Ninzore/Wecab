@@ -42,6 +42,8 @@ if (config.mysql.enable)
 if (setting.akhr.enable) Akhr.init();
 if (setting.reminder.enable) rmdInit(replyMsg);
 
+pretendLearn.learnReply(replyMsg);
+
 const bot = new CQWebsocket(config);
 const logger = new Logger();
 
@@ -238,14 +240,16 @@ function privateAndAtMsg(e, context) {
     }
     else if (pixivImage.pixivCheck(context, replyMsg, bot)) {
         e.stopPropagation();
-
+        return;
     }
     else if (pokemon.pokemonCheck(context, replyMsg)) {
         e.stopPropagation();
+        return;
 
     }
-    else if (pretendLearn.learn(context, replyMsg)) {
+    else if (pretendLearn.learn(context)) {
         e.stopPropagation();
+        return;
     }
     else if (hasImage(context.message)) {
         //搜图
@@ -341,13 +345,14 @@ function groupMsg(e, context) {
             searchImg(context, smStatus);
         }
     } 
-    else if (pixivImage.pixivCheck(context, replyMsg, bot));
-    else if (weibo.weiboCheck(context, replyMsg));
-    else if (bilibili.bilibiliCheck(context, replyMsg));
-    else if (pokemon.pokemonCheck(context, replyMsg));
-    else if (/^\.dice.+/g.exec(context.message)) {
-  	    dice(context, replyMsg, rand);
+    else if (weibo.weiboCheck(context, replyMsg) ||
+             bilibili.bilibiliCheck(context, replyMsg)) {
+        e.stopPropagation();
+        return;
     }
+    else if (pixivImage.pixivCheck(context, replyMsg, bot)) e.stopPropagation();
+    else if (pokemon.pokemonCheck(context, replyMsg)) e.stopPropagation();
+    else if (/^\.dice.+/g.exec(context.message)) dice(context, replyMsg, rand);
     else if (setting.repeat.enable) {
         //复读（
         //随机复读，rptLog得到当前复读次数
@@ -356,14 +361,14 @@ function groupMsg(e, context) {
             //延迟2s后复读
             setTimeout(() => {
                 replyMsg(context, context.message);
-            }, 2000);
+            }, 1000);
         } else if (getRand() <= setting.repeat.commonProb) {
             //平时发言下的随机复读
             setTimeout(() => {
                 replyMsg(context, context.message);
-            }, 2000);
+            }, 1000);
         } else {
-            pretendLearn.talk(context, replyMsg);
+            pretendLearn.talk(context);
         }
     }
 }
@@ -630,4 +635,4 @@ function parseArgs(str, enableArray = false, _key = null) {
 }
 
 weibo.checkWeiboDynamic(replyMsg);
-setTimeout(() => bilibili.checkBiliDynamic(replyMsg), 10000);
+setTimeout(() => bilibili.checkBiliDynamic(replyMsg), 20000);
