@@ -17,7 +17,8 @@ import minimist from 'minimist';
 import { rmdInit, rmdHandler } from './modules/plugin/reminder';
 import broadcast from './modules/broadcast';
 import weibo from './modules/plugin/weibo';
-import bilibili from './modules/plugin/bilibili'
+import bilibili from './modules/plugin/bilibili';
+import twitter from './modules/plugin/twitter';
 import dice from './modules/plugin/dice';
 import pokemon from './modules/plugin/pokemon';
 import pretendLearn from "./modules/plugin/pretendLearn";
@@ -346,7 +347,8 @@ function groupMsg(e, context) {
         }
     } 
     else if (weibo.weiboCheck(context, replyMsg) ||
-             bilibili.bilibiliCheck(context, replyMsg)) {
+             bilibili.bilibiliCheck(context, replyMsg) ||
+             twitter.aggragation(context)) {
         e.stopPropagation();
         return;
     }
@@ -358,7 +360,7 @@ function groupMsg(e, context) {
         //随机复读，rptLog得到当前复读次数
         if (logger.rptLog(group_id, user_id, context.message) >= setting.repeat.times && getRand() <= setting.repeat.probability) {
             logger.rptDone(group_id);
-            //延迟2s后复读
+            //延迟1s后复读
             setTimeout(() => {
                 replyMsg(context, context.message);
             }, 1000);
