@@ -218,7 +218,7 @@ async function rmSubscribe(context, replyFunc, choose = null, name = null) {
                     mongo.close();
                 });
             }
-        }).catch(err => console.log(err));
+        });
     }
 }
 
