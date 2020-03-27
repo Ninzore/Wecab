@@ -9,9 +9,9 @@
 1. main基于V2.11.11修改，2.11.11可以直接复制main.js，~~2.11.11版以外的版本需要把main_edit.js里面的东西复制到main的337行左右~~ 
   改的地方太多了直接复制吧
 2. 需要先安装[原版](https://github.com/Tsuk1ko/CQ-picfinder-robot)再复制这边的文件到文件夹  
-2. 需要安装MongoDB，没装的参考官方教程https://docs.mongodb.com/manual/installation/ ，端口是默认端口不要改  
-3. 需要npm install mongodb和seedrandom  
-4. 把别的东西放到module/plugin里  
+3. 需要安装MongoDB，没装的参考官方教程https://docs.mongodb.com/manual/installation/ ，端口是默认端口不要改  
+4. 需要npm install mongodb和seedrandom  
+5. 把别的东西放到module/plugin里  
 
 ## 部件列表  
 正在缓慢更新中
