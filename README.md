@@ -9,7 +9,7 @@
 1. main基于V2.11.11修改，2.11.11可以直接复制main.js，~~2.11.11版以外的版本需要把main_edit.js里面的东西复制到main的337行左右~~ 
   改的地方太多了直接复制吧
 2. 需要先安装[原版](https://github.com/Tsuk1ko/CQ-picfinder-robot)再复制这边的文件到文件夹  
-3. 需要安装MongoDB，没装的参考官方教程https://docs.mongodb.com/manual/installation/ ，端口是默认端口不要改  
+3. 需要安装MongoDB，没装的参考官方教程https://docs.mongodb.com/manual/installation/ ，端口是默认端口不要改，然后使用mongorestore将dump文件夹中的东西恢复到mongodb中，这样才能使用小游戏功能，当然如果不用的话也可以，删除main中所有pokemon相关的语句就行  
 4. 需要npm install mongodb和seedrandom  
 5. 把别的东西放到module/plugin里  
 
@@ -17,9 +17,10 @@
 正在缓慢更新中  
 TODO:  
 1. 不使用RSSHub, 接入Twitter API 加快转推速度  
-2. Twitter自动翻译  
-2. Pixiv订阅，可能会使用RSSHub    
-3. 小游戏更新(不存在的)  
+2. 重写weibo.js    
+3. Twitter自动翻译  
+4. Pixiv订阅，可能会使用RSSHub    
+5. 小游戏更新(不存在的)  
 
 ### 1. 看微博，B站动态  
 用 “看看**谁谁上条**微博/B站”，谁谁是要看的人的名字，上条可以改，可以要求看置顶，上条，上上条，上上上条.....，也可以直接写第x条，x范围是0~9
