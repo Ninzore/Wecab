@@ -238,7 +238,6 @@ function commonHandle(e, context) {
 
 //私聊以及群组@的处理
 function privateAndAtMsg(e, context) {
-    if (context.group_id ==543372349) console.log(context);
     if (commonHandle(e, context)) {
         e.stopPropagation();
         return;
@@ -301,7 +300,6 @@ function groupMsg(e, context) {
         e.stopPropagation();
         return;
     }
-    if (context.group_id ==543372349) console.log(context.message);
     //进入或退出搜图模式
     const { group_id, user_id } = context;
 
