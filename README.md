@@ -6,7 +6,7 @@
 [更新日志](https://github.com/Ninzore/CQ-picfinder-robot-add-on/blob/master/CHANGELOG.md)
    
    **注意！！！**
-1. main基于V2.11.11修改，2.11.11可以直接复制main.js，~~2.11.11版以外的版本需要把main_edit.js里面的东西复制到main的337行左右~~ 
+1. main基于V2.11.12修改，2.11.12可以直接复制main.js，~~2.11.12版以外的版本需要把main_edit.js里面的东西复制到main的337行左右~~ 
   改的地方太多了直接复制吧
 2. 需要先安装[原版](https://github.com/Tsuk1ko/CQ-picfinder-robot)再复制这边的文件到文件夹  
 3. 需要安装MongoDB，没装的参考官方教程https://docs.mongodb.com/manual/installation/ ，端口是默认端口不要改，然后使用mongorestore将dump文件夹中的东西恢复到mongodb中，这样才能使用小游戏功能，当然如果不用的话也可以，删除main中所有pokemon相关的语句就行  
@@ -30,6 +30,7 @@ TODO:
 用 “订阅**谁谁**微博/B站/Twitter”就好，取消订阅用“取消订阅**谁谁**微博/B站/Twitter”，每5分钟检查一次  
 用**查看微博/B站/Twitter订阅**来检查目前群里订阅了哪些账号  
 注意Twitter订阅时需要使用用户id而不是名字，取消订阅时需要用名字~~(割裂的使用体验）~~  
+在订阅微博时，可以在后面加>全部，或只看图，或>仅转发，这样就只会发送对应的内容，什么都不写默认只看原创  
   
 ### 3. 教说话  
 ***注意*** 每个群的问答库都是分卡的，私聊教说话暂时无效以后可能会有这方面的更新，可以学习图片   
