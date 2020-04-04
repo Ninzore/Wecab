@@ -17,8 +17,8 @@ import minimist from 'minimist';
 import { rmdInit, rmdHandler } from './modules/plugin/reminder';
 import broadcast from './modules/broadcast';
 import weibo from './modules/plugin/weibo';
-import bilibili from './modules/plugin/bilibili'
-import twitter from './modules/plugin/twitter'
+import bilibili from './modules/plugin/bilibili';
+import twitter from './modules/plugin/twitter';
 import dice from './modules/plugin/dice';
 import pokemon from './modules/plugin/pokemon';
 import pretendLearn from "./modules/plugin/pretendLearn";
@@ -44,7 +44,8 @@ if (config.mysql.enable)
         });
 if (setting.akhr.enable) Akhr.init();
 if (setting.reminder.enable) rmdInit(replyMsg);
-
+weibo.weiboReply(replyMsg);
+twitter.twiReply(replyMsg);
 pretendLearn.learnReply(replyMsg);
 
 const bot = new CQWebsocket(config);
@@ -237,6 +238,7 @@ function commonHandle(e, context) {
 
 //私聊以及群组@的处理
 function privateAndAtMsg(e, context) {
+    if (context.group_id ==543372349) console.log(context);
     if (commonHandle(e, context)) {
         e.stopPropagation();
         return;
@@ -299,7 +301,7 @@ function groupMsg(e, context) {
         e.stopPropagation();
         return;
     }
-
+    if (context.group_id ==543372349) console.log(context.message);
     //进入或退出搜图模式
     const { group_id, user_id } = context;
 
@@ -349,8 +351,9 @@ function groupMsg(e, context) {
         }
     } 
     else if (helpZen(context, replyMsg, bot, rand)) e.stopPropagation();
-    else if (weibo.weiboCheck(context, replyMsg) ||
-             bilibili.bilibiliCheck(context, replyMsg)) {
+    else if (weibo.weiboAggr(context, replyMsg) ||
+             bilibili.bilibiliCheck(context, replyMsg) ||
+             twitter.aggragation(context)) {
         e.stopPropagation();
         return;
     }
@@ -647,5 +650,6 @@ function parseArgs(str, enableArray = false, _key = null) {
     return m;
 }
 
-weibo.checkWeiboDynamic(replyMsg);
+weibo.checkWeiboDynamic();
 setTimeout(() => bilibili.checkBiliDynamic(replyMsg), 20000);
+setTimeout(() => twitter.checkTimeline(), 40000);
