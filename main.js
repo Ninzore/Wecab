@@ -42,7 +42,8 @@ if (config.mysql.enable)
         });
 if (setting.akhr.enable) Akhr.init();
 if (setting.reminder.enable) rmdInit(replyMsg);
-
+weibo.weiboReply(replyMsg);
+twitter.twiReply(replyMsg);
 pretendLearn.learnReply(replyMsg);
 
 const bot = new CQWebsocket(config);
@@ -346,7 +347,7 @@ function groupMsg(e, context) {
             searchImg(context, smStatus);
         }
     } 
-    else if (weibo.weiboCheck(context, replyMsg) ||
+    else if (weibo.weiboAggr(context) ||
              bilibili.bilibiliCheck(context, replyMsg) ||
              twitter.aggragation(context)) {
         e.stopPropagation();
@@ -636,5 +637,6 @@ function parseArgs(str, enableArray = false, _key = null) {
     return m;
 }
 
-weibo.checkWeiboDynamic(replyMsg);
+weibo.checkWeiboDynamic();
 setTimeout(() => bilibili.checkBiliDynamic(replyMsg), 20000);
+setTimeout(() => twitter.checkTimeline(), 40000);
