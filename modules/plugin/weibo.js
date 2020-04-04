@@ -45,7 +45,7 @@ function httpHeader(uid = 0, mid = 0) {
 
 /**
 * @param {string} user_name 用户名
-* @returns {number} Promise 用户uid，如果搜索不到返回false
+* @returns {Promise} number 用户uid，如果搜索不到返回false
 */
 function getUserId(user_name = "") {
     // console.log(user_name);
@@ -73,7 +73,7 @@ function getUserId(user_name = "") {
  * 从用户时间线获取微博
  * @param {number} uid 用户uid
  * @param {number} num 需要获取的微博，-1为查找最新，-2为查找置顶，0为置顶或者最新，1是次新，以此类推，只允许0到9
- * @returns {object} 单条微博
+ * @returns {Promise} 单条微博mblog
 */
 function getTimeline(uid, num = -1) {
     let payload = httpHeader(uid);
@@ -265,6 +265,10 @@ function checkWeiboSubs(context) {
     }).catch(err => console.error(err + " weibo checkWeiboSubs error, group_id= " + group_id));
 }
 
+/**
+ * @param {string} text 需要过滤的html
+ * @returns {string} 处理完成
+ */
 function textFilter(text) {
     // console.log(text)
     return text.replace(/<a href="\/status\/.*\d">/g, "")
@@ -287,7 +291,8 @@ function textFilter(text) {
 
 /**
 * @param {object} mblog 单条微博mblog，可以是Promise
-* @returns {array} Promise，由文字，图片，链接集合的单条微博的array
+* @param {boolean} textForm 是否整理为成string
+* @returns {Promise} Promise，由文字，图片，链接集合的单条微博的array或string
 */
 async function format(mblog, textForm = false) {
     mblog = await mblog;
@@ -325,10 +330,19 @@ async function format(mblog, textForm = false) {
     return payload;
 }
 
+/**
+ * @param {string} id 微博id
+ * @returns {Promise} 单条微博的完整文字部分
+ */
 function weiboText(id) {
     return axios.get("https://m.weibo.cn/statuses/extend?id=" + id).then(res => res.data.data.longTextContent).catch(err => {return err.response.status})
 }
 
+/**
+ * @param {string} id 微博id
+ * @param {object} context
+ * @returns {} no return
+ */
 function rtSingleWeibo(id, context) {
     axios.get("https://m.weibo.cn/statuses/show?id=" + id, {params : httpHeader().headers}).then(async res => {
         let payload = await format(res.data.data, true);
@@ -352,6 +366,10 @@ function rtWeibo(name, num, context) {
     })
 }
 
+/**
+ * @param {object} context 
+ * @returns {boolean} 如果是这里的功能，返回true，否则为false
+ */
 function weiboAggr(context) {
     if (/看看(.+?)的?((第[0-9]?[一二三四五六七八九]?条)|(上*条)|(置顶)|(最新))?微博/.test(context.message)) {	
 		let num = 1;
