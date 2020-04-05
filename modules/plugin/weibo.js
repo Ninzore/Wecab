@@ -3,7 +3,7 @@ var mongodb = require('mongodb').MongoClient;
 
 var db_port = 27017;
 var db_path = "mongodb://127.0.0.1:" + db_port;
-var replyFunc = (context, msg, at = false) => {};
+var replyFunc = (context, msg, at = false) => {console.log(msg)};
 
 function weiboReply(replyMsg) {
     replyFunc = replyMsg;
@@ -108,7 +108,7 @@ function getTimeline(uid, num = -1) {
 
 /**
  * 增加订阅
- * @param {number} uid 微博用户uid
+ * @param {string} name 微博用户名
  * @param {number} group_id 群组id
  * @param {string} option_nl 偏好设置，可以是"仅原创"，"包含转发"，"仅带图"
  * @returns {} no return
@@ -407,14 +407,14 @@ function weiboAggr(context) {
         rtSingleWeibo(id, context);
         return true;
     }
-    else if (/^订阅.+微博(>(包含转发|只看图|全部))?/.test(context.message)) {
-        let {groups : {name, option}} = /订阅(?<name>.+)微博(>(?<option>仅转发|只看图|全部))?/.exec(context.message);
+    else if (/^订阅.+的?微博([>＞](包含转发|只看图|全部))?/.test(context.message)) {
+        let {groups : {name, option}} = /订阅(?<name>.+)的?微博([>＞](?<option>仅转发|只看图|全部))?/.exec(context.message);
         if (option == undefined) option = "仅原创"
         subscribe(name, context, option);
         return true;
     }
-    else if (/^取消订阅.+微博$/.test(context.message)) {
-        let name = /取消订阅(.+)微博/i.exec(context.message)[1];
+    else if (/^取消订阅.+的?微博$/.test(context.message)) {
+        let name = /取消订阅(.+)的?微博/i.exec(context.message)[1];
         unSubscribe(name, context);
         return true;
     }
@@ -426,3 +426,5 @@ function weiboAggr(context) {
 }
 
 module.exports = {weiboAggr, checkWeiboDynamic, weiboReply};
+let contexy = {group_id:123, message:"订阅理查不接稿不接广告微博>只看图"}
+weiboAggr(contexy)
