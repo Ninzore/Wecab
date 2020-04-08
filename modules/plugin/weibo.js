@@ -25,7 +25,7 @@ function httpHeader(uid = 0, mid = 0) {
         "scheme": "https",
         "User-Agent": "Mozilla/5.0 (iPhone; CPU iPhone OS 12_2 like Mac OS X) AppleWebKit/605.1.15 (KHTML, like Gecko) Mobile/15E148",
         "Accept":'application/json, text/plain, */*',
-        "X-Requested-With":"XMLHttpRequest"
+        "X-Requested-With":"XMLHttpRequest",
     }
 
     params = {
@@ -48,19 +48,16 @@ function httpHeader(uid = 0, mid = 0) {
 * @returns {Promise} number 用户uid，如果搜索不到返回false
 */
 function getUserId(user_name = "") {
-    // console.log(user_name);
     user_name = encodeURI(user_name);
     return axios({
         method:'GET',
         url: "https://m.weibo.cn/api/container/getIndex",
-        headers : httpHeader.headers,
+        headers : httpHeader().headers,
         params : {
             "containerid" : "100103type=3&q=" + user_name,
             "page_type" : "searchall"
         }
     }).then(response => {
-        // console.log(response.data.data.cards[1].card_group[0])
-        // console.log(response.data)
         if (response.data.ok != 1) {
             return false;
         }
@@ -103,35 +100,25 @@ function getTimeline(uid, num = -1) {
                 return response.data.data.statuses[card_num_seq[0]];
             }
             else return response.data.data.statuses[num];
-        }).catch(err => console.error(err + " getTimeline error, uid= " + uid));
+        }).catch(err => console.error(err + " /getTimeline error, uid= " + uid));
 }
 
 /**
  * 增加订阅
- * @param {string} name 微博用户名
- * @param {number} group_id 群组id
- * @param {string} option_nl 偏好设置，可以是"仅原创"，"包含转发"，"仅带图"
- * @returns {} no return
+ * @param {number} uid 微博用户id
+ * @param {string} option 偏好设置
+ * @param {object} context
+ * @returns {boolean} 错误返回false
  */
-function subscribe(name, context, option_nl ="仅原创") {
+function subscribe(uid, option, context) {
     let group_id = context.group_id;
-    let option = "origin";
-    switch (option_nl) {
-        case "仅转发": option = "rt_only"; break;
-        case "只看图": option = "pic_only"; break;
-        case "全部": option = "all"; break;
-        default: option = "origin"; break;
-    }
+    let option_nl = opt2optnl(option);
     mongodb(db_path, {useUnifiedTopology: true}).connect().then(async mongo => {
-        let uid = await getUserId(name);
-        if (!uid) {
-            replyFunc(context, "没这人", true);
-            return 1;
-        }
         let coll = mongo.db('bot').collection('weibo');
         let weibo = await coll.find({weibo_uid : uid}).toArray();
         if (weibo.length == 0) {
             let mblog = await getTimeline(uid);
+            if (mblog == undefined) return false;
             let mid = mblog.mid;
             let screen_name = mblog.user.screen_name;
             coll.insertOne({weibo_uid : uid, name : screen_name, mid : mid, groups : [group_id], [group_id] : option},
@@ -248,12 +235,7 @@ function checkWeiboSubs(context) {
                     let name_list = [];
                     result.forEach(weibo_obj => {
                         let option_nl = "仅原创";
-                        switch (weibo_obj[group_id]) {
-                            case "rt_only": option_nl = "仅转发"; break;
-                            case "pic_only": option_nl = "只看图"; break;
-                            case "all": option_nl = "全部"; break;
-                            default: break;
-                        }
+                        option_nl = opt2optnl(weibo_obj[group_id])
                         name_list.push(`${weibo_obj.name}，${option_nl}`);
                     });
                     let subs = "本群已订阅:\n" + name_list.join("\n");
@@ -302,11 +284,13 @@ async function format(mblog, textForm = false) {
     payload.push(textFilter(text));
     if ("pics" in mblog) {
         let pics = mblog.pics;
+        let pic_str = "";
         for (let pic of pics) {
             pid = pic.pid;
             pic_url = pic.large.url;
-            payload.push("[CQ:image,cache=0,file=" + pic_url + "]");
+            pic_str += `[CQ:image,cache=0,file=${pic_url}]`;
         }
+        payload.push(pic_str);
     }
     if ("page_info" in mblog) {
         if("media_info" in mblog.page_info){
@@ -331,11 +315,45 @@ async function format(mblog, textForm = false) {
 }
 
 /**
+ * @param {string} option 偏好设置
+ * @returns {string} 中文偏好设置 
+ */
+function opt2optnl(option = "origin") {
+    let option_nl = "仅原创"
+    switch (option) {
+        case "origin": option_nl = "仅原创"; break;
+        case "rt_only": option_nl = "仅转发"; break;
+        case "pic_only": option_nl = "只看图"; break;
+        case "all": option_nl = "全部"; break;
+        default: break;
+    }
+    return option_nl;
+}
+
+/**
+ * @param {string} option_nl 中文偏好设置
+ * @returns {string} 偏好设置 
+ */
+function optnl2opt(option_nl = "仅原创") {
+    let option = "origin";
+    switch (option_nl) {
+        case "仅原创": option = "origin"; break;
+        case "仅转发": option = "rt_only"; break;
+        case "只看图": option = "pic_only"; break;
+        case "全部": option = "all"; break;
+        default: break;
+    }
+    return option;
+}
+
+/**
  * @param {string} id 微博id
  * @returns {Promise} 单条微博的完整文字部分
  */
 function weiboText(id) {
-    return axios.get("https://m.weibo.cn/statuses/extend?id=" + id).then(res => res.data.data.longTextContent).catch(err => {return err.response.status})
+    return axios.get("https://m.weibo.cn/statuses/extend?id=" + id, {headers : httpHeader().headers})
+                .then(res => res.data.data.longTextContent)
+                .catch(err => {return err.response.status})
 }
 
 /**
@@ -344,10 +362,48 @@ function weiboText(id) {
  * @returns {} no return
  */
 function rtSingleWeibo(id, context) {
-    axios.get("https://m.weibo.cn/statuses/show?id=" + id, {params : httpHeader().headers}).then(async res => {
+    axios.get("https://m.weibo.cn/statuses/show?id=" + id, {headers : httpHeader().headers}).then(async res => {
         let payload = await format(res.data.data, true);
         replyFunc(context, payload);
     }).catch(err => console.error(err));
+}
+
+/**
+ * 通过用户名添加订阅
+ * @param {string} name 微博用户名
+ * @param {string} option_nl 偏好设置，可以是"仅原创"，"包含转发"，"仅带图"
+ * @param {object} context
+ * @returns {boolean} 成功返回true
+ */
+async function addSubByName(name, option_nl, context) {
+    let uid = await getUserId(name);
+    if (!uid) {
+        replyFunc(context, "没这人", true);
+        return true;
+    }
+    else {
+        let option = optnl2opt(option_nl)
+        subscribe(uid, option, context);
+        return false;
+    }
+}
+
+/**
+ * 通过用户uid添加订阅
+ * @param {string} url 单条微博url m.weibo.cn
+ * @param {string} option_nl 偏好设置，可以是"仅原创"，"包含转发"，"仅带图"
+ * @param {object} context
+ */
+async function addSubByUid(url, option_nl, context) {
+    axios.get(url, {params : httpHeader().headers}).then(res => {
+        let temp = /https:\/\/m.weibo.cn(\/(\d+)\/\d+|\/u\/(\d+))/.exec(url);
+        let uid = temp[2] ? temp[2] : temp[3]
+        let option = optnl2opt(option_nl);
+        subscribe(uid, option, context);
+    }).catch(err => {
+        replyFunc(context, "无法订阅这个人", true);
+        console.error(err);
+    });
 }
 
 /**
@@ -408,9 +464,15 @@ function weiboAggr(context) {
         return true;
     }
     else if (/^订阅.+的?微博([>＞](包含转发|只看图|全部))?/.test(context.message)) {
-        let {groups : {name, option}} = /订阅(?<name>.+)的?微博([>＞](?<option>仅转发|只看图|全部))?/.exec(context.message);
-        if (option == undefined) option = "仅原创"
-        subscribe(name, context, option);
+        let {groups : {name, option_nl}} = /订阅(?<name>.+)的?微博([>＞](?<option_nl>仅转发|只看图|全部))?/.exec(context.message);
+        if (option_nl == undefined) option_nl = "仅原创"
+        addSubByName(name, option_nl, context);
+        return true;
+    }
+    else if (/^订阅微博\s?https:\/\/m.weibo.cn.+([>＞](包含转发|只看图|全部))?/.test(context.message)) {
+        let {groups : {url, option_nl}} = /(?<url>https:\/\/m.weibo.cn.+)([>＞](?<option_nl>仅转发|只看图|全部))?/.exec(context.message);
+        if (option_nl == undefined) option_nl = "仅原创"
+        addSubByUid(url, option_nl, context);
         return true;
     }
     else if (/^取消订阅.+的?微博$/.test(context.message)) {
@@ -426,5 +488,3 @@ function weiboAggr(context) {
 }
 
 module.exports = {weiboAggr, checkWeiboDynamic, weiboReply};
-let contexy = {group_id:123, message:"订阅理查不接稿不接广告微博>只看图"}
-weiboAggr(contexy)
