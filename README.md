@@ -16,10 +16,10 @@
 ## 部件列表  
 正在缓慢更新中  
 TODO:  
-1. 不使用RSSHub, 接入Twitter API 加快转推速度  
-2. 重写weibo.js    
-3. Twitter自动翻译  
-4. Pixiv订阅，可能会使用RSSHub    
+1. 重写twitter.js(incoming!!!)  
+2. 接入RSSHub 
+3. 外语翻译  
+4. Pixiv订阅  
 5. 小游戏更新(不存在的)  
 
 ### 1. 看微博，B站动态  
