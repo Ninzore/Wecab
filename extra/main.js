@@ -45,7 +45,7 @@ if (config.mysql.enable)
 if (setting.akhr.enable) Akhr.init();
 if (setting.reminder.enable) rmdInit(replyMsg);
 weibo.weiboReply(replyMsg);
-twitter.twiReply(replyMsg);
+twitter.twitterReply(replyMsg);
 pretendLearn.learnReply(replyMsg);
 
 const bot = new CQWebsocket(config);
@@ -351,7 +351,7 @@ function groupMsg(e, context) {
     else if (helpZen(context, replyMsg, bot, rand)) e.stopPropagation();
     else if (weibo.weiboAggr(context, replyMsg) ||
              bilibili.bilibiliCheck(context, replyMsg) ||
-             twitter.aggragation(context)) {
+             twitter.twitterAggr(context)) {
         e.stopPropagation();
         return;
     }
@@ -650,4 +650,4 @@ function parseArgs(str, enableArray = false, _key = null) {
 
 weibo.checkWeiboDynamic();
 setTimeout(() => bilibili.checkBiliDynamic(replyMsg), 20000);
-setTimeout(() => twitter.checkTimeline(), 40000);
+setTimeout(() => twitter.checkTwiTimeline(), 40000);
