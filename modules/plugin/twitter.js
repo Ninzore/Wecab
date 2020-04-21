@@ -33,9 +33,11 @@ function checkConnection() {
 }
 
 function httpHeader() {
-    headers = {
+    return headers = {
         "origin" : "https://twitter.com",
         "authorization" : bearer_token,
+        "cookie" : cookie,
+        "x-guest-token" : guest_token,
         "x-twitter-active-user" : "yes",
         "sec-fetch-dest" : "empty",
         "sec-fetch-mode" : "cors",
@@ -47,16 +49,14 @@ function httpHeader() {
         "accept-language" : "zh-CN,zh;q=0.9,en-US;q=0.8,en;q=0.7,ja;q=0.6",
         "x-twitter-client-language" : "zh-cn"
     }
-    if (cookie != "") headers["cookie"] = cookie;
-    if (guest_token != "") headers["x-guest-token"] = guest_token;
-    return headers;
 }
-
 
 /** 获取一个Guest Token*/
 function getGuestToken() {
     if (!connection) return;
     let headers = httpHeader();
+    delete headers.cookie;
+    delete headers.guest_token;
     headers["Host"] = "api.twitter.com";
     axios({
         method : "POST",
@@ -68,13 +68,12 @@ function getGuestToken() {
 /** 获取一个cookie，后面要用*/
 function getCookie() {
     if (!connection) return;
+    let headers = httpHeader();
+    delete headers.cookie;
     axios({
         method : "GET",
         url : "https://twitter.com/",
-        headers : {
-            "user-agent" : "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/80.0.3987.163 Safari/537.36",
-            "authorization" : bearer_token,
-        }
+        headers : headers
     }).then(res => {
         let temp = "";
         let guest_id = "";  //expire 2 years
@@ -88,7 +87,6 @@ function getCookie() {
             else if (temp = /(_twitter_sess=.+?);/.exec(res.headers["set-cookie"][i])) twitter_sess = temp[1];
         }
         cookie = "dnt=1; fm=0; csrf_same_site_set=1; csrf_same_site=1;" + guest_token + ct0 + guest_id + personalization_id + twitter_sess;
-        // console.log(httpHeader())
     }).catch(err => console.log(err.response))
 }
 
@@ -186,7 +184,7 @@ function subscribe(uid, option, context) {
         let res = await coll.find({uid : uid}).toArray();
         if (res.length == 0) {
             let tweet = (await getUserTimeline(uid))[0];
-            if (!tweet) {
+            if (tweet == undefined) {
                 replyFunc(context, `无法订阅这个人的Twitter`, true);
                 return false;
             }
@@ -220,7 +218,6 @@ function subscribe(uid, option, context) {
  * 取消订阅
  * @param {string} name Twitter用户名
  * @param {object} context
- * @returns {} no return
  */
 function unSubscribe(name, context) {
     let group_id = context.group_id;
@@ -256,21 +253,25 @@ function checkTwiTimeline() {
             let coll = mongo.db('bot').collection('twitter');
             let subscribes = await coll.find({}).toArray();
             for (let i = 0; i < subscribes.length; i++) {
-                let tweet = await getUserTimeline(subscribes[i].uid);
+                let tweet = (await getUserTimeline(subscribes[i].uid))[0];
+                if (tweet == undefined) {
+                    console.log(`这个人有问题${subscribes[i].name}`);
+                    continue;
+                }
                 let last_tweet_id = subscribes[i].tweet_id;
                 let current_id = tweet.id_str;
                 if (current_id > last_tweet_id) {
                     let groups = subscribes[i].groups;
                     groups.forEach(group_id => {
-                    format(tweet).then(payload => replyFunc({group_id : group_id}, payload)).catch(err => console.error(err));
+                        format(tweet).then(payload => {replyFunc({group_id : group_id}, payload)}).catch(err => console.error(err));
                     });
-                    coll.updateOne({id : subscribes[i].id},
+                    coll.updateOne({uid : subscribes[i].uid},
                                     {$set : {tweet_id : current_id, name : tweet.user.name}}, 
                         (err, result) => {if (err) console.error(err + " database update error during checkTwitter");});
                 }
             }
             mongo.close();
-        }).catch(err => console.error(err));;
+        }).catch(err => console.error(err));
     }, 5 * 60 * 1000);
 }
 
@@ -301,6 +302,11 @@ function checkSubs(context) {
     }).catch(err => console.error(err + " Twitter checkWeiboSubs error, group_id= " + group_id));
 }
 
+/**
+ * 整理tweet_obj
+ * @param {object} tweet Twitter用户名
+ * @returns Promise  排列完成的Tweet String
+ */
 async function format(tweet) {
     let payload = [];
     let text = tweet.full_text;
@@ -356,6 +362,11 @@ async function format(tweet) {
     return payload.join("\n");
 }
 
+/**
+ * 将Twitter的t.co短网址扩展为原网址
+ * @param {string} twitter_short_url Twitter短网址
+ * @returns Promise  原网址
+ */
 function urlExpand(twitter_short_url) {
     return axios({
         method : "GET",
@@ -383,7 +394,6 @@ function rtTimeline(name, num, context) {
 
 function rtSingleTweet(tweet_id_str, context) {
     getSingleTweet(tweet_id_str).then(tweet => {
-        // console.log(res);
         format(tweet).then(tweet_string => replyFunc(context, tweet_string))
     });
 }
@@ -467,13 +477,12 @@ setTimeout(() => {
     if (connection) {
         getGuestToken();
         setTimeout(() => getCookie(), 1000);
-        setTimeout(() => console.log(guest_token, "\n", cookie), 2000);
     }
     else console.log("Twitter无法连接，功能暂停");
 }, 2000);
 
 let get_cookie_routine = setInterval(() => getCookie(), 20*60*60*1000);
-let get_gt_routine = setInterval(() => getGuestToken(), 2*60*60*1000);
+let get_gt_routine = setInterval(() => getGuestToken(), 0.9*60*60*1000);
 
 setInterval(() => {
     checkConnection();
@@ -482,6 +491,10 @@ setInterval(() => {
             console.log("Twitter无法连接，功能暂停");
             clearInterval(get_cookie_routine);
             clearInterval(get_gt_routine);
+        }
+        else {
+            if (!get_cookie_routine) var get_cookie_routine = setInterval(() => getCookie(), 20*60*60*1000);
+            if (!get_cookie_routine) var get_gt_routine = setInterval(() => getGuestToken(), 0.9*60*60*1000);
         }
     }, 2000);
 }, 20*60*1000);
