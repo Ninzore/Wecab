@@ -4,8 +4,8 @@ var mongodb = require('mongodb').MongoClient;
 var db_port = 27017;
 var db_path = "mongodb://127.0.0.1:" + db_port;
 let bearer_token = "Bearer AAAAAAAAAAAAAAAAAAAAANRILgAAAAAAnNwIzUejRCOuH5E6I8xnZz4puTs%3D1Zv7ttfk8LF81IUq16cHjhLTvJu4FA33AGWWjCpTnA"
-let guest_token = "1252345844738650118";
-let cookie = `dnt=1; csrf_same_site_set=1; csrf_same_site=1; remember_checked_on=1; personalization_id="v1_F+iIGUVWDUofc+r/RQwRUw=="; guest_id=v1%3A158733926321061904; eu_cn=1; external_referer=padhuUp37zh0IGKR%2F3vB2PHESPBuzz1x|0|8e8t2xd8A2w%3D; tfw_exp=0; ct0=aefc4f7e606ebadc0fb707a02bfb9c1d; gt=1252345844738650118`;
+let guest_token = "";
+let cookie = "";
 let connection = true;
 
 let option_map = {
@@ -55,6 +55,7 @@ function httpHeader() {
 
 /** 获取一个Guest Token*/
 function getGuestToken() {
+    if (!connection) return;
     let headers = httpHeader();
     headers["Host"] = "api.twitter.com";
     axios({
@@ -66,6 +67,7 @@ function getGuestToken() {
 
 /** 获取一个cookie，后面要用*/
 function getCookie() {
+    if (!connection) return;
     axios({
         method : "GET",
         url : "https://twitter.com/",
@@ -184,14 +186,13 @@ function subscribe(uid, option, context) {
         let res = await coll.find({uid : uid}).toArray();
         if (res.length == 0) {
             let tweet = (await getUserTimeline(uid))[0];
-            // console.log(tweet)
             if (!tweet) {
                 replyFunc(context, `无法订阅这个人的Twitter`, true);
                 return false;
             }
-            let id = tweet.id_str;
+            let tweet_id = tweet.id_str;
             let name = tweet.user.name;
-            coll.insertOne({uid : uid, name : name, id : id, groups : [group_id], [group_id] : option},
+            coll.insertOne({uid : uid, name : name, tweet_id : tweet_id, groups : [group_id], [group_id] : option},
                 (err) => {
                     if (err) console.error(err + " Twitter subscribes insert error");
                     else replyFunc(context, `已订阅${name}的Twitter，模式为${option_nl}`, true);
@@ -255,7 +256,6 @@ function checkTwiTimeline() {
             let coll = mongo.db('bot').collection('twitter');
             let subscribes = await coll.find({}).toArray();
             for (let i = 0; i < subscribes.length; i++) {
-                console.log(subscribes[i].uid)
                 let tweet = await getUserTimeline(subscribes[i].uid);
                 let last_tweet_id = subscribes[i].tweet_id;
                 let current_id = tweet.id_str;
@@ -271,7 +271,7 @@ function checkTwiTimeline() {
             }
             mongo.close();
         }).catch(err => console.error(err));;
-    }, 5 * 60000);
+    }, 5 * 60 * 1000);
 }
 
 /**
@@ -289,7 +289,7 @@ function checkSubs(context) {
                     let name_list = [];
                     result.forEach(twitter_obj => {
                         let option_nl = "仅原创";
-                        option_nl = opt2optnl(twitter_obj[group_id])
+                        option_nl = findKey(option_map, twitter_obj[group_id]);
                         name_list.push(`${twitter_obj.name}，${option_nl}`);
                     });
                     let subs = "本群已订阅:\n" + name_list.join("\n");
@@ -403,7 +403,6 @@ async function addSubByName(name, option_nl, context) {
         return true;
     }
     else {
-        // console.log(user)
         let option = option_map[option_nl];
         subscribe(user.id_str, option, context);
         return false;
@@ -422,7 +421,7 @@ function twitterAggr(context) {
         else if (/上条/.test(context.message)) (num = 1);
 	    else if (/第.+?条/.test(context.message)) {
             let temp = /第([0-9]|[一二三四五六七八九])条/.exec(context.message)[1];
-            if (temp==0 || temp=="零") (num = -1);
+            if (temp==0 || temp=="零") (num = 0);
             else if (temp==1 || temp=="一") (num = 0);
             else if (temp==2 || temp=="二") (num = 1);
             else if (temp==3 || temp=="三") (num = 2);
@@ -435,7 +434,6 @@ function twitterAggr(context) {
         }
         else num = 0;       
         name = /看看(.+?)的?((第[0-9]?[一二三四五六七八九]?条)|(上*条)|(置顶)|(最新))?\s?(推特|Twitter)/i.exec(context.message)[1];
-        console.log(name)
         rtTimeline(name, num, context);
         return true;
 	}
@@ -471,13 +469,21 @@ setTimeout(() => {
         setTimeout(() => getCookie(), 1000);
         setTimeout(() => console.log(guest_token, "\n", cookie), 2000);
     }
+    else console.log("Twitter无法连接，功能暂停");
 }, 2000);
+
+let get_cookie_routine = setInterval(() => getCookie(), 20*60*60*1000);
+let get_gt_routine = setInterval(() => getGuestToken(), 2*60*60*1000);
 
 setInterval(() => {
     checkConnection();
-}, 60*60*1000);
-
-setInterval(() => getCookie(), 20*60*60*1000);
-setInterval(() => getGuestToken(), 2*60*60*1000);
+    setTimeout(() => {
+        if (!connection) {
+            console.log("Twitter无法连接，功能暂停");
+            clearInterval(get_cookie_routine);
+            clearInterval(get_gt_routine);
+        }
+    }, 2000);
+}, 20*60*1000);
 
 module.exports = {twitterAggr, twitterReply, checkTwiTimeline};
