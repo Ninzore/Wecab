@@ -11,6 +11,7 @@ let connection = true;
 let option_map = {
     "仅原创" : "origin",
     "仅转发" : "rt_only",
+    "包含转发" : "include_rts",
     "只看图" : "pic_only",
     "全部" : "all"
 } 
@@ -124,7 +125,7 @@ function getSingleTweet(tweet_id_str) {
  * @param {number} count 获取数量，最大为200
  * @returns {Promise} 用户时间线，如果错误结果为false
  */
-function getUserTimeline(user_id, count = 15) {
+function getUserTimeline(user_id, count = 2, include_rts = false) {
     return axios({
         method:'GET',
         url: "https://api.twitter.com/1.1/statuses/user_timeline.json",
@@ -134,7 +135,7 @@ function getUserTimeline(user_id, count = 15) {
             "user_id" : user_id,
             "count" : count,
             "exclude_replies" : true,
-            "include_rts" : false,
+            "include_rts" : include_rts,
             "tweet_mode" : "extended"
         }
     }).then(res => {return res.data;
@@ -202,11 +203,9 @@ function subscribe(uid, option, context) {
                 (err, result) => {
                     if (err) console.error(err + " Twitter subscribes update error");
                     else {
-                        // console.log(result)
                         if (result.value.groups.includes(group_id)) text = "多次订阅有害我的身心健康";
                         else text = `已订阅${result.value.name}的Twitter，模式为${option_nl}`;
                         replyFunc(context, text, true);
-                        // console.log(text)
                     }
                 });
         }
@@ -253,17 +252,19 @@ function checkTwiTimeline() {
             let coll = mongo.db('bot').collection('twitter');
             let subscribes = await coll.find({}).toArray();
             for (let i = 0; i < subscribes.length; i++) {
-                let tweet = (await getUserTimeline(subscribes[i].uid))[0];
+                let tweet = (await getUserTimeline(subscribes[i].uid, 2, true))[0];
                 if (tweet == undefined) {
                     console.log(`这个人有问题${subscribes[i].name}`);
                     continue;
                 }
                 let last_tweet_id = subscribes[i].tweet_id;
                 let current_id = tweet.id_str;
-                if (current_id > last_tweet_id) {
+                if (current_id != last_tweet_id) {
                     let groups = subscribes[i].groups;
                     groups.forEach(group_id => {
-                        format(tweet).then(payload => {replyFunc({group_id : group_id}, payload)}).catch(err => console.error(err));
+                        if (checkOption(tweet, subscribes[i][group_id])) {
+                            format(tweet).then(payload => {replyFunc({group_id : group_id}, payload)}).catch(err => console.error(err));
+                        }
                     });
                     coll.updateOne({uid : subscribes[i].uid},
                                     {$set : {tweet_id : current_id, name : tweet.user.name}}, 
@@ -273,6 +274,21 @@ function checkTwiTimeline() {
             mongo.close();
         }).catch(err => console.error(err));
     }, 5 * 60 * 1000);
+
+    function checkOption(tweet, option) {
+        if (option == "all") return true;
+        let status = "";
+        if ("conversation_id_str" in tweet) status = "retweet";
+        else if ("media" in  tweet.entities && tweet.entities.media[0].type == "photo") status = "ori_with_pic";
+        else status = "origin"
+
+        if (option == "include_rts" && status == "retweet") return true;
+        else if (option == "pic_only" && status == "ori_with_pic") return true;
+        else if (option == "origin") {
+            if (status == "ori_with_pic" || status == "origin") return true;
+        }
+        else return false;
+    }
 }
 
 /**
@@ -285,7 +301,6 @@ function checkSubs(context) {
         let coll = mongo.db('bot').collection('twitter');
         await coll.find({groups : {$elemMatch : {$eq : group_id}}}, {projection: {_id : 0}})
             .toArray().then(result => {
-                // console.log(result);
                 if (result.length > 0) {
                     let name_list = [];
                     result.forEach(twitter_obj => {
@@ -339,10 +354,7 @@ async function format(tweet) {
         }
         if (pics != "") payload.push(pics);
     }
-    // if ("conversation_id_str" in tweet) {
-    //     let conversation = await getSingleTweet(tweet.conversation_id_str);
-    //     console.log(conversation);
-    // }
+    if ("conversation_id_str" in tweet) text = "转推" + text;
     if ("is_quote_status" in tweet && tweet.is_quote_status == true) {
         let quote_tweet = await getSingleTweet(tweet.quoted_status_id_str);
         payload.push("提到了", await format(quote_tweet));
@@ -452,9 +464,9 @@ function twitterAggr(context) {
         rtSingleTweet(tweet_id, context);
         return true;
     }
-    else if (connection && /^订阅.+的?(推特|Twitter)/i.test(context.message)) {
-        let {groups : {name, option_nl}} = /订阅(?<name>.+)的?(推特|Twitter)/i.exec(context.message);
-        option_nl = "仅原创"
+    else if (connection && /^订阅.+的?(推特|Twitter)([>＞](包含转发|只看图|全部))?/i.test(context.message)) {
+        let {groups : {name, option_nl}} = /订阅(?<name>.+)的?(推特|Twitter)([>＞](?<option_nl>包含转发|只看图|全部))?/i.exec(context.message);
+        if (option_nl == undefined) option_nl = "仅原创"
         addSubByName(name, option_nl, context);
         return true;
     }
