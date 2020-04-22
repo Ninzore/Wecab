@@ -100,7 +100,7 @@ function getTimeline(uid, num = -1) {
                 return response.data.data.statuses[card_num_seq[0]];
             }
             else return response.data.data.statuses[num];
-        }).catch(err => console.error(err + " /getTimeline error, uid= " + uid));
+        }).catch(err => console.error(err + " weibo getTimeline error, uid= " + uid));
 }
 
 /**
@@ -185,6 +185,7 @@ function checkWeiboDynamic() {
             let subscribes = await coll.find({}).toArray();
             for (let i = 0; i < subscribes.length; i++) {
                 let mblog = await getTimeline(subscribes[i].weibo_uid);
+                if (mblog == undefined) continue;
                 let last_mid = subscribes[i].mid;
                 let current_mid = mblog.mid;
                 if (current_mid > last_mid) {
@@ -463,13 +464,13 @@ function weiboAggr(context) {
         rtSingleWeibo(id, context);
         return true;
     }
-    else if (/^订阅.+的?微博([>＞](包含转发|只看图|全部))?/.test(context.message)) {
+    else if (/^订阅.+的?微博([>＞](仅转发|只看图|全部))?/.test(context.message)) {
         let {groups : {name, option_nl}} = /订阅(?<name>.+)的?微博([>＞](?<option_nl>仅转发|只看图|全部))?/.exec(context.message);
         if (option_nl == undefined) option_nl = "仅原创"
         addSubByName(name, option_nl, context);
         return true;
     }
-    else if (/^订阅微博\s?https:\/\/m.weibo.cn.+([>＞](包含转发|只看图|全部))?/.test(context.message)) {
+    else if (/^订阅微博\s?https:\/\/m.weibo.cn.+([>＞](仅转发|只看图|全部))?/.test(context.message)) {
         let {groups : {url, option_nl}} = /(?<url>https:\/\/m.weibo.cn.+)([>＞](?<option_nl>仅转发|只看图|全部))?/.exec(context.message);
         if (option_nl == undefined) option_nl = "仅原创"
         addSubByUid(url, option_nl, context);
