@@ -11,7 +11,6 @@ let connection = true;
 let option_map = {
     "仅原创" : "origin",
     "仅转发" : "rt_only",
-    "包含转发" : "include_rts",
     "只看图" : "pic_only",
     "全部" : "all"
 } 
@@ -21,7 +20,7 @@ let replyFunc = (context, msg, at = false) => {console.log(msg)};
 function findKey(obj, value) {
     for (key in obj) {
         if (obj[key] === value) return key;
-      }
+    }
 }
 
 function twitterReply(replyMsg) {
@@ -30,7 +29,7 @@ function twitterReply(replyMsg) {
 
 /** 检查网络情况，如果连不上Twitter那后面都不用做了*/
 function checkConnection() {
-    axios.get("https://twitter.com").then(res => {connection = (res.headers.status == "200 OK") ? true : false}).catch(err => connection = false);
+    return axios.get("https://twitter.com").then(res => {connection = (res.headers.status == "200 OK") ? true : false}).catch(err => connection = false);
 }
 
 function httpHeader() {
@@ -87,7 +86,7 @@ function getCookie() {
             else if (temp = /personalization_id=.+?; /.exec(res.headers["set-cookie"][i])) personalization_id = temp[0];
             else if (temp = /(_twitter_sess=.+?);/.exec(res.headers["set-cookie"][i])) twitter_sess = temp[1];
         }
-        cookie = "dnt=1; fm=0; csrf_same_site_set=1; csrf_same_site=1;" + guest_token + ct0 + guest_id + personalization_id + twitter_sess;
+        cookie = `dnt=1; fm=0; csrf_same_site_set=1; csrf_same_site=1; gt=${guest_token}; ${ct0}${guest_id}${personalization_id}${twitter_sess}`;
     }).catch(err => console.log(err.response))
 }
 
@@ -278,11 +277,10 @@ function checkTwiTimeline() {
     function checkOption(tweet, option) {
         if (option == "all") return true;
         let status = "";
-        if ("conversation_id_str" in tweet) status = "retweet";
-        else if ("media" in  tweet.entities && tweet.entities.media[0].type == "photo") status = "ori_with_pic";
+        if ("media" in  tweet.entities && tweet.entities.media[0].type == "photo") status = "ori_with_pic";
         else status = "origin"
 
-        if (option == "include_rts" && status == "retweet") return true;
+        if (option == "rt_only" && status == "retweet") return true;
         else if (option == "pic_only" && status == "ori_with_pic") return true;
         else if (option == "origin") {
             if (status == "ori_with_pic" || status == "origin") return true;
@@ -319,14 +317,19 @@ function checkSubs(context) {
 
 /**
  * 整理tweet_obj
- * @param {object} tweet Twitter用户名
+ * @param {object} tweet Tweet object
+ * @param {string} from_user Twitter用户名
  * @returns Promise  排列完成的Tweet String
  */
 async function format(tweet) {
     let payload = [];
     let text = tweet.full_text;
+    if ("retweeted_status" in tweet) {
+        let rt_status = await format(tweet.retweeted_status)
+        payload.push(`来自${tweet.user.name}的Twitter\n转推了`, rt_status);
+        return payload.join("\n");
+    }
     let pics = "";
-    // console.log(tweet)
     if ("extended_entities" in tweet) {
         for (entity in tweet.extended_entities) {
             if (entity == "media") {
@@ -345,7 +348,6 @@ async function format(tweet) {
                             if (media[i].video_info.variants[j].content_type == "video/mp4") mp4obj.push(media[i].video_info.variants[j]);
                         }
                         mp4obj.sort((a, b) => {return b.bitrate - a.bitrate;});
-                        // console.log(mp4obj)
                         payload.push(`[CQ:image,cache=0,file=${media[i].media_url_https}]`,
                                      `视频地址: ${mp4obj[0].url}`);
                     }
@@ -354,12 +356,10 @@ async function format(tweet) {
         }
         if (pics != "") payload.push(pics);
     }
-    if ("conversation_id_str" in tweet) text = "转推" + text;
     if ("is_quote_status" in tweet && tweet.is_quote_status == true) {
         let quote_tweet = await getSingleTweet(tweet.quoted_status_id_str);
         payload.push("提到了", await format(quote_tweet));
         text = text.replace(tweet.quoted_status_permalink.url, "");
-        // console.log(quote_tweet);
     }
     if ("card" in tweet) {
         payload.push(tweet.binding_values.title.string_value, urlExpand(card.url));
@@ -369,8 +369,7 @@ async function format(tweet) {
             text = text.replace(tweet.entities.urls[i].url, tweet.entities.urls[i].expanded_url);
         }
     }
-    payload.unshift(`${tweet.user.name}的Twitter`, text)
-    // console.log(payload)
+    payload.unshift(`${tweet.user.name}的Twitter`, text);
     return payload.join("\n");
 }
 
@@ -464,8 +463,16 @@ function twitterAggr(context) {
         rtSingleTweet(tweet_id, context);
         return true;
     }
-    else if (connection && /^订阅.+的?(推特|Twitter)([>＞](包含转发|只看图|全部))?/i.test(context.message)) {
-        let {groups : {name, option_nl}} = /订阅(?<name>.+)的?(推特|Twitter)([>＞](?<option_nl>包含转发|只看图|全部))?/i.exec(context.message);
+    else if (connection && /^订阅(推特|Twitter)https:\/\/twitter.com\/.+(\/status\/\d+)?([>＞](仅转发|只看图|全部))?/i.test(context.message)) {
+        let name = (/status\/\d+/.test(context.message) && /\.com\/(.+)\/status/.exec(context.message)[1] ||
+                    /\.com\/(.+)[>＞]/.exec(context.message)[1]);
+        let option_nl = /[>＞](仅转发|只看图|全部)/.exec(context.message)[1];
+        if (option_nl == undefined) option_nl = "仅原创"
+        addSubByName(name, option_nl, context);
+        return true;
+    }
+    else if (connection && /^订阅.+的?(推特|Twitter)([>＞](仅转发|只看图|全部))?/i.test(context.message)) {
+        let {groups : {name, option_nl}} = /订阅(?<name>.+)的?(推特|Twitter)([>＞](?<option_nl>仅转发|只看图|全部))?/i.exec(context.message);
         if (option_nl == undefined) option_nl = "仅原创"
         addSubByName(name, option_nl, context);
         return true;
@@ -482,33 +489,20 @@ function twitterAggr(context) {
     else return false;
 }
 
-
-checkConnection();
-
-setTimeout(() => {
-    if (connection) {
-        getGuestToken();
-        setTimeout(() => getCookie(), 1000);
-    }
-    else console.log("Twitter无法连接，功能暂停");
-}, 2000);
-
-let get_cookie_routine = setInterval(() => getCookie(), 20*60*60*1000);
-let get_gt_routine = setInterval(() => getGuestToken(), 0.9*60*60*1000);
-
-setInterval(() => {
-    checkConnection();
-    setTimeout(() => {
+function firstConnect() {
+    checkConnection().then(() => {
         if (!connection) {
             console.log("Twitter无法连接，功能暂停");
-            clearInterval(get_cookie_routine);
-            clearInterval(get_gt_routine);
         }
         else {
-            if (!get_cookie_routine) var get_cookie_routine = setInterval(() => getCookie(), 20*60*60*1000);
-            if (!get_cookie_routine) var get_gt_routine = setInterval(() => getGuestToken(), 0.9*60*60*1000);
+            getGuestToken();
+            setTimeout(() => getCookie(), 1000);
+            let get_cookie_routine = setInterval(() => getCookie(), 20*60*60*1000);
+            let get_gt_routine = setInterval(() => getGuestToken(), 0.9*60*60*1000);
         }
-    }, 2000);
-}, 20*60*1000);
+    });
+}
+
+firstConnect()
 
 module.exports = {twitterAggr, twitterReply, checkTwiTimeline};
