@@ -23,6 +23,7 @@ import dice from './modules/plugin/dice';
 import pokemon from './modules/plugin/pokemon';
 import pretendLearn from "./modules/plugin/pretendLearn";
 import pixivImage from "./modules/plugin/pixivImage";
+import translate from "./modules/plugin/translate";
 
 //常量
 const setting = config.picfinder;
@@ -45,6 +46,7 @@ if (setting.reminder.enable) rmdInit(replyMsg);
 weibo.weiboReply(replyMsg);
 twitter.twitterReply(replyMsg);
 pretendLearn.learnReply(replyMsg);
+translate.transReply(replyMsg);
 
 const bot = new CQWebsocket(config);
 const logger = new Logger();
@@ -240,20 +242,14 @@ function privateAndAtMsg(e, context) {
         e.stopPropagation();
         return;
     }
-    else if (pixivImage.pixivCheck(context, replyMsg, bot)) {
+    else if (pixivImage.pixivCheck(context, replyMsg, bot) ||
+            pokemon.pokemonCheck(context, replyMsg) ||
+            pretendLearn.learn(context) ||
+            translate.transEntry(context)) {
         e.stopPropagation();
         return;
     }
-    else if (pokemon.pokemonCheck(context, replyMsg)) {
-        e.stopPropagation();
-        return;
-
-    }
-    else if (pretendLearn.learn(context)) {
-        e.stopPropagation();
-        return;
-    }
-    else if (hasImage(context.message)) {
+    else if (hasImage(context.message) && !/我教你/.test(context.message)) {
         //搜图
         e.stopPropagation();
         searchImg(context);
