@@ -14,7 +14,7 @@
   改的地方太多了直接复制吧
 2. 需要先安装[原版](https://github.com/Tsuk1ko/CQ-picfinder-robot)再复制这边的文件到文件夹  
 3. 需要安装MongoDB，没装的参考官方教程https://docs.mongodb.com/manual/installation/ ，端口是默认端口不要改，然后使用mongorestore将dump文件夹中的东西恢复到mongodb中，这样才能使用小游戏功能，当然如果不用的话也可以，删除main中所有pokemon相关的语句就行  
-4. 需要npm install mongodb和seedrandom  
+4. 需要npm install mongodb，seedrandom和puppeteer  
 5. 把别的东西放到module/plugin里  
 
 ## 部件列表  
@@ -27,7 +27,8 @@ TODO:
 
 ### 1. 看微博，B站，Twitter动态  
 用 “看看**谁谁上条**微博/B站/Twitter/推特”，谁谁是要看的人的名字，上条可以改，可以要求看置顶，上条，上上条，上上上条.....，也可以直接写第x条，x范围是0~9
-也可以用 **看看微博/B站/Twitter/推特 url**，url为单条微博/B站/Twitter的网址，在app里，选分享链接就好
+也可以用 **看看微博/B站/Twitter/推特 url**，url为单条微博/B站/Twitter的网址，在app里，选分享链接就好  
+Twitter可以在后面加>截图以使用自动截图功能  
 
 ### 2. 订阅微博，B博，Twitter
 用 “订阅**谁谁**微博/B站/Twitter”就好，取消订阅用“取消订阅**谁谁**微博/B站/Twitter”，每5分钟检查一次  
