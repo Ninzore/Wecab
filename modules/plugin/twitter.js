@@ -1,5 +1,6 @@
-var axios = require('axios');
-var mongodb = require('mongodb').MongoClient;
+const axios = require('axios');
+const mongodb = require('mongodb').MongoClient;
+const puppeteer = require('puppeteer');
 
 var db_port = 27017;
 var db_path = "mongodb://127.0.0.1:" + db_port;
@@ -44,7 +45,7 @@ function httpHeader() {
         "sec-fetch-site" : "same-site",
         "user-agent" : "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/80.0.3987.163 Safari/537.36",
         "accept" : "application/json, text/plain, */*",
-        "dnt" : 1,
+        "dnt" : "1",
         // "accept-encoding" : "gzip, deflate, br",
         "accept-language" : "zh-CN,zh;q=0.9,en-US;q=0.8,en;q=0.7,ja;q=0.6",
         "x-twitter-client-language" : "zh-cn"
@@ -183,7 +184,7 @@ function subscribe(uid, option, context) {
         let coll = mongo.db('bot').collection('twitter');
         let res = await coll.find({uid : uid}).toArray();
         if (res.length == 0) {
-            let tweet = (await getUserTimeline(uid))[0];
+            let tweet = (await getUserTimeline(uid, 15, true))[0];
             if (tweet == undefined) {
                 replyFunc(context, `无法订阅这个人的Twitter`, true);
                 return false;
@@ -253,8 +254,11 @@ function checkTwiTimeline() {
             for (let i = 0; i < subscribes.length; i++) {
                 let tweet = (await getUserTimeline(subscribes[i].uid, 2, true))[0];
                 if (tweet == undefined) {
-                    console.log(`这个人有问题${subscribes[i].name}`);
-                    continue;
+                    tweet = (await getUserTimeline(subscribes[i].uid, 15, true))[0];
+                    if (tweet == undefined) {
+                        console.log(`这个人有问题${subscribes[i].name}`);
+                        continue;
+                    }
                 }
                 let last_tweet_id = subscribes[i].tweet_id;
                 let current_id = tweet.id_str;
@@ -373,6 +377,46 @@ async function format(tweet) {
     return payload.join("\n");
 }
 
+function tweetShot(twitter_url, context) {
+    (async () => {
+        let browser = await puppeteer.launch({
+            args: ['--no-sandbox']
+        });
+        let page = await browser.newPage();
+        await page.setExtraHTTPHeaders({
+            "accept-language" : "zh-CN,zh;q=0.9,en-US;q=0.8,en;q=0.7,ja;q=0.6",
+            "user-agent":"Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/80.0.3987.163 Safari/537.36"
+        });
+        await page.emulateTimezone('Asia/Tokyo');
+        await page.goto(twitter_url, {waitUntil : "networkidle0"});
+        await page.evaluate(() => {
+            document.querySelector(".css-1dbjc4n").scrollIntoView();
+        })
+        let avater_bound = await page.$(".css-1dbjc4n.r-18u37iz.r-d0pm55.r-thb0q2").then(async elem => {
+            let bound_box = await elem.boundingBox();
+            return bound_box;
+        });
+        let time_bound = await page.$(".css-901oao.r-1re7ezh.r-1qd0xha.r-a023e6.r-16dba41.r-ad9z0x.r-zso239.r-bcqeeo.r-qvutc0").then(async elem => {
+            let bound_box = await elem.boundingBox();
+            return bound_box;
+        });
+        await page.setViewport({
+            width: 800,
+            height: Math.round(time_bound.y) + 200,
+            deviceScaleFactor: 1.5,
+          });
+        await page.screenshot({
+            type : "jpeg",
+            quality : 100,
+            encoding : "base64",
+            clip : {x : avater_bound.x-3, y : avater_bound.y-3, width : avater_bound.width+3, height : time_bound.y - time_bound.height - 5},
+        }).then(pic64 => {
+            replyFunc(context, `[CQ:image,file=base64://${pic64}]`)
+        });
+        await browser.close();
+    })().catch(err => {console.log(err)})
+}
+
 /**
  * 将Twitter的t.co短网址扩展为原网址
  * @param {string} twitter_short_url Twitter短网址
@@ -391,13 +435,15 @@ function urlExpand(twitter_short_url) {
     });
 }
 
-function rtTimeline(name, num, context) {
+function rtTimeline(name, num, shot, context) {
     searchUser(name).then(user => {
         if (!user) replyFunc(context, "没这人");
+        else if (user.protected == true) replyFunc(context, "这人的Twitter受保护");
         else {
             getUserTimeline(user.id_str, 15).then(async timeline => {
                 if (timeline.length-1 < num) timeline = await getUserTimeline(user.id_str, 30);
-                format(timeline[num]).then(tweet_string => replyFunc(context, tweet_string))
+                if(shot) tweetShot(`https://twitter.com/${user.screen_name}/status/${timeline[num].id_str}`, context);
+                else format(timeline[num]).then(tweet_string => replyFunc(context, tweet_string));
             }).catch(err => console.log(err));
         }
     })
@@ -432,7 +478,7 @@ async function addSubByName(name, option_nl, context) {
 
 function twitterAggr(context) {
     let temp = "";
-    if (connection && /^看看(.+?)的?((第[0-9]?[一二三四五六七八九]?条)|(上*条)|(置顶)|(最新))?\s?(推特|Twitter)$/i.test(context.message)) {	
+    if (connection && /^看看(.+?)的?((第[0-9]?[一二三四五六七八九]?条)|(上*条)|(置顶)|(最新))?\s?(推特|Twitter)([＞>]截图)?$/i.test(context.message)) {	
 		let num = 1;
         let name = "";
         if (/置顶/.test(context.message)) (num = -1);
@@ -454,13 +500,19 @@ function twitterAggr(context) {
             else if (temp==9 || temp=="九") (num = 8);
         }
         else num = 0;       
-        name = /看看(.+?)的?((第[0-9]?[一二三四五六七八九]?条)|(上*条)|(置顶)|(最新))?\s?(推特|Twitter)/i.exec(context.message)[1];
-        rtTimeline(name, num, context);
+        name = /看看(.+?)的?((第[0-9]?[一二三四五六七八九]?条)|(上*条)|(置顶)|(最新))?\s?(推特|Twitter)([＞>]截图)?/i.exec(context.message)[1];
+        if (/[＞>]截图/.test(context.message)) rtTimeline(name, num, true, context);
+        else rtTimeline(name, num, false, context);
         return true;
 	}
     else if (connection && /^看看(推特|Twitter)\s?https:\/\/twitter.com\/.+?\/status\/(\d+)/i.test(context.message)) {
         let tweet_id = /^看看(推特|Twitter)\s?https:\/\/twitter.com\/.+?\/status\/(\d+)/i.exec(context.message)[2];
         rtSingleTweet(tweet_id, context);
+        return true;
+    }
+    else if (connection && /^(推特|Twitter)截图\s?https:\/\/twitter.com\/.+?\/status\/\d+/i.test(context.message)) {
+        let twitter_url = /https:\/\/twitter.com\/.+?\/status\/\d+/i.exec(context.message)[0];
+        tweetShot(twitter_url, context);
         return true;
     }
     else if (connection && /^订阅(推特|Twitter)https:\/\/twitter.com\/.+(\/status\/\d+)?([>＞](仅转发|只看图|全部))?/i.test(context.message)) {
