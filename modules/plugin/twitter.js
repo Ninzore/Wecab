@@ -281,6 +281,7 @@ function checkTwiTimeline() {
     function checkOption(tweet, option) {
         if (option == "all") return true;
         let status = "";
+        if ("retweeted_status" in tweet) status = "retweet";
         if ("media" in  tweet.entities && tweet.entities.media[0].type == "photo") status = "ori_with_pic";
         else status = "origin"
 
@@ -341,7 +342,7 @@ async function format(tweet) {
                 for (let i = 0; i < media.length; i++) {
                     text = text.replace(media[i].url, "");
                     if (media[i].type == "photo") {
-                        pics += (`[CQ:image,cache=0,file=${media[i].media_url_https}]`);
+                        pics += (`[CQ:image,cache=0,file=${media[i].media_url_https.substring(0, media[i].media_url_https.length-4)}?format=jpg&name=4096x4096]`);
                     }
                     else if (media[i].type == "animated_gif") {
                         pics += (`这是一张动图 [CQ:image,cache=0,file=${media[i].media_url_https}]`, `动起来看这里${media[i].video_info.variants[0].url}`);
@@ -380,41 +381,36 @@ async function format(tweet) {
 function tweetShot(twitter_url, context) {
     (async () => {
         let browser = await puppeteer.launch({
-            args: ['--no-sandbox']
+            args: ['--no-sandbox'],
         });
         let page = await browser.newPage();
         await page.setExtraHTTPHeaders({
-            "accept-language" : "zh-CN,zh;q=0.9,en-US;q=0.8,en;q=0.7,ja;q=0.6",
-            "user-agent":"Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/80.0.3987.163 Safari/537.36"
+            "user-agent":"Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/80.0.3987.163 Safari/537.36",
+            "accept-language" : "zh-CN,zh;q=0.9,en-US;q=0.8,en;q=0.7,ja;q=0.6"
         });
         await page.emulateTimezone('Asia/Tokyo');
         await page.goto(twitter_url, {waitUntil : "networkidle0"});
         await page.evaluate(() => {
-            document.querySelector(".css-1dbjc4n").scrollIntoView();
-        })
-        let avater_bound = await page.$(".css-1dbjc4n.r-18u37iz.r-d0pm55.r-thb0q2").then(async elem => {
-            let bound_box = await elem.boundingBox();
-            return bound_box;
+            let banner = document.getElementsByClassName('css-1dbjc4n r-1g40b8q')[0];
+            banner.parentNode.removeChild(banner);
+            document.querySelector("#react-root").scrollIntoView();
         });
-        let time_bound = await page.$(".css-901oao.r-1re7ezh.r-1qd0xha.r-a023e6.r-16dba41.r-ad9z0x.r-zso239.r-bcqeeo.r-qvutc0").then(async elem => {
-            let bound_box = await elem.boundingBox();
-            return bound_box;
-        });
+        let tweet_box = await page.$('.css-1dbjc4n.r-my5ep6.r-qklmqi.r-1adg3ll').then((tweet_article) => {return tweet_article.boundingBox()});
         await page.setViewport({
             width: 800,
-            height: Math.round(time_bound.y) + 200,
+            height: Math.round(tweet_box.height + 200),
             deviceScaleFactor: 1.5,
-          });
+        });
         await page.screenshot({
             type : "jpeg",
             quality : 100,
             encoding : "base64",
-            clip : {x : avater_bound.x-3, y : avater_bound.y-3, width : avater_bound.width+3, height : time_bound.y - time_bound.height - 5},
+            clip : {x : tweet_box.x, y : tweet_box.y+2, width : tweet_box.width, height : tweet_box.height-106},
         }).then(pic64 => {
-            replyFunc(context, `[CQ:image,file=base64://${pic64}]`)
+            replyFunc(context, `[CQ:image,file=base64://${pic64}]`);
         });
         await browser.close();
-    })().catch(err => {console.log(err)})
+    })().catch(err => {console.log(err); replyFunc(context, "出错惹", true)});
 }
 
 /**
@@ -435,7 +431,7 @@ function urlExpand(twitter_short_url) {
     });
 }
 
-function rtTimeline(name, num, shot, context) {
+function rtTimeline(context, name, num, shot) {
     searchUser(name).then(user => {
         if (!user) replyFunc(context, "没这人");
         else if (user.protected == true) replyFunc(context, "这人的Twitter受保护");
@@ -501,8 +497,8 @@ function twitterAggr(context) {
         }
         else num = 0;       
         name = /看看(.+?)的?((第[0-9]?[一二三四五六七八九]?条)|(上*条)|(置顶)|(最新))?\s?(推特|Twitter)([＞>]截图)?/i.exec(context.message)[1];
-        if (/[＞>]截图/.test(context.message)) rtTimeline(name, num, true, context);
-        else rtTimeline(name, num, false, context);
+        if (/[＞>]截图/.test(context.message)) rtTimeline(context, name, num, true);
+        else rtTimeline(context, name, num, false);
         return true;
 	}
     else if (connection && /^看看(推特|Twitter)\s?https:\/\/twitter.com\/.+?\/status\/(\d+)/i.test(context.message)) {
