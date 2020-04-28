@@ -1,7 +1,8 @@
 # CQ-picfinder-robot-add-on
 
 给Tsuk1ko的CQ-picfinder-robot V2.11做了几个小挂件，基本稳定，至少目前看起来很稳而且从没翻车  
-如果有bug请复制pm2log中的错误信息并提交issus，我会尽快解决（可能）
+如果有bug请复制pm2log中的错误信息并提交issus，我会尽快解决（可能） 
+觉得好用不妨点个Star谢谢  
   
 [更新日志](https://github.com/Ninzore/CQ-picfinder-robot-add-on/blob/master/CHANGELOG.md)
 
