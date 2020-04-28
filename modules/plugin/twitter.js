@@ -378,7 +378,12 @@ async function format(tweet) {
     return payload.join("\n");
 }
 
-function tweetShot(twitter_url, context) {
+/**
+ * Twitter截图相关功能
+ * @param {string} twitter_url 单条Tweet网址
+ * @param {object} context 
+ */
+function tweetShot(context, twitter_url, translation, trans_args={font:"", size:"", text_decoration:"", color:""}) {
     (async () => {
         let browser = await puppeteer.launch({
             args: ['--no-sandbox'],
@@ -390,25 +395,35 @@ function tweetShot(twitter_url, context) {
         });
         await page.emulateTimezone('Asia/Tokyo');
         await page.goto(twitter_url, {waitUntil : "networkidle0"});
-        await page.evaluate(() => {
+        trans_args.translation = translation;
+        await page.evaluate(trans_args => {
             let banner = document.getElementsByClassName('css-1dbjc4n r-1g40b8q')[0];
             banner.parentNode.removeChild(banner);
+            let article = document.getElementsByClassName('css-901oao r-hkyrab r-gwet1z r-1blvdjr r-16dba41 r-ad9z0x r-bcqeeo r-bnwqim r-qvutc0')[0].appendChild(document.createElement('span'));
+            article.className = "css-901oao css-16my406 r-1qd0xha r-ad9z0x r-bcqeeo r-qvutc0";
+            article.dir = "auto";
+            
+            let font = (trans_args.font != "") ? trans_args.font : "";
+            let size = (trans_args.size != "") ? trans_args.size : "";
+            let color = (trans_args.color != "") ? trans_args.color : "black";
+            let translation = (trans_args.translation != "") ? trans_args.translation : "你忘了加翻译";
+            let text_decoration = (trans_args.text_decoration !== "") ? trans_args.text_decoration : "";
+
+            article.innerHTML = `<p style="color:#1DA1F2; font-size:16px">翻译自日文</p><div style="font-family:${font};font-size:${size}; text-decoration:${text_decoration}; color:${color}">${translation}</div>`;
             document.querySelector("#react-root").scrollIntoView();
-        });
+        }, trans_args);
         let tweet_box = await page.$('.css-1dbjc4n.r-my5ep6.r-qklmqi.r-1adg3ll').then((tweet_article) => {return tweet_article.boundingBox()});
         await page.setViewport({
             width: 800,
             height: Math.round(tweet_box.height + 200),
             deviceScaleFactor: 1.5,
-        });
+        }, trans_args);
         await page.screenshot({
             type : "jpeg",
             quality : 100,
             encoding : "base64",
-            clip : {x : tweet_box.x, y : tweet_box.y+2, width : tweet_box.width, height : tweet_box.height-106},
-        }).then(pic64 => {
-            replyFunc(context, `[CQ:image,file=base64://${pic64}]`);
-        });
+            clip : {x : tweet_box.x, y : tweet_box.y+2, width : tweet_box.width, height : tweet_box.height-109},
+        }).then(pic64 => replyFunc(context, `[CQ:image,file=base64://${pic64}]`));
         await browser.close();
     })().catch(err => {console.log(err); replyFunc(context, "出错惹", true)});
 }
@@ -431,14 +446,15 @@ function urlExpand(twitter_short_url) {
     });
 }
 
-function rtTimeline(context, name, num, shot) {
+function rtTimeline(context, name, num, option={shot:false, link:false}) {
     searchUser(name).then(user => {
         if (!user) replyFunc(context, "没这人");
         else if (user.protected == true) replyFunc(context, "这人的Twitter受保护");
         else {
             getUserTimeline(user.id_str, 15).then(async timeline => {
                 if (timeline.length-1 < num) timeline = await getUserTimeline(user.id_str, 30);
-                if(shot) tweetShot(`https://twitter.com/${user.screen_name}/status/${timeline[num].id_str}`, context);
+                if(option.shot) tweetShot(context, `https://twitter.com/${user.screen_name}/status/${timeline[num].id_str}`);
+                else if (option.link) replyFunc(context, `https://twitter.com/${user.screen_name}/status/${timeline[num].id_str}`, true)
                 else format(timeline[num]).then(tweet_string => replyFunc(context, tweet_string));
             }).catch(err => console.log(err));
         }
@@ -451,6 +467,38 @@ function rtSingleTweet(tweet_id_str, context) {
     });
 }
 
+function cookTweet(context) {
+    let {groups : {twitter_url, text}} = /(?<twitter_url>https:\/\/twitter.com\/.+?\/status\/\d+)[>＞](?<text>.+)/i.exec(context.message);
+
+    let translation = text.split(/[>＞]/)[0];
+    let style_options = text.split(/[>＞]/)[1];
+    if (style_options == undefined || style_options == "") {
+        tweetShot(twitter_url, translation);
+        return;
+    }
+    style_options = style_options.split(/[,，]/);
+    
+    let trans_args = {font:"", size:"", text_decoration:"", color:""};
+    let option = "";
+    let style = "";
+    let option_map = {
+        "颜色" : "color",
+        "大小" : "size",
+        "字体" : "size",
+        "装饰" : "text_decoration",
+        "error" : false
+    }
+    for (i in style_options) {
+        option = style_options[i].split(/[=＝]/);
+        style = option_map[option[0].replace(" ", "")] || option_map["error"];
+        if (!style) {
+            replyFunc(context, `没有${option[0]}这个选项`, true);
+            return;
+        }
+        else trans_args[style] = option[1];
+    }
+    tweetShot(context, twitter_url, translation, trans_args);
+}
 
 /**
  * 通过用户名添加订阅
@@ -473,8 +521,7 @@ async function addSubByName(name, option_nl, context) {
 }
 
 function twitterAggr(context) {
-    let temp = "";
-    if (connection && /^看看(.+?)的?((第[0-9]?[一二三四五六七八九]?条)|(上*条)|(置顶)|(最新))?\s?(推特|Twitter)([＞>]截图)?$/i.test(context.message)) {	
+    if (connection && /^看看(.+?)的?((第[0-9]?[一二三四五六七八九]?条)|(上*条)|(置顶)|(最新))?\s?(推特|Twitter)([＞>](截图|链接))?$/i.test(context.message)) {	
 		let num = 1;
         let name = "";
         if (/置顶/.test(context.message)) (num = -1);
@@ -496,9 +543,10 @@ function twitterAggr(context) {
             else if (temp==9 || temp=="九") (num = 8);
         }
         else num = 0;       
-        name = /看看(.+?)的?((第[0-9]?[一二三四五六七八九]?条)|(上*条)|(置顶)|(最新))?\s?(推特|Twitter)([＞>]截图)?/i.exec(context.message)[1];
-        if (/[＞>]截图/.test(context.message)) rtTimeline(context, name, num, true);
-        else rtTimeline(context, name, num, false);
+        name = /看看(.+?)的?((第[0-9]?[一二三四五六七八九]?条)|(上*条)|(置顶)|(最新))?\s?(推特|Twitter)([＞>](截图|链接))?/i.exec(context.message)[1];
+        if (/[＞>]截图/.test(context.message)) rtTimeline(context, name, num, {shot:true});
+        else if (/[＞>]链接/.test(context.message)) rtTimeline(context, name, num, {link:true});
+        else rtTimeline(context, name, num);
         return true;
 	}
     else if (connection && /^看看(推特|Twitter)\s?https:\/\/twitter.com\/.+?\/status\/(\d+)/i.test(context.message)) {
@@ -508,7 +556,11 @@ function twitterAggr(context) {
     }
     else if (connection && /^(推特|Twitter)截图\s?https:\/\/twitter.com\/.+?\/status\/\d+/i.test(context.message)) {
         let twitter_url = /https:\/\/twitter.com\/.+?\/status\/\d+/i.exec(context.message)[0];
-        tweetShot(twitter_url, context);
+        tweetShot(context, twitter_url);
+        return true;
+    }
+    else if (connection && /^烤制\s?https:\/\/twitter.com\/.+?\/status\/\d+[>＞].+/i.test(context.message)) {
+        cookTweet(context);
         return true;
     }
     else if (connection && /^订阅(推特|Twitter)https:\/\/twitter.com\/.+(\/status\/\d+)?([>＞](仅转发|只看图|全部))?/i.test(context.message)) {
