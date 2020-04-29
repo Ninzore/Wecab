@@ -383,7 +383,7 @@ async function format(tweet) {
  * @param {string} twitter_url 单条Tweet网址
  * @param {object} context 
  */
-function tweetShot(context, twitter_url, translation, trans_args={font:"", size:"", text_decoration:"", color:""}) {
+function tweetShot(context, twitter_url, translation, trans_args={font:"", size:"", text_decoration:"", color:"", background:"", style:""}) {
     (async () => {
         let browser = await puppeteer.launch({
             args: ['--no-sandbox'],
@@ -402,14 +402,19 @@ function tweetShot(context, twitter_url, translation, trans_args={font:"", size:
             let article = document.getElementsByClassName('css-901oao r-hkyrab r-gwet1z r-1blvdjr r-16dba41 r-ad9z0x r-bcqeeo r-bnwqim r-qvutc0')[0].appendChild(document.createElement('span'));
             article.className = "css-901oao css-16my406 r-1qd0xha r-ad9z0x r-bcqeeo r-qvutc0";
             article.dir = "auto";
-            
-            let font = (trans_args.font != "") ? trans_args.font : "";
-            let size = (trans_args.size != "") ? trans_args.size : "";
-            let color = (trans_args.color != "") ? trans_args.color : "black";
-            let translation = (trans_args.translation != "") ? trans_args.translation : "你忘了加翻译";
-            let text_decoration = (trans_args.text_decoration !== "") ? trans_args.text_decoration : "";
 
-            article.innerHTML = `<p style="color:#1DA1F2; font-size:16px">翻译自日文</p><div style="font-family:${font};font-size:${size}; text-decoration:${text_decoration}; color:${color}">${translation}</div>`;
+            let html = '<p style="color:#1DA1F2; font-size:16px">翻译自日文</p>';
+            if (trans_args.style != undefined && trans_args.style != "") html += `<div style="${trans_args.style}">${trans_args.translation}</div>`
+            else {
+                let font = (trans_args.font != "") ? trans_args.font : "";
+                let size = (trans_args.size != "") ? trans_args.size : "";
+                let color = (trans_args.color != "") ? trans_args.color : "black";
+                let background = (trans_args.background != "") ? trans_args.background : "";
+                let translation = (trans_args.translation != "") ? trans_args.translation : "你忘了加翻译";
+                let text_decoration = (trans_args.text_decoration !== "") ? trans_args.text_decoration : "";
+                html += `<div style="font-family: ${font}; font-size: ${size}; text-decoration: ${text_decoration}; color: ${color}; background: ${background};">${translation}</div>`;
+            }
+            article.innerHTML = html;
             document.querySelector("#react-root").scrollIntoView();
         }, trans_args);
         let tweet_box = await page.$('.css-1dbjc4n.r-my5ep6.r-qklmqi.r-1adg3ll').then((tweet_article) => {return tweet_article.boundingBox()});
@@ -470,8 +475,8 @@ function rtSingleTweet(tweet_id_str, context) {
 function cookTweet(context) {
     let {groups : {twitter_url, text}} = /(?<twitter_url>https:\/\/twitter.com\/.+?\/status\/\d+)[>＞](?<text>.+)/i.exec(context.message);
 
-    let translation = text.split(/[>＞]/)[0];
-    let style_options = text.split(/[>＞]/)[1];
+    let translation = text.split(/[>＞](?<!<.{0,4}>)/)[0];
+    let style_options = text.split(/[>＞](?<!<.{0,4}>)/)[1];
     if (style_options == undefined || style_options == "") {
         tweetShot(twitter_url, translation);
         return;
@@ -486,6 +491,8 @@ function cookTweet(context) {
         "大小" : "size",
         "字体" : "size",
         "装饰" : "text_decoration",
+        "背景" : "background",
+        "style" : "style",
         "error" : false
     }
     for (i in style_options) {
