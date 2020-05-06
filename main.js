@@ -48,6 +48,7 @@ weibo.weiboReply(replyMsg);
 twitter.twitterReply(replyMsg);
 pretendLearn.learnReply(replyMsg);
 translate.transReply(replyMsg);
+nbnhhsh.reply(replyMsg);
 
 const bot = new CQWebsocket(config);
 const logger = new Logger();
