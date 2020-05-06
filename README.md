@@ -101,6 +101,7 @@ Twitter相关功能在开机后会尝试测试Twitter连接，如果无法连接
 基于各种奇怪需求开发的部件，需要把extra文件夹中除了main的放到plugin里，并且替换之前的main  
 1. 匹配句子发送音频，参考recordMsg文件  
 2. 指挥机器人禁言，解除禁言，触发关键词禁言，参考zen文件  
+3. 能不能好好说话，来自[nbnhhsh项目](https://github.com/itorr/nbnhhsh) 现在因为太吵了就注释掉了
 
 ## 以下内容因为版本更迭暂不支持  
 ### 2. 图片分类  
