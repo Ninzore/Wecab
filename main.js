@@ -24,6 +24,7 @@ import pokemon from './modules/plugin/pokemon';
 import pretendLearn from "./modules/plugin/pretendLearn";
 import pixivImage from "./modules/plugin/pixivImage";
 import translate from "./modules/plugin/translate";
+import nbnhhsh from "./modules/plugin/nbnhhsh";
 
 //常量
 const setting = config.picfinder;
@@ -367,6 +368,7 @@ function groupMsg(e, context) {
                 replyMsg(context, context.message);
             }, 1000);
         } else {
+            // if (!hasImage(context.message)) nbnhhsh.findAndGuess(context);
             pretendLearn.talk(context);
         }
     }
