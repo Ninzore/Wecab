@@ -11,7 +11,7 @@
 2. 群组分离，互不干扰  
 
 **注意！！！**
-1. main基于V2.11.13修改，2.11.13可以直接复制main.js，~~2.11.12版以外的版本需要把main_edit.js里面的东西复制到main的337行左右~~ 
+1. main基于V2.12.4修改，2.12.4可以直接复制main.js，~~2.11.12版以外的版本需要把main_edit.js里面的东西复制到main的337行左右~~ 
   改的地方太多了直接复制吧
 2. 需要先安装[原版](https://github.com/Tsuk1ko/CQ-picfinder-robot)再复制这边的文件到文件夹  
 3. 需要安装MongoDB，没装的参考官方教程https://docs.mongodb.com/manual/installation/ ，端口是默认端口不要改，然后使用mongorestore将dump文件夹中的东西恢复到mongodb中，这样才能使用小游戏功能，当然如果不用的话也可以，删除main中所有pokemon相关的语句就行  
