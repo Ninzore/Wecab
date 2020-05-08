@@ -16,15 +16,18 @@ import _ from 'lodash';
 import minimist from 'minimist';
 import { rmdInit, rmdHandler } from './modules/plugin/reminder';
 import broadcast from './modules/broadcast';
+import antiBiliMiniApp from './modules/plugin/antiBiliMiniApp';
 import weibo from './modules/plugin/weibo';
 import bilibili from './modules/plugin/bilibili';
 import twitter from './modules/plugin/twitter';
 import dice from './modules/plugin/dice';
 import pokemon from './modules/plugin/pokemon';
 import pretendLearn from "./modules/plugin/pretendLearn";
+import translate from "./modules/plugin/translate";
 import pixivImage from "./modules/plugin/pixivImage";
 import recordMsg from "./modules/plugin/recordMsg";
 import helpZen from "./modules/plugin/zen";
+import nbnhhsh from "./modules/plugin/nbnhhsh";
 
 //常量
 const setting = config.picfinder;
@@ -44,12 +47,19 @@ if (config.mysql.enable)
         });
 if (setting.akhr.enable) Akhr.init();
 if (setting.reminder.enable) rmdInit(replyMsg);
+
 weibo.weiboReply(replyMsg);
 twitter.twitterReply(replyMsg);
 pretendLearn.learnReply(replyMsg);
+translate.transReply(replyMsg);
+nbnhhsh.reply(replyMsg);
 
 const bot = new CQWebsocket(config);
 const logger = new Logger();
+
+weibo.checkWeiboDynamic();
+setTimeout(() => bilibili.checkBiliDynamic(replyMsg), 20000);
+setTimeout(() => twitter.checkTwiTimeline(), 40000);
 
 //好友请求
 bot.on('request.friend', context => {
@@ -144,11 +154,13 @@ bot.on('message.private', (e, context) => {
 //设置监听器
 if (setting.debug) {
     //私聊
-    bot.on('message.private', debugRrivateAndAtMsg);
+    bot.on('message.private', debugPrivateAndAtMsg);
     //讨论组@
     //bot.on('message.discuss.@me', debugRrivateAndAtMsg);
     //群组@
-    bot.on('message.group.@me', debugRrivateAndAtMsg);
+    bot.on('message.group.@me', debugPrivateAndAtMsg);
+    //群组
+    bot.on('message.group', debugGroupMsg);
 } else {
     //私聊
     bot.on('message.private', privateAndAtMsg);
@@ -233,6 +245,9 @@ function commonHandle(e, context) {
         if (rmdHandler(context)) return true;
     }
 
+    // 反哔哩哔哩小程序
+    antiBiliMiniApp(context, replyMsg);
+
     return false;
 }
 
@@ -242,20 +257,14 @@ function privateAndAtMsg(e, context) {
         e.stopPropagation();
         return;
     }
-    else if (pixivImage.pixivCheck(context, replyMsg, bot)) {
+    if (pixivImage.pixivCheck(context, replyMsg, bot) ||
+        pretendLearn.learn(context) ||
+        translate.transEntry(context) ||
+        pokemon.pokemonCheck(context, replyMsg)) {
         e.stopPropagation();
         return;
     }
-    else if (pokemon.pokemonCheck(context, replyMsg)) {
-        e.stopPropagation();
-        return;
-
-    }
-    else if (pretendLearn.learn(context)) {
-        e.stopPropagation();
-        return;
-    }
-    else if (hasImage(context.message)) {
+    if (hasImage(context.message)  && !/我教你/.test(context.message)) {
         //搜图
         e.stopPropagation();
         searchImg(context);
@@ -285,13 +294,17 @@ function privateAndAtMsg(e, context) {
 }
 
 //调试模式
-function debugRrivateAndAtMsg(e, context) {
+function debugPrivateAndAtMsg(e, context) {
     if (context.user_id != setting.admin) {
         e.stopPropagation();
         return setting.replys.debug;
-    } else {
-        privateAndAtMsg(e, context);
     }
+    return privateAndAtMsg(e, context);
+}
+
+function debugGroupMsg(e, context) {
+    if (context.user_id != setting.admin) e.stopPropagation();
+    else return groupMsg(e, context);
 }
 
 //群组消息处理
@@ -300,6 +313,7 @@ function groupMsg(e, context) {
         e.stopPropagation();
         return;
     }
+
     //进入或退出搜图模式
     const { group_id, user_id } = context;
 
@@ -347,25 +361,19 @@ function groupMsg(e, context) {
             e.stopPropagation();
             searchImg(context, smStatus);
         }
-    } 
-    else if (helpZen(context, replyMsg, bot, rand)) e.stopPropagation();
+    }
     else if (weibo.weiboAggr(context, replyMsg) ||
              bilibili.bilibiliCheck(context, replyMsg) ||
-             twitter.twitterAggr(context)) {
+             twitter.twitterAggr(context) ||
+             pixivImage.pixivCheck(context, replyMsg, bot) ||
+             recordMsg.response(context, replyMsg) ||
+             helpZen(context, replyMsg, bot, rand) ||
+             pokemon.pokemonCheck(context, replyMsg)) {
         e.stopPropagation();
         return;
     }
-    else if (pixivImage.pixivCheck(context, replyMsg, bot)) e.stopPropagation();
-    else if (pokemon.pokemonCheck(context, replyMsg)) e.stopPropagation();
-    else if (recordMsg.response(context, replyMsg)) e.stopPropagation();
-    else if (/^说的是呢$/.test(context.message)) {
-        replyMsg(context, "[CQ:image,file=1.jpg]");
-    }
-    else if (/^咳咳咳$/i.test(context.message)) {
-        replyMsg(context, "[CQ:image,file=2.jpg]");
-    }
     else if (/^\.dice.+/g.exec(context.message)) {
-  	    dice(context, replyMsg, rand);
+        dice(context, replyMsg, rand);
     }
     else if (setting.repeat.enable) {
         //复读（
@@ -375,7 +383,7 @@ function groupMsg(e, context) {
             //延迟2s后复读
             setTimeout(() => {
                 replyMsg(context, context.message);
-            }, 1000);
+            }, 2000);
         } else if (getRand() <= setting.repeat.commonProb) {
             //平时发言下的随机复读
             setTimeout(() => {
@@ -396,6 +404,7 @@ function groupMsg(e, context) {
  */
 async function searchImg(context, customDB = -1) {
     const args = parseArgs(context.message);
+    const hasWord = word => context.message.indexOf(word) !== -1;
 
     //OCR
     if (args.ocr) {
@@ -404,7 +413,7 @@ async function searchImg(context, customDB = -1) {
     }
 
     //明日方舟
-    if (args.akhr) {
+    if (hasWord('akhr') || hasWord('公招')) {
         doAkhr(context);
         return;
     }
@@ -444,7 +453,7 @@ async function searchImg(context, customDB = -1) {
                 if (cache) {
                     hasCache = true;
                     for (const cmsg of cache) {
-                        replyMsg(context, `&#91;缓存&#93; ${cmsg}`);
+                        replySearchMsgs(context, `&#91;缓存&#93; ${cmsg}`);
                     }
                 }
             }
@@ -463,14 +472,12 @@ async function searchImg(context, customDB = -1) {
 
                 //saucenao
                 if (!useAscii2d) {
-                    const saRet = await saucenao(img.url, db, args.debug);
+                    const saRet = await saucenao(img.url, db, args.debug || setting.debug);
                     if (!saRet.success) success = false;
                     if ((setting.useAscii2dWhenLowAcc && saRet.lowAcc && (db == snDB.all || db == snDB.pixiv)) || (setting.useAscii2dWhenQuotaExcess && saRet.excess)) useAscii2d = true;
                     if (!saRet.lowAcc && saRet.msg.indexOf('anidb.net') !== -1) useWhatAnime = true;
                     if (saRet.msg.length > 0) needCacheMsgs.push(saRet.msg);
-
-                    replyMsg(context, saRet.msg);
-                    replyMsg(context, saRet.warnMsg);
+                    replySearchMsgs(context, saRet.msg, saRet.warnMsg);
                 }
 
                 //ascii2d
@@ -480,12 +487,11 @@ async function searchImg(context, customDB = -1) {
                     }));
                     if (asErr) {
                         const errMsg = (asErr.response && asErr.response.data.length < 50 && `\n${asErr.response.data}`) || '';
-                        replyMsg(context, `ascii2d 搜索失败${errMsg}`);
+                        replySearchMsgs(context, `ascii2d 搜索失败${errMsg}`);
                         console.error(`${getTime()} [error] ascii2d`);
                         console.error(asErr);
                     } else {
-                        replyMsg(context, color);
-                        replyMsg(context, bovw);
+                        replySearchMsgs(context, color, bovw);
                         needCacheMsgs.push(color);
                         needCacheMsgs.push(bovw);
                     }
@@ -493,7 +499,7 @@ async function searchImg(context, customDB = -1) {
 
                 //搜番
                 if (useWhatAnime) {
-                    const waRet = await whatanime(img.url, args.debug);
+                    const waRet = await whatanime(img.url, args.debug || setting.debug);
                     if (!waRet.success) success = false; //如果搜番有误也视作不成功
                     replyMsg(context, waRet.msg);
                     if (waRet.msg.length > 0) needCacheMsgs.push(waRet.msg);
@@ -549,9 +555,7 @@ function doAkhr(context) {
         };
 
         for (const img of imgs) {
-            ocr[setting.akhr.ocr](img.url, 'chs')
-                .then(handleWords)
-                .catch(handleError);
+            ocr[setting.akhr.ocr](img.url, 'chs').then(handleWords).catch(handleError);
         }
     } else {
         replyMsg(context, '该功能未开启');
@@ -596,23 +600,57 @@ function hasImage(msg) {
  * @param {boolean} at 是否at发送者
  */
 function replyMsg(context, msg, at = false) {
-    if (typeof msg != 'string' || msg.length == 0) return;
-    if (context.group_id) {
-        return bot('send_group_msg', {
-            group_id: context.group_id,
-            message: at ? CQ.at(context.user_id) + msg : msg,
-        });
-    } else if (context.discuss_id) {
-        return bot('send_discuss_msg', {
-            discuss_id: context.discuss_id,
-            message: at ? CQ.at(context.user_id) + msg : msg,
-        });
-    } else if (context.user_id) {
-        return bot('send_private_msg', {
-            user_id: context.user_id,
-            message: msg,
-        });
+    if (typeof msg !== 'string' || msg.length === 0) return;
+    switch (context.message_type) {
+        case 'private':
+            return bot('send_private_msg', {
+                user_id: context.user_id,
+                message: msg,
+            });
+        case 'group':
+            return bot('send_group_msg', {
+                group_id: context.group_id,
+                message: at ? CQ.at(context.user_id) + msg : msg,
+            });
+        case 'discuss':
+            return bot('send_discuss_msg', {
+                discuss_id: context.discuss_id,
+                message: at ? CQ.at(context.user_id) + msg : msg,
+            });
     }
+}
+
+/**
+ * 回复搜图消息
+ *
+ * @param {object} context 消息对象
+ * @param {Array<string>} msgs 回复内容
+ */
+function replySearchMsgs(context, ...msgs) {
+    msgs = msgs.filter(msg => msg && typeof msg === 'string');
+    if (msgs.length === 0) return;
+    let promises = [];
+    // 是否私聊回复
+    if (setting.pmSearchResult) {
+        switch (context.message_type) {
+            case 'group':
+            case 'discuss':
+                if (!context.pmTipSended) {
+                    context.pmTipSended = true;
+                    replyMsg(context, '搜图结果将私聊发送！', true);
+                }
+                break;
+        }
+        promises = msgs.map(msg =>
+            bot('send_private_msg', {
+                user_id: context.user_id,
+                message: msg,
+            })
+        );
+    } else {
+        promises = msgs.map(msg => replyMsg(context, msg));
+    }
+    return Promise.all(promises);
 }
 
 /**
@@ -647,7 +685,3 @@ function parseArgs(str, enableArray = false, _key = null) {
     if (_key && typeof m[_key] == 'string' && m._.length > 0) m[_key] += ' ' + m._.join(' ');
     return m;
 }
-
-weibo.checkWeiboDynamic();
-setTimeout(() => bilibili.checkBiliDynamic(replyMsg), 20000);
-setTimeout(() => twitter.checkTwiTimeline(), 40000);
