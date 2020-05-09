@@ -268,7 +268,7 @@ function checkTwiTimeline() {
                         if (checkOption(tweet, subscribes[i][group_id])) {
                             format(tweet).then(payload => {
                                 payload += `\nhttps://twitter.com/${tweet.user.screen_name}/status/${current_id}`
-                                replyFunc({group_id : group_id}, payload);
+                                replyFunc({group_id : group_id, message_type : "group"}, payload);
                             }).catch(err => console.error(err));
                         }
                     });
