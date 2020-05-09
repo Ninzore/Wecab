@@ -192,7 +192,7 @@ function checkWeiboDynamic() {
                     let groups = subscribes[i].groups;
                     groups.forEach(group_id => {
                         if (checkOption(mblog, subscribes[i][group_id])) {
-                            format(mblog, true).then(payload => replyFunc({group_id : group_id}, payload)).catch(err => console.error(err));
+                            format(mblog, true).then(payload => replyFunc({group_id : group_id, message_type : "group"}, payload)).catch(err => console.error(err));
                         }
                         else;
                     });
