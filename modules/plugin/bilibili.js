@@ -267,7 +267,7 @@ function checkBiliDynamic(replyFunc) {
                 let curr_timestamp = dynamic.desc.timestamp;
                 let groups = subscribe.groups;
                 groups.forEach(group_id => {
-                    sender({group_id:group_id}, replyFunc, clean_dynamic, "");
+                    sender({group_id:group_id, message_type : "group"}, replyFunc, clean_dynamic, "");
                 });
                 await coll.updateOne({uid : subscribe.uid},
                             {$set : {timestamp : curr_timestamp, dynamic_id : dynamic_id}}, 
