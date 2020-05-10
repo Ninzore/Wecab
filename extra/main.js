@@ -49,6 +49,7 @@ if (setting.akhr.enable) Akhr.init();
 if (setting.reminder.enable) rmdInit(replyMsg);
 
 weibo.weiboReply(replyMsg);
+bilibili.bilibiliReply(replyMsg);
 twitter.twitterReply(replyMsg);
 pretendLearn.learnReply(replyMsg);
 translate.transReply(replyMsg);
