@@ -4,6 +4,12 @@ var mongodb = require('mongodb').MongoClient;
 var db_port = 27017;
 var db_path = "mongodb://127.0.0.1:" + db_port;
 
+let replyFunc = (context, msg, at = false) => {};
+
+function bilibiliReply(replyMsg) {
+    replyFunc = replyMsg;
+}
+
 function httpHeader(uid = 0, dynamic_id = 0, keyword = "") {
     let url = "";
     let headers = {};
@@ -93,25 +99,24 @@ function dynamicProcess(dynamic) {
     let pics = "";
     let video = "";
     let rt_dynamic = 0;
-    // console.log(card)
+
     if ("user" in card){
         if ("uname" in card.user) name = card.user.uname;
         else if ("name" in card.user) name = card.user.name;
     }
+    else if ("list" in card) name = card.list.name;
     
     //投稿
     if ("videos" in card) {
         name = card.owner.name;
         text = card.dynamic;
         // console.log(card)
-        video = "发布视频:\n" + card.title
+        video = "发布视频:\n" + card.title;
     }
     //转发
     if ("origin" in card) {
-        let origin = card.origin
-        // console.log(origin)
+        let origin = card.origin;
         rt_dynamic = dynamicProcess({card : origin});
-        // console.log(rt_dynamic)
     }
     if ("pic" in card) pics += "[CQ:image,cache=0,file=" + card.pic + "]"; 
     if ("item" in card) {
@@ -119,18 +124,18 @@ function dynamicProcess(dynamic) {
         if ("video_playurl" in card.item) {
             video = card.item.video_playurl;
             text = card.item.description;
-            video = video_playurl;
         }
         //通常
         else {
-            if ("content" in card.item) text = card.item.content;
+            if ("content" in card.item && card.item.content.length > 0) text = card.item.content;
+            else if ("description" in card.item && card.item.description.length > 0) text = card.item.description;
             if ("pictures" in card.item) {
-                if ("description" in card.item) text = card.item.description;
                 let pictures = card.item.pictures;
                 for (let pic of pictures) pics += "[CQ:image,cache=0,file=" + pic.img_src + "]";  
             }
         }
     }
+    else if ("title" in card && card.title.length > 0) text = "发布文章" + card.title;
     // console.log(name)
     // console.log(text)
     let dynamicObj = {
@@ -172,7 +177,7 @@ function addBiliSubscribe(context, replyFunc, name = "") {
                                 groups : [group_id]},
                     (err) => {
                         if (err) text = "database subscribes update error";
-                        else text = "已订阅" + name + "的微博";
+                        else text = "已订阅" + name + "的B站动态";
                         sender(context, replyFunc, {}, text, true);
                     });
             }
@@ -184,7 +189,7 @@ function addBiliSubscribe(context, replyFunc, name = "") {
                         else {
                             // console.log(result)
                             if (result.value.groups.includes(group_id)) text = "多次订阅有害我的身心健康";
-                            else text = "已订阅" + result.value.name + "的微博";
+                            else text = "已订阅" + result.value.name + "的B站动态";
                          }
                          sender(context, replyFunc, {}, text, true);
                      });
@@ -218,7 +223,6 @@ function rmBiliSubscribe(context, replyFunc, name = "") {
                             console.log(err);
                         }
                         else {
-                            // console.log(result)
                             if (!result.value.groups.includes(group_id)) text = "小火汁你压根就没订阅嗷";
                             else text = "已取消订阅" + name + "的B站动态";
                         }
@@ -244,6 +248,7 @@ function checkBiliDynamic(replyFunc) {
                         getDynamicList(subscribes[i].uid, 0).then(dynamic => {
                             let last_timestamp = subscribes[i].timestamp;
                             let curr_timestamp = dynamic.desc.timestamp;
+                            if (!"desc" in dynamic) console.log(dynamic);
                             if (curr_timestamp > last_timestamp) {
                                 update(subscribes[i], dynamic)
                             }
@@ -323,12 +328,11 @@ function checkBiliSubs(context, replyFunc) {
 
 function sender(context, replyFunc, dynamicObj = {}, others = "", at = false) {
     let payload = "";
-    // console.log(dynamicObj)
     if (Object.keys(dynamicObj).length != 0) {
         payload = dynamicObj.name + "\n" + dynamicObj.text + "\n"  + dynamicObj.video + dynamicObj.pics;
         if (dynamicObj.rt_dynamic != 0) {
             let rt_dynamic = dynamicObj.rt_dynamic
-            payload += "\n转发自 " + rt_dynamic.name + "\n" + rt_dynamic.text  + "\n" +rt_dynamic.video + rt_dynamic.pics;;
+            payload += `\n转发自${rt_dynamic.name}的B站动态${rt_dynamic.text}\n${rt_dynamic.video}\n${rt_dynamic.pics}`;
         }
         replyFunc(context, payload, at);
     }
@@ -338,8 +342,6 @@ function sender(context, replyFunc, dynamicObj = {}, others = "", at = false) {
 }
 
 function rtBilibili(context, replyFunc, name = "", num = 0, dynamic_id = "") {
-    // getUserId(name, choose).then(uid => {
-    //     console.log(uid)
     if (dynamic_id != "") {
         getDynamicDetail(dynamic_id).then(dynamic => {
             if (dynamic == undefined) sender(context, replyFunc, 0, "你码输错了", true);
@@ -356,12 +358,12 @@ function rtBilibili(context, replyFunc, name = "", num = 0, dynamic_id = "") {
             else getDynamicList(name_card.mid, num).then(dynamic => {
                 // console.log(dynamic)
                 let clean_dynamic = dynamicProcess(dynamic);
-                sender(context, replyFunc, clean_dynamic)
+                sender(context, replyFunc, clean_dynamic);
             });
         });
     }
     else {
-        console.log("error rtBilibili")
+        console.log("error rtBilibili");
     }
 }
 
@@ -370,8 +372,8 @@ function rtBiliByUrl(context, replyFunc){
     rtBilibili(context, replyFunc, "", 0, dynamic_id);
 }
 
-function bilibiliCheck (context, replyFunc) {
-    if (/^看看.+?B站$/gi.test(context.message)) {	
+function bilibiliCheck (context) {
+    if (/^看看.+?B站$/i.test(context.message)) {	
 		var num = 1;
         var name = "";
         if (/置顶/.test(context.message)) (num = -1);
@@ -397,27 +399,27 @@ function bilibiliCheck (context, replyFunc) {
         rtBilibili(context, replyFunc, name, num);
         return true;
 	}
-    else if (/^看看B站https:\/\/t.bilibili.com\/(\d+).+?/gi.test(context.message)) {
+    else if (/^看看B站https:\/\/t.bilibili.com\/(\d+).+?/i.test(context.message)) {
         rtBiliByUrl(context, replyFunc);
         return true;
     }
-    else if (/^订阅.+?B站$/gi.test(context.message)) {
-        let name = /^订阅(.+?)B站$/gi.exec(context.message)[1];
-        console.log(name + " B站订阅");
+    else if (/^订阅.+?B站$/i.test(context.message)) {
+        let name = /订阅(.+?)B站$/gi.exec(context.message)[1];
+        console.log(`${context.group_id} ${name} 添加B站订阅`);
         addBiliSubscribe(context, replyFunc, name);
         return true;
     }
-    else if (/^取消订阅.+?B站$/gi.test(context.message)) {
-        let name = /^取消订阅(.+?)B站$/gi.exec(context.message)[1];
-        console.log(name + " B站订阅取消");
+    else if (/^取消订阅.+?B站$/i.test(context.message)) {
+        let name = /取消订阅(.+?)B站$/gi.exec(context.message)[1];
+        console.log(`${context.group_id} ${name} B站订阅取消`);
         rmBiliSubscribe(context, replyFunc, name);
         return true;
     }
-    else if (/^查看(订阅B站|B站订阅)$/gi.test(context.message)) {
+    else if (/^查看(订阅B站|B站订阅)$/i.test(context.message)) {
         checkBiliSubs(context, replyFunc);
         return true;
     }
     else return false;
 }
 
-module.exports = {bilibiliCheck, checkBiliDynamic};
+module.exports = {bilibiliCheck, checkBiliDynamic, bilibiliReply};
