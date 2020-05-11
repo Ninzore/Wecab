@@ -267,7 +267,7 @@ function checkTwiTimeline() {
                     groups.forEach(group_id => {
                         if (checkOption(tweet, subscribes[i][group_id])) {
                             format(tweet).then(payload => {
-                                payload += `\nhttps://twitter.com/${tweet.user.screen_name}/status/${current_id}`
+                                payload += `\n\nhttps://twitter.com/${tweet.user.screen_name}/status/${current_id}`
                                 replyFunc({group_id : group_id, message_type : "group"}, payload);
                             }).catch(err => console.error(err));
                         }
@@ -331,7 +331,9 @@ function checkSubs(context) {
  */
 async function format(tweet) {
     let payload = [];
-    let text = tweet.full_text;
+    let text = "";
+    if('full_text' in tweet) text = tweet.full_text;
+    else text = tweet.text;
     if ("retweeted_status" in tweet) {
         let rt_status = await format(tweet.retweeted_status)
         payload.push(`来自${tweet.user.name}的Twitter\n转推了`, rt_status);
@@ -403,35 +405,39 @@ function tweetShot(context, twitter_url, trans_args={}) {
             await page.evaluate(trans_args => {
                 let banner = document.getElementsByTagName('header')[0];
                 banner.parentNode.removeChild(banner);
-                let article = document.getElementsByClassName('css-1dbjc4n r-156q2ks')[0];
-     
-                let trans_place = document.createElement('div');
-                let node_group_info = document.createElement('span');
-                let node_trans_article = document.createElement('span');
-                trans_place.className = node_group_info.className = node_trans_article.className = 'css-901oao r-hkyrab r-gwet1z r-1blvdjr r-16dba41 r-ad9z0x r-bcqeeo r-bnwqim r-qvutc0';
     
-                if (trans_args.group_info == undefined) trans_args.group_info = "翻译自日文"
-                if (trans_args.group_html == undefined) trans_args.group_html = `<p style="color:#1DA1F2; font-size:16px">${trans_args.group_info}</p>`;
+                let articles = document.querySelectorAll('[lang][dir="auto"]');
+                insert(articles[0], trans_args.translation);
+                if (trans_args.reply != undefined) insert(articles[1], trans_args.reply);
     
-                let trans_article_html = "";
-                if (trans_args.trans_html != undefined) trans_article_html = trans_args.trans_html;
-                else if (trans_args.style != undefined && trans_args.style !== "") trans_article_html = `<div style="${trans_args.style};">${trans_args.translation}</div>`
-                else {
-                    let font = (trans_args.font != undefined || trans_args.font != "") ? trans_args.font : "";
-                    let size = (trans_args.size != undefined || trans_args.size != "") ? trans_args.size : "";
-                    let color = (trans_args.color != undefined || trans_args.color != "") ? trans_args.color : "black";
-                    let background = (trans_args.background != undefined || trans_args.background != "") ? trans_args.background : "";
-                    let translation = (trans_args.translation != undefined || trans_args.translation != "") ? trans_args.translation : "你忘了加翻译";
-                    let text_decoration = (trans_args.text_decoration != undefined || trans_args.text_decoration !== "") ? trans_args.text_decoration : "";
-                    trans_article_html = `<div style="font-family: ${font}; font-size: ${size}; text-decoration: ${text_decoration}; color: ${color}; background: ${background};">${translation}</div>`;
+                function insert(article, article_trans) {
+                    let trans_place = document.createElement('div');
+                    let node_group_info = document.createElement('span');
+                    let node_trans_article = document.createElement('span');
+                    trans_place.className = node_group_info.className = node_trans_article.className = 'css-901oao css-16my406 r-1qd0xha r-ad9z0x r-bcqeeo r-qvutc0';
+        
+                    if (trans_args.group_info == undefined) trans_args.group_info = "翻译自日文"
+                    if (trans_args.group_html == undefined) trans_args.group_html = `<p dir="auto" style="color:#1DA1F2; font-size:15px">${trans_args.group_info}</p>`;
+    
+                    let translation = (article_trans != undefined || article_trans != "") ? article_trans : "你忘了加翻译";
+                    let trans_article_html = "";
+                    if (trans_args.trans_html != undefined) trans_article_html = trans_args.trans_html;
+                    else if (trans_args.style != undefined && trans_args.style !== "") trans_article_html = `<div style="${trans_args.style};">${translation}</div>`
+                    else {
+                        let font = (trans_args.font != undefined || trans_args.font != "") ? trans_args.font : "";
+                        let size = (trans_args.size != undefined || trans_args.size != "") ? trans_args.size : "";
+                        let color = (trans_args.color != undefined || trans_args.color != "") ? trans_args.color : "black";
+                        let background = (trans_args.background != undefined || trans_args.background != "") ? trans_args.background : "";
+                        let text_decoration = (trans_args.text_decoration != undefined || trans_args.text_decoration !== "") ? trans_args.text_decoration : "";
+                        trans_article_html = `<div dir="auto" style="font-family: ${font}; font-size: ${size}; text-decoration: ${text_decoration}; color: ${color}; background: ${background};">${translation}</div>`;
+                    }
+                    node_group_info.innerHTML = trans_args.group_html;
+                    node_trans_article.innerHTML = trans_article_html;
+                    
+                    trans_place.appendChild(node_group_info);
+                    trans_place.appendChild(node_trans_article);
+                    article.appendChild(trans_place);
                 }
-                node_group_info.innerHTML = trans_args.group_html;
-                node_trans_article.innerHTML = trans_article_html;
-                
-                trans_place.appendChild(node_group_info);
-                trans_place.appendChild(node_trans_article);
-                article.appendChild(trans_place);
-    
                 document.querySelector("#react-root").scrollIntoView();
             }, trans_args);
             await page.waitFor(1000);
@@ -443,22 +449,17 @@ function tweetShot(context, twitter_url, trans_args={}) {
                 document.querySelector("#react-root").scrollIntoView();
             });
         }
-        let tweet_box = await page.$('article').then((tweet_article) => {return tweet_article.boundingBox()});
+        let tweet_box = await page.$('article .css-1dbjc4n .r-vpgt9t').then((tweet_article) => {return tweet_article.boundingBox()});
         await page.setViewport({
             width: 800,
-            height: Math.round(tweet_box.height + 200),
-            deviceScaleFactor: 1.5,
+            height: Math.round(tweet_box.width + 200),
+            deviceScaleFactor: 1.6
         });
-        await page.setViewport({
-            width: 800,
-            height: Math.round(tweet_box.height + 200),
-            deviceScaleFactor: 1.5,
-        }, trans_args);
         await page.screenshot({
             type : "jpeg",
             quality : 100,
             encoding : "base64",
-            clip : {x : tweet_box.x, y : tweet_box.y+2, width : tweet_box.width, height : tweet_box.height-109},
+            clip : {x : tweet_box.x - 8, y : 0, width : tweet_box.width + 8, height : tweet_box.y + tweet_box.height + 8}
         }).then(pic64 => replyFunc(context, `[CQ:image,file=base64://${pic64}]`));
         await browser.close();
     })().catch(err => {console.log(err); replyFunc(context, "出错惹", true)});
@@ -517,6 +518,7 @@ function cookTweet(context) {
     let option = "";
     let style = "";
     let option_map = {
+        "回复" : "reply",
         "颜色" : "color",
         "大小" : "size",
         "字体" : "font-size",
