@@ -507,10 +507,18 @@ function rtSingleTweet(tweet_id_str, context) {
 function cookTweet(context) {
     let {groups : {twitter_url, text}} = /(?<twitter_url>https:\/\/twitter.com\/.+?\/status\/\d+)[>＞](?<text>.+)/i.exec(context.message);
 
-    let translation = text.split(/[>＞](?<!<\/?\w{1,5}>)/)[0];
-    let style_options = text.split(/[>＞](?<!<\/?\w{1,5}>)/)[1];
-    if (style_options == undefined || style_options == "") {
-        tweetShot(twitter_url, {translation:translation});
+    let trans_args = {};
+    let translation = "";
+    let style_options = "";
+
+    if (/https:\/\/twitter.com\/.+?\/status\/\d+[>＞]{2}/.test(context.message)) style_options = text.substring(1, text.length);
+    else {
+        translation = text.split(/[>＞](?<!<\/?\w{1,5}>)/)[0];
+        style_options = text.split(/[>＞](?<!<\/?\w{1,5}>)/)[1];
+    }
+
+    if (style_options == undefined || style_options.length == 0) {
+        // tweetShot(twitter_url, {translation:translation});
         return;
     }
     style_options = style_options.split(/[+＋]/);
@@ -521,7 +529,7 @@ function cookTweet(context) {
         "回复" : "reply",
         "颜色" : "color",
         "大小" : "size",
-        "字体" : "font-size",
+        "字体" : "font",
         "装饰" : "text_decoration",
         "背景" : "background",
         "汉化组" : "group_info",
