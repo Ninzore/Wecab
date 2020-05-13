@@ -22,9 +22,9 @@
 正在缓慢更新中  
 TODO:  
 1. 准备脱离原[CQ-Picfinder-robot](https://github.com/Tsuk1ko/CQ-picfinder-robot)，可能之后会改个名并且更方便安装  
-2. Pixiv订阅  
-3. 接入RSSHub 
-4. 外语翻译  
+2. 烤推emoji支持  
+3. Pixiv订阅  
+4. 接入RSSHub 
 5. 小游戏更新(不存在的)  
 
 ### 1. 看微博，B站，Twitter动态  
