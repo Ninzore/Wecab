@@ -507,7 +507,6 @@ function rtSingleTweet(tweet_id_str, context) {
 function cookTweet(context) {
     let {groups : {twitter_url, text}} = /(?<twitter_url>https:\/\/twitter.com\/.+?\/status\/\d+)[>＞](?<text>.+)/i.exec(context.message);
 
-    let trans_args = {};
     let translation = "";
     let style_options = "";
 
@@ -518,7 +517,7 @@ function cookTweet(context) {
     }
 
     if (style_options == undefined || style_options.length == 0) {
-        // tweetShot(twitter_url, {translation:translation});
+        tweetShot(twitter_url, {translation:translation});
         return;
     }
     style_options = style_options.split(/[+＋]/);
