@@ -507,28 +507,21 @@ function rtSingleTweet(tweet_id_str, context) {
 function cookTweet(context) {
     let {groups : {twitter_url, text}} = /(?<twitter_url>https:\/\/twitter.com\/.+?\/status\/\d+)[>＞](?<text>.+)/i.exec(context.message);
 
-    let translation = "";
-    let style_options = "";
-
-    if (/https:\/\/twitter.com\/.+?\/status\/\d+[>＞]{2}/.test(context.message)) style_options = text.substring(1, text.length);
-    else {
-        translation = text.split(/[>＞](?<!<\/?\w{1,5}>)/)[0];
-        style_options = text.split(/[>＞](?<!<\/?\w{1,5}>)/)[1];
-    }
-
-    if (style_options == undefined || style_options.length == 0) {
-        tweetShot(twitter_url, {translation:translation});
+    if (/https:\/\/twitter.com\/.+?\/status\/\d+[>＞]{2}/.test(context.message)) {
+        tweetShot(twitter_url, {translation : text.substring(1, text.length)});
         return;
     }
-    style_options = style_options.split(/[+＋]/);
+    
     let trans_args = {};
+    let style_options = text.split(/[+＋]/);
     let option = "";
     let style = "";
     let option_map = {
+        "翻译" : "translation",
         "回复" : "reply",
         "颜色" : "color",
         "大小" : "size",
-        "字体" : "font",
+        "字体" : "font_family",
         "装饰" : "text_decoration",
         "背景" : "background",
         "汉化组" : "group_info",
@@ -537,22 +530,24 @@ function cookTweet(context) {
         "style" : "style",
         "error" : false
     }
-    
+
     for (i in style_options) {
-        option = style_options[i].split(/(?<!(style|class))[=＝]/).filter((noEmpty) => {return noEmpty != undefined});
+        option = style_options[i].split(/(?<!<.+(style|class))[=＝]/).filter((noEmpty) => {return noEmpty != undefined});
         style = option_map[option[0].replace(" ", "")] || option_map["error"];
         if (!style) {
-            replyFunc(context, `没有${option[0]}这个选项`, true);
+            console.log(`没有${option[0]}这个选项`);
             return;
         }
         else trans_args[style] = option[1];
     }
-    if (trans_args.trans_html == undefined && translation.length <= 0) {
-        replyFunc(context, "你没加翻译", true);
+
+    if (!'trans_html' in trans_args && trans_args.trans_html.length == 0 &&
+        !'translation' in trans_args && trans_args.translation.length == 0) {
+        console.log("你没加翻译");
         return;
     }
-    if(translation.length > 0) trans_args.translation = translation;
-    tweetShot(context, twitter_url, trans_args);
+    
+    tweetShot(twitter_url, trans_args);
 }
 
 /**
