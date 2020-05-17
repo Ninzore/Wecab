@@ -384,88 +384,6 @@ async function format(tweet) {
 }
 
 /**
- * Twitter截图相关功能
- * @param {object} context 
- * @param {string} twitter_url 单条Tweet网址
- * @param {object} trans_args 所有翻译相关选项
- */
-function tweetShot(context, twitter_url, trans_args={}) {
-    (async () => {
-        let browser = await puppeteer.launch({
-            args: ['--no-sandbox']
-        });
-        let page = await browser.newPage();
-        await page.setExtraHTTPHeaders({
-            "user-agent":"Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/80.0.3987.163 Safari/537.36",
-            "accept-language" : "zh-CN,zh;q=0.9,en-US;q=0.8,en;q=0.7,ja;q=0.6"
-        });
-        await page.emulateTimezone('Asia/Tokyo');
-        await page.goto(twitter_url, {waitUntil : "networkidle0"});
-        if (Object.keys(trans_args).length > 0) {
-            await page.evaluate(trans_args => {
-                let banner = document.getElementsByTagName('header')[0];
-                banner.parentNode.removeChild(banner);
-    
-                let articles = document.querySelectorAll('[lang][dir="auto"]');
-                insert(articles[0], trans_args.translation);
-                if (trans_args.reply != undefined) insert(articles[1], trans_args.reply);
-    
-                function insert(article, article_trans) {
-                    let trans_place = document.createElement('div');
-                    let node_group_info = document.createElement('span');
-                    let node_trans_article = document.createElement('span');
-                    trans_place.className = node_group_info.className = node_trans_article.className = 'css-901oao css-16my406 r-1qd0xha r-ad9z0x r-bcqeeo r-qvutc0';
-        
-                    if (trans_args.group_info == undefined) trans_args.group_info = "翻译自日文"
-                    if (trans_args.group_html == undefined) trans_args.group_html = `<p dir="auto" style="color:#1DA1F2; font-size:15px">${trans_args.group_info}</p>`;
-    
-                    let translation = (article_trans != undefined || article_trans != "") ? article_trans : "你忘了加翻译";
-                    let trans_article_html = "";
-                    if (trans_args.trans_html != undefined) trans_article_html = trans_args.trans_html;
-                    else if (trans_args.style != undefined && trans_args.style !== "") trans_article_html = `<div style="${trans_args.style};">${translation}</div>`
-                    else {
-                        let font = (trans_args.font != undefined || trans_args.font != "") ? trans_args.font : "";
-                        let size = (trans_args.size != undefined || trans_args.size != "") ? trans_args.size : "";
-                        let color = (trans_args.color != undefined || trans_args.color != "") ? trans_args.color : "black";
-                        let background = (trans_args.background != undefined || trans_args.background != "") ? trans_args.background : "";
-                        let text_decoration = (trans_args.text_decoration != undefined || trans_args.text_decoration !== "") ? trans_args.text_decoration : "";
-                        trans_article_html = `<div dir="auto" style="font-family: ${font}; font-size: ${size}; text-decoration: ${text_decoration}; color: ${color}; background: ${background};">${translation}</div>`;
-                    }
-                    node_group_info.innerHTML = trans_args.group_html;
-                    node_trans_article.innerHTML = trans_article_html;
-                    
-                    trans_place.appendChild(node_group_info);
-                    trans_place.appendChild(node_trans_article);
-                    article.appendChild(trans_place);
-                }
-                document.querySelector("#react-root").scrollIntoView();
-            }, trans_args);
-            await page.waitFor(1000);
-        }
-        else {
-            await page.evaluate(() => {
-                let banner = document.getElementsByTagName('header')[0];
-                banner.parentNode.removeChild(banner);
-                document.querySelector("#react-root").scrollIntoView();
-            });
-        }
-        let tweet_box = await page.$('article .css-1dbjc4n .r-vpgt9t').then((tweet_article) => {return tweet_article.boundingBox()});
-        await page.setViewport({
-            width: 800,
-            height: Math.round(tweet_box.width + 200),
-            deviceScaleFactor: 1.6
-        });
-        await page.screenshot({
-            type : "jpeg",
-            quality : 100,
-            encoding : "base64",
-            clip : {x : tweet_box.x - 8, y : 0, width : tweet_box.width + 8, height : tweet_box.y + tweet_box.height + 8}
-        }).then(pic64 => replyFunc(context, `[CQ:image,file=base64://${pic64}]`));
-        await browser.close();
-    })().catch(err => {console.log(err); replyFunc(context, "出错惹", true)});
-}
-
-/**
  * 将Twitter的t.co短网址扩展为原网址
  * @param {string} twitter_short_url Twitter短网址
  * @returns Promise  原网址
@@ -502,52 +420,6 @@ function rtSingleTweet(tweet_id_str, context) {
     getSingleTweet(tweet_id_str).then(tweet => {
         format(tweet).then(tweet_string => replyFunc(context, tweet_string))
     });
-}
-
-function cookTweet(context) {
-    let {groups : {twitter_url, text}} = /(?<twitter_url>https:\/\/twitter.com\/.+?\/status\/\d+)[>＞](?<text>.+)/i.exec(context.message);
-
-    if (/https:\/\/twitter.com\/.+?\/status\/\d+[>＞]{2}/.test(context.message)) {
-        tweetShot(twitter_url, {translation : text.substring(1, text.length)});
-        return;
-    }
-    
-    let trans_args = {};
-    let style_options = text.split(/[+＋]/);
-    let option = "";
-    let style = "";
-    let option_map = {
-        "翻译" : "translation",
-        "回复" : "reply",
-        "颜色" : "color",
-        "大小" : "size",
-        "字体" : "font_family",
-        "装饰" : "text_decoration",
-        "背景" : "background",
-        "汉化组" : "group_info",
-        "group_html" : "group_html",
-        "trans_html" : "trans_html",
-        "style" : "style",
-        "error" : false
-    }
-
-    for (i in style_options) {
-        option = style_options[i].split(/(?<!<.+(style|class))[=＝]/).filter((noEmpty) => {return noEmpty != undefined});
-        style = option_map[option[0].replace(" ", "")] || option_map["error"];
-        if (!style) {
-            console.log(`没有${option[0]}这个选项`);
-            return;
-        }
-        else trans_args[style] = option[1];
-    }
-
-    if (!'trans_html' in trans_args && trans_args.trans_html.length == 0 &&
-        !'translation' in trans_args && trans_args.translation.length == 0) {
-        console.log("你没加翻译");
-        return;
-    }
-    
-    tweetShot(twitter_url, trans_args);
 }
 
 /**
@@ -602,15 +474,6 @@ function twitterAggr(context) {
     else if (connection && /^看看(推特|Twitter)https:\/\/twitter.com\/.+?\/status\/(\d+)/i.test(context.message)) {
         let tweet_id = /^看看(推特|Twitter)https:\/\/twitter.com\/.+?\/status\/(\d+)/i.exec(context.message)[2];
         rtSingleTweet(tweet_id, context);
-        return true;
-    }
-    else if (connection && /^(推特|Twitter)截图\s?https:\/\/twitter.com\/.+?\/status\/\d+/i.test(context.message)) {
-        let twitter_url = /https:\/\/twitter.com\/.+?\/status\/\d+/i.exec(context.message)[0];
-        tweetShot(context, twitter_url);
-        return true;
-    }
-    else if (connection && /^烤制\s?https:\/\/twitter.com\/.+?\/status\/\d+.+/i.test(context.message)) {
-        cookTweet(context);
         return true;
     }
     else if (connection && /^订阅(推特|Twitter)https:\/\/twitter.com\/.+(\/status\/\d+)?([>＞](仅转发|只看图|全部))?/i.test(context.message)) {
