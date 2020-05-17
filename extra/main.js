@@ -28,6 +28,7 @@ import pixivImage from "./modules/plugin/pixivImage";
 import recordMsg from "./modules/plugin/recordMsg";
 import helpZen from "./modules/plugin/zen";
 import nbnhhsh from "./modules/plugin/nbnhhsh";
+import tweBBQ from './modules/plugin/tweBBQ';
 
 //常量
 const setting = config.picfinder;
@@ -368,6 +369,7 @@ function groupMsg(e, context) {
              twitter.twitterAggr(context) ||
              pixivImage.pixivCheck(context, replyMsg, bot) ||
              recordMsg.response(context, replyMsg) ||
+             tweBBQ.complex(context, replyMsg) ||
              helpZen(context, replyMsg, bot, rand) ||
              pokemon.pokemonCheck(context, replyMsg)) {
         e.stopPropagation();
