@@ -4,6 +4,21 @@ var mongodb = require('mongodb').MongoClient;
 const db_port = 27017;
 const db_path = "mongodb://127.0.0.1:" + db_port;
 
+const option_map = {
+    "仅原创" : "origin",
+    "仅转发" : "rt_only",
+    "只看图" : "pic_only",
+    "视频更新" : "video_only",
+    "全部" : "all"
+} 
+
+/** 用value找key*/
+function findKey(obj, value) {
+    for (key in obj) {
+        if (obj[key] === value) return key;
+    }
+}
+
 let replyFunc = (context, msg, at = false) => {};
 
 function bilibiliReply(replyMsg) {
@@ -63,7 +78,7 @@ function searchName(keyword = "") {
     let header = httpHeader(0, 0, keyword);
     return axios(header).then(response => {
             return response.data.data.items[0];
-        }).catch(() => console.error(error));
+        }).catch(err => console.error(err));
 }
 
 //choose 选择需要查找的人
@@ -73,8 +88,7 @@ function getDynamicList(uid, num = 0) {
     return axios(header).then(response => {
             // console.log(card)
             return (response.data.data.cards[num])
-        })
-        .catch(() => console.error(error));
+        }).catch(err => console.error(err));
 }
 
 function getDynamicDetail(dynamic_id = "") {
@@ -82,7 +96,7 @@ function getDynamicDetail(dynamic_id = "") {
     return axios(header).then(response => {
             // console.log(JSON.parse(response.data.data.card.card))
             return response.data.data.card;
-        }).catch(() => console.error(error));
+        }).catch(err => console.error(err));
 }
 
 function dynamicProcess(dynamic) {
@@ -103,7 +117,6 @@ function dynamicProcess(dynamic) {
     if ("videos" in card) {
         name = card.owner.name;
         text = card.dynamic;
-        // console.log(card)
         video = "发布视频:\n" + card.title;
     }
     //转发
@@ -116,7 +129,7 @@ function dynamicProcess(dynamic) {
         //小视频
         if ("video_playurl" in card.item) {
             video = card.item.video_playurl;
-            text = card.item.description;
+            text = "小视频\n" + card.item.description;
         }
         //通常
         else {
@@ -142,19 +155,20 @@ function dynamicProcess(dynamic) {
 }
 
 
-function addBiliSubscribe(context, name = "") {
+function addBiliSubscribe(context, name = "", option_nl) {
     var text = "";
     let group_id = context.group_id;
+    let option = option_map[option_nl];
     searchName(name).then(name_card => {
         if (name_card == undefined) sender(context, {}, "你名字写对了吗", true);
         else getDynamicList(name_card.mid, 0).then(dynamic => {
-            addData(dynamic.desc)
+            addData(dynamic.desc);
         });
     });
 
     function addData(desc = {}) {
         mongodb(db_path, {useUnifiedTopology: true}).connect(async (err, mongo) => {
-            if (err) text = "database openning error";
+            if (err) console.error("database openning error", err);
             let coll = mongo.db('bot').collection('bilibili');
             let name = desc.user_profile.info.uname;
             let uid = desc.uid;
@@ -167,22 +181,23 @@ function addBiliSubscribe(context, name = "") {
                                 name : name,
                                 dynamic_id : dynamic_id,
                                 timestamp : timestamp,
+                                [group_id] : option,
                                 groups : [group_id]},
                     (err) => {
                         if (err) text = "database subscribes update error";
-                        else text = "已订阅" + name + "的B站动态";
+                        else text = `已订阅${name}的B站动态，模式为${option_nl}`;
                         sender(context, {}, text, true);
                     });
             }
             else {
                 coll.findOneAndUpdate({uid : uid},
-                                      {$addToSet : {groups : group_id}},
+                                      {$addToSet : {groups : group_id}, $set : {[group_id] : option}},
                     (err, result) => {
-                        if (err) text = "database subscribes update error";
+                        if (err) console.error("database subscribes update error", err);
                         else {
                             // console.log(result)
                             if (result.value.groups.includes(group_id)) text = "多次订阅有害我的身心健康";
-                            else text = "已订阅" + result.value.name + "的B站动态";
+                            else text = `已订阅${result.value.name}的B站动态，模式为${option_nl}`;
                          }
                          sender(context, {}, text, true);
                      });
@@ -205,23 +220,21 @@ function rmBiliSubscribe(context, name = "") {
         let uid = desc.uid;
         let name = desc.user_profile.info.uname;
         mongodb(db_path, {useUnifiedTopology: true}).connect((err, mongo) => {
-            if (err) text = "database openning error";
+            if (err) console.error("database openning error", err);
             else {
                 let coll = mongo.db('bot').collection('bilibili');
                 coll.findOneAndUpdate({uid : uid},
-                                      {$pull : {groups : {$in : [group_id]}}},
-                    (err, result) => {
-                        if (err) {
-                            text = "database subscribes delete error";
-                            console.error(err);
-                        }
+                                      {$pull : {groups : {$in : [group_id]}, $unset : {[group_id] : []}}},
+                    async (err, result) => {
+                        if (err) console.error("database bilibili unsubscribes error", err);
                         else {
                             if (!result.value.groups.includes(group_id)) text = "小火汁你压根就没订阅嗷";
                             else text = "已取消订阅" + name + "的B站动态";
+                            if (result.value.groups.length <= 1) await coll.deleteOne({_id : result.value._id});
                         }
-                    sender(context, {}, text, true);
-                    mongo.close();
-                });
+                        sender(context, {}, text, true);
+                        mongo.close();
+                    });
             }
         });
     }
@@ -230,25 +243,20 @@ function rmBiliSubscribe(context, name = "") {
 function checkBiliDynamic() {
     setInterval(() => {
         mongodb(db_path, {useUnifiedTopology: true}).connect(async function(err, mongo) {
-            if (err) console.error("bilibili error update");
+            if (err) console.error("bilibili update error", err);
             else {
                 let coll = mongo.db('bot').collection('bilibili');
                 let subscribes = await coll.find({}).toArray();
                 mongo.close();
                 for (let i = 0; i < subscribes.length; i++) {
-                    let id = subscribes[i]._id;
                     if (subscribes[i].groups.length > 0) {
                         getDynamicList(subscribes[i].uid, 0).then(dynamic => {
                             let last_timestamp = subscribes[i].timestamp;
                             let curr_timestamp = dynamic.desc.timestamp;
-                            if (!"desc" in dynamic) console.log(dynamic);
                             if (curr_timestamp > last_timestamp) {
-                                update(subscribes[i], dynamic)
+                                update(subscribes[i], dynamic);
                             }
                         });
-                    }
-                    else {
-                        deleteEmpty(id);
                     }
                 }
             }
@@ -265,32 +273,36 @@ function checkBiliDynamic() {
                 let curr_timestamp = dynamic.desc.timestamp;
                 let groups = subscribe.groups;
                 groups.forEach(group_id => {
-                    sender({group_id:group_id, message_type : "group"}, clean_dynamic, "");
+                    if (checkOption(JSON.parse(dynamic.card)), subscribe[group_id]) {
+                        sender({group_id:group_id, message_type : "group"}, clean_dynamic, "");
+                    }
+                    else;
                 });
                 await coll.updateOne({uid : subscribe.uid},
                             {$set : {timestamp : curr_timestamp, dynamic_id : dynamic_id}}, 
                     (err, result) => {
-                        // if (err) console.log("database update error when checking bilibili");
-                        if (err) console.error(err);
-                        // else console.log(result);
+                        if (err) console.error("database update error when checking bilibili dynamic updates", err);
                         mongo.close();
                     });
             }
         });
     }
 
-    function deleteEmpty(id) {
-        mongodb(db_path, {useUnifiedTopology: true}).connect(async function(err, mongo) {
-            if (err) console.error("Bilibili error delete empty");
-            else {
-                let coll = mongo.db('bot').collection('bilibili');
-                await coll.findOneAndDelete({_id : id}, (err, result) => {
-                    if (err) console.error("database delete error when checking bilibili");
-                    // else console.log("delete bilibili subsctibe:" + result.value.name);
-                    mongo.close();
-                });
-            }
-        });
+    function checkOption(card, option) {
+        if (option == "all") return true;
+        let status = "";
+        if ("origin" in card) status = "retweet";
+        else if ("videos" in card) status = "pub_video";
+        else if ("item" in card && "pictures" in card.item) status = "ori_with_pic"
+        else status = "origin"
+
+        if (option == "rt_only" && status == "retweet") return true;
+        else if (option == "pic_only" && status == "ori_with_pic") return true;
+        else if (option == "video_only" && status == "pub_video") return true;
+        else if (option == "origin") {
+            if (status == "ori_with_pic" || status == "pub_video" || status == "origin") return true;
+        }
+        else return false;
     }
 }
 
@@ -301,15 +313,17 @@ function checkBiliSubs(context) {
         if (err) console.error("database openning error during checkBiliSubs");
         else {
             let coll = mongo.db('bot').collection('bilibili');
-            coll.find({groups : {$elemMatch : {$eq : group_id}}}, {projection: {_id : 0, name : 1}})
+            coll.find({groups : {$elemMatch : {$eq : group_id}}}, {projection: {_id : 0}})
                 .toArray().then(result => {
                     // console.log(result);
                     if (result.length > 0) {
                         let name_list = [];
-                        result.forEach(name_obj => {
-                            name_list.push(name_obj.name);
+                        let option_nl = "仅原创";
+                        result.forEach(sub_obj => {
+                            option_nl = findKey(option_map, sub_obj[group_id]);
+                            name_list.push(`${sub_obj.name}，模式为${option_nl}`);
                         });
-                        text = "本群已订阅: " + name_list.join(", ");
+                        text = "本群已订阅: " + name_list.join("\n");
                     }
                     else text = "你一无所有";
                     sender(context, {}, text, true);
@@ -322,10 +336,10 @@ function checkBiliSubs(context) {
 function sender(context, dynamicObj = {}, others = "", at = false) {
     let payload = "";
     if (Object.keys(dynamicObj).length != 0) {
-        payload = dynamicObj.name + "\n" + dynamicObj.text + "\n"  + dynamicObj.video + dynamicObj.pics;
+        payload = `${dynamicObj.name}的B站动态\n${dynamicObj.text}\n${dynamicObj.pics}\n${dynamicObj.video}`;
         if (dynamicObj.rt_dynamic != 0) {
             let rt_dynamic = dynamicObj.rt_dynamic
-            payload += `\n转发自${rt_dynamic.name}的B站动态${rt_dynamic.text}\n${rt_dynamic.video}\n${rt_dynamic.pics}`;
+            payload += `\n转发自${rt_dynamic.name}\n${rt_dynamic.text}\n${rt_dynamic.video}\n${rt_dynamic.pics}`;
         }
         replyFunc(context, payload, at);
     }
@@ -395,10 +409,11 @@ function bilibiliCheck (context) {
         rtBiliByUrl(context);
         return true;
     }
-    else if (/^订阅.+?B站$/i.test(context.message)) {
-        let name = /订阅(.+?)B站$/i.exec(context.message)[1];
+    else if (/^订阅.+?B站([>＞](仅转发|只看图|全部|视频更新))?/i.test(context.message)) {
+        let {groups : {name, option_nl}} = /订阅(?<name>.+?)B站([>＞](?<option_nl>仅转发|只看图|视频更新|全部))?/i.exec(context.message);
         console.log(`${context.group_id} ${name} 添加B站订阅`);
-        addBiliSubscribe(context, name);
+        if (option_nl == undefined) option_nl = "仅原创"
+        addBiliSubscribe(context, name, option_nl);
         return true;
     }
     else if (/^取消订阅.+?B站$/i.test(context.message)) {
