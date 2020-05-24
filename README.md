@@ -1,6 +1,8 @@
-# CQ-picfinder-robot-add-on
+# Wecab 
 
-给Tsuk1ko的CQ-picfinder-robot V2.12做了几个小挂件，基本稳定，至少目前看起来很稳而且从没翻车  
+Web Content Aggregation Bot 网络内容聚合机器人  
+争做基于酷Q的最好的订阅制机器人  
+前身是给Tsuk1ko的CQ-picfinder-robot V2.12做的小挂件，基本稳定，至少目前看起来很稳而且从没翻车  
 如果有bug请复制pm2log中的错误信息并提交issus，我会尽快解决（可能） 
 觉得好用不妨点个Star谢谢  
   
