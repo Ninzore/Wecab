@@ -33,8 +33,8 @@ function tweetShot(context, replyFunc, twitter_url, trans_args={}) {
             let trans_group_html = "";
 
             if (trans_args.reply_html != undefined) html_ready.reply_html = consistHTML(trans_args.reply, trans_args);
-            if (trans_args.group_info == undefined) trans_args.group_info = "翻译自日文"
-            if (trans_args.group_html == undefined) trans_group_html = ['<p dir="auto">', parseString(trans_args.group_info, {'color' : '#1DA1F2', 'font-size' : '15px'}), '</p>'].join("");
+            if (trans_args.group_info == undefined) trans_args.group_info = " 翻译自日文"
+            if (trans_args.group_html == undefined) trans_group_html = ['<p dir="auto">', parseString(trans_args.group_info, {'color' : '#1DA1F2', 'font-size' : '12px'}), '</p>'].join("");
             else trans_group_html = ['<p>', trans_args.group_html, '</p>'].join("");
 
             html_ready.trans_article_html = trans_article_html;
@@ -43,6 +43,8 @@ function tweetShot(context, replyFunc, twitter_url, trans_args={}) {
             await page.evaluate(html_ready => {
                 let banner = document.getElementsByTagName('header')[0];
                 banner.parentNode.removeChild(banner);
+                let footer = document.getElementsByClassName('css-1dbjc4n r-aqfbo4 r-1p0dtai r-1d2f490 r-12vffkv r-1xcajam r-zchlnj')[0];
+                footer.parentNode.removeChild(footer);
 
                 let articles = document.querySelectorAll('[lang][dir="auto"]');
                 insert(articles[0], html_ready.trans_article_html, html_ready.trans_group_html);
@@ -67,13 +69,20 @@ function tweetShot(context, replyFunc, twitter_url, trans_args={}) {
                 }
                 document.querySelector("#react-root").scrollIntoView();
             }, html_ready);
-            await page.waitFor(2500);
         }
-
+        else {
+            await page.evaluate(() => {
+                let banner = document.getElementsByTagName('header')[0];
+                banner.parentNode.removeChild(banner);
+                let footer = document.getElementsByClassName('css-1dbjc4n r-aqfbo4 r-1p0dtai r-1d2f490 r-12vffkv r-1xcajam r-zchlnj')[0];
+                footer.parentNode.removeChild(footer);
+            });
+        }
+        await page.waitFor(1500);
         let tweet_box = await page.$('article .css-1dbjc4n .r-vpgt9t').then((tweet_article) => {return tweet_article.boundingBox()});
         await page.setViewport({
             width: 800,
-            height: Math.round(tweet_box.width + 200),
+            height: Math.round(tweet_box.y + 200),
             deviceScaleFactor: 1.5
         });
 
