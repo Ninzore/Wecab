@@ -1,7 +1,7 @@
 module.exports = {
     apps: [
         {
-            name: 'CQPF',
+            name: 'Wecab',
             script: 'index.js',
             instances: 1,
             autorestart: true,
