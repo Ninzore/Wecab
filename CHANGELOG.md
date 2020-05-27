@@ -2,6 +2,13 @@
   
 ## 2020
 
+### 5/27
+  * 解决截图不完整的bug  
+  * 解决有时页脚没有被正确删除的bug  
+
+### 5/26
+  * 准备脱离原[CQ-Picfinder-Robot](https://github.com/Tsuk1ko/CQ-picfinder-robot)  
+
 ### 5/23
   * 增加B站动态订阅设置  
 
