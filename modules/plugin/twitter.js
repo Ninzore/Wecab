@@ -40,9 +40,11 @@ function httpHeader() {
         "cookie" : cookie,
         "x-guest-token" : guest_token,
         "x-twitter-active-user" : "yes",
-        "sec-fetch-dest" : "empty",
-        "sec-fetch-mode" : "cors",
+        "sec-fetch-dest" : "document",
+        "sec-fetch-mode" : "navigate",
+        "sec-fetch-user" : "?1",
         "sec-fetch-site" : "same-site",
+        "upgrade-insecure-requests" : "1",
         "user-agent" : "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/80.0.3987.163 Safari/537.36",
         "accept" : "application/json, text/plain, */*",
         "dnt" : "1",
@@ -71,9 +73,10 @@ function getCookie() {
     if (!connection) return;
     let headers = httpHeader();
     delete headers.cookie;
+    delete headers.authorization;
     axios({
         method : "GET",
-        url : "https://twitter.com/",
+        url : "https://twitter.com/explore",
         headers : headers
     }).then(res => {
         let temp = "";
@@ -88,7 +91,7 @@ function getCookie() {
             else if (temp = /(_twitter_sess=.+?);/.exec(res.headers["set-cookie"][i])) twitter_sess = temp[1];
         }
         cookie = `dnt=1; fm=0; csrf_same_site_set=1; csrf_same_site=1; gt=${guest_token}; ${ct0}${guest_id}${personalization_id}${twitter_sess}`;
-    }).catch(err => console.log(err.response))
+    }).catch(err => console.error('Twitter cookie设置出错，错误：', err.response.status, err.response.statusText));
 }
 
 /** 
@@ -113,7 +116,7 @@ function getSingleTweet(tweet_id_str) {
         }
     }).then(res => {return res.data[0]; 
     }).catch(err => {
-        console.log(err.response.data);
+        console.error(err.response.data);
         return false;
     });
 }
@@ -140,7 +143,7 @@ function getUserTimeline(user_id, count = 2, include_rts = false) {
         }
     }).then(res => {return res.data;
     }).catch(err => {
-        console.log(err.response.data);
+        console.error(err.response.data);
         return false;
     });
 }
@@ -284,7 +287,7 @@ function checkTwiTimeline() {
     function checkOption(tweet, option) {
         if (option == "all") return true;
         let status = "";
-        if ("retweeted_status" in tweet) status = "retweet";
+        if ("retweeted_status_id_str" in tweet) status = "retweet";
         if ("media" in  tweet.entities && tweet.entities.media[0].type == "photo") status = "ori_with_pic";
         else status = "origin"
 
@@ -516,6 +519,6 @@ function firstConnect() {
     });
 }
 
-firstConnect()
+firstConnect();
 
 module.exports = {twitterAggr, twitterReply, checkTwiTimeline};
