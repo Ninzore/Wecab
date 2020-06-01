@@ -287,7 +287,7 @@ function checkTwiTimeline() {
     function checkOption(tweet, option) {
         if (option == "all") return true;
         let status = "";
-        if ("retweeted_status_id_str" in tweet) status = "retweet";
+        if (if ("retweeted_status" in tweet || "retweeted_status_id_str" in tweet || /^RT @/.test(tweet.full_text)) status = "retweet";) status = "retweet";
         if ("media" in  tweet.entities && tweet.entities.media[0].type == "photo") status = "ori_with_pic";
         else status = "origin"
 
