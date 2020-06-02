@@ -30,7 +30,7 @@ function twitterReply(replyMsg) {
 
 /** 检查网络情况，如果连不上Twitter那后面都不用做了*/
 function checkConnection() {
-    return axios.get("https://twitter.com").then(res => {connection = (res.headers.status == "200 OK") ? true : false}).catch(err => connection = false);
+    return axios.get("https://twitter.com").then(res => {connection = (res.status == 200) ? true : false}).catch(err => connection = false);
 }
 
 function httpHeader() {
@@ -288,7 +288,7 @@ function checkTwiTimeline() {
         if (option == "all") return true;
         let status = "";
         if (if ("retweeted_status" in tweet || "retweeted_status_id_str" in tweet || /^RT @/.test(tweet.full_text)) status = "retweet";) status = "retweet";
-        if ("media" in  tweet.entities && tweet.entities.media[0].type == "photo") status = "ori_with_pic";
+        else if ("media" in  tweet.entities && tweet.entities.media[0].type == "photo") status = "ori_with_pic";
         else status = "origin"
 
         if (option == "rt_only" && status == "retweet") return true;
