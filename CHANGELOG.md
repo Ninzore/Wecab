@@ -2,6 +2,9 @@
   
 ## 2020
 
+### 6/04
+* 添加对Twitter移动版mobile.twitter网址的识别   
+
 ### 6/03
 * 简化twitter指令  
   1. 取消看看xxTwitter>链接，现在默认发送链接  
