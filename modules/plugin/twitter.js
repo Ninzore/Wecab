@@ -1,6 +1,5 @@
 const axios = require('axios');
 const mongodb = require('mongodb').MongoClient;
-const puppeteer = require('puppeteer');
 
 var db_port = 27017;
 var db_path = "mongodb://127.0.0.1:" + db_port;
@@ -287,7 +286,7 @@ function checkTwiTimeline() {
     function checkOption(tweet, option) {
         if (option == "all") return true;
         let status = "";
-        if (if ("retweeted_status" in tweet || "retweeted_status_id_str" in tweet || /^RT @/.test(tweet.full_text)) status = "retweet";) status = "retweet";
+        if ("retweeted_status" in tweet || "retweeted_status_id_str" in tweet || /^RT @/.test(tweet.full_text)) status = "retweet";
         else if ("media" in  tweet.entities && tweet.entities.media[0].type == "photo") status = "ori_with_pic";
         else status = "origin"
 
@@ -399,24 +398,25 @@ function urlExpand(twitter_short_url) {
     }).then(res => {
         return /URL=(http.+?)">/.exec(res.data)[1];
     }).catch(err => {
-        console.log(err.response.data);
+        console.error(err.response.data);
         return false;
     });
 }
 
-function rtTimeline(context, name, num, option={shot:false, link:false}) {
+function rtTimeline(context, name, num) {
     searchUser(name).then(user => {
         if (!user) replyFunc(context, "没这人");
         else if (user.protected == true) replyFunc(context, "这人的Twitter受保护");
         else {
             getUserTimeline(user.id_str, 15).then(async timeline => {
-                if (timeline.length-1 < num) timeline = await getUserTimeline(user.id_str, 30);
-                if(option.shot) tweetShot(context, `https://twitter.com/${user.screen_name}/status/${timeline[num].id_str}`);
-                else if (option.link) replyFunc(context, `https://twitter.com/${user.screen_name}/status/${timeline[num].id_str}`, true)
-                else format(timeline[num]).then(tweet_string => replyFunc(context, tweet_string));
-            }).catch(err => console.log(err));
+                if (timeline.length-1 < num) timeline = await getUserTimeline(user.id_str, 50);
+                format(timeline[num]).then(tweet_string => {
+                    let payload = [tweet_string, `https://twitter.com/${user.screen_name}/status/${timeline[num].id_str}`].join('\n\n');
+                    replyFunc(context, payload);
+                }).catch(err => console.error(err));
+            });
         }
-    })
+    });
 }
 
 function rtSingleTweet(tweet_id_str, context) {
@@ -446,7 +446,7 @@ async function addSubByName(name, option_nl, context) {
 }
 
 function twitterAggr(context) {
-    if (connection && /^看看(.+?)的?((第[0-9]?[一二三四五六七八九]?条)|(上*条)|(置顶)|(最新))?\s?(推特|Twitter)([＞>](截图|链接))?$/i.test(context.message)) {	
+    if (connection && /^看看(.+?)的?((第[0-9]?[一二三四五六七八九]?条)|(上*条)|(置顶)|(最新))?\s?(推特|Twitter)$/i.test(context.message)) {	
 		let num = 1;
         let name = "";
         if (/置顶/.test(context.message)) (num = -1);
@@ -468,14 +468,12 @@ function twitterAggr(context) {
             else if (temp==9 || temp=="九") (num = 8);
         }
         else num = 0;       
-        name = /看看(.+?)的?((第[0-9]?[一二三四五六七八九]?条)|(上*条)|(置顶)|(最新))?\s?(推特|Twitter)([＞>](截图|链接))?/i.exec(context.message)[1];
-        if (/[＞>]截图/.test(context.message)) rtTimeline(context, name, num, {shot:true});
-        else if (/[＞>]链接/.test(context.message)) rtTimeline(context, name, num, {link:true});
-        else rtTimeline(context, name, num);
+        name = /看看(.+?)的?((第[0-9]?[一二三四五六七八九]?条)|(上*条)|(置顶)|(最新))?\s?(推特|Twitter)/i.exec(context.message)[1];
+        rtTimeline(context, name, num);
         return true;
 	}
-    else if (connection && /^看看(推特|Twitter)https:\/\/twitter.com\/.+?\/status\/(\d+)/i.test(context.message)) {
-        let tweet_id = /^看看(推特|Twitter)https:\/\/twitter.com\/.+?\/status\/(\d+)/i.exec(context.message)[2];
+    else if (connection && /^看看https:\/\/twitter.com\/.+?\/status\/(\d+)/i.test(context.message)) {
+        let tweet_id = /^看看https:\/\/twitter.com\/.+?\/status\/(\d+)/i.exec(context.message)[1];
         rtSingleTweet(tweet_id, context);
         return true;
     }
