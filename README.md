@@ -32,7 +32,7 @@ TODO:
 ### 1. 看微博，B站，Twitter动态  
 用 “看看**谁谁上条**微博/B站/Twitter/推特”，谁谁是要看的人的名字，上条可以改，可以要求看置顶，上条，上上条，上上上条.....，也可以直接写第x条，x范围是0~9  
 反微博小程序，会自动把微博小程序内容给抓出来，造福PC用户  
-也可以用 **看看微博/B站/Twitter/推特 url**，url为单条微博/B站/Twitter的网址，在app里，选分享链接就好  
+也可以用 **看看 url**，url为单条微博/B站/Twitter的网址，在app里，选分享链接就好  
 Twitter可以在后面加>截图以使用自动截图功能，如果有字变成方块了，你可能需要安装字体，推荐安装一套Google Noto Fonts  
 
 ### 2. 订阅微博，B博，Twitter
@@ -74,7 +74,11 @@ Twitter相关功能在开机后会尝试测试Twitter连接，如果无法连接
 .dice16,10  扔1个最低为10的D16  
 .dice20x3,10  扔3个最低为10的D20  
 
-### 6. Twitter烤制  
+### 7. Twitter截图    
+使用Twitter/推特截图 https://twitter.com/xxxx  
+可以直接产生一张截图  
+
+### 8. Twitter烤制  
 烤制https://twitter.com....(单条Twitter网址)>>这里放翻译内容  
 这样就能直接生成一张带翻译的twitter截图  
 
