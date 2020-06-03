@@ -472,8 +472,8 @@ function twitterAggr(context) {
         rtTimeline(context, name, num);
         return true;
 	}
-    else if (connection && /^看看https:\/\/twitter.com\/.+?\/status\/(\d+)/i.test(context.message)) {
-        let tweet_id = /^看看https:\/\/twitter.com\/.+?\/status\/(\d+)/i.exec(context.message)[1];
+    else if (connection && /^看看https:\/\/(mobile\.)?twitter.com\/.+?\/status\/(\d+)/i.test(context.message)) {
+        let tweet_id = /status\/(\d+)/i.exec(context.message)[1];
         rtSingleTweet(tweet_id, context);
         return true;
     }
