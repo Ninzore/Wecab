@@ -5,7 +5,7 @@ let connection = true;
 
 /** 检查网络情况，如果连不上Twitter那后面都不用做了*/
 function checkConnection() {
-    return axios.get("https://twitter.com").then(res => {connection = (res.headers.status == "200 OK") ? true : false}).catch(err => connection = false);
+    return axios.get("https://twitter.com").then(res => {connection = (res.status == "200 OK") ? true : false}).catch(err => connection = false);
 }
 
 /**
@@ -40,7 +40,7 @@ function tweetShot(context, replyFunc, twitter_url, trans_args={}) {
             html_ready.trans_article_html = trans_article_html;
             html_ready.trans_group_html = trans_group_html;
   
-            await page.evaluate(html_ready => {
+            await page.evaluate((html_ready, cover_origin) => {
                 let banner = document.getElementsByTagName('header')[0];
                 banner.parentNode.removeChild(banner);
                 let footer = document.getElementsByClassName('css-1dbjc4n r-aqfbo4 r-1p0dtai r-1d2f490 r-12vffkv r-1xcajam r-zchlnj')[0];
@@ -48,9 +48,9 @@ function tweetShot(context, replyFunc, twitter_url, trans_args={}) {
 
                 let articles = document.querySelectorAll('[lang][dir="auto"]');
                 insert(articles[0], html_ready.trans_article_html, html_ready.trans_group_html);
-                if (html_ready.reply_html != undefined) insert(articles[1], html_ready.reply_html, html_ready.trans_group_html);
+                if (html_ready.reply_html != undefined) insert(articles[1], html_ready.reply_html, html_ready.trans_group_html, cover_origin);
           
-                function insert(article, translation_html, group_html) {
+                function insert(article, translation_html, group_html, cover_origin=false) {
                     let trans_place = document.createElement('div');
                     let node_group_info = document.createElement('div');
                     let node_trans_article = document.createElement('div');
@@ -65,10 +65,11 @@ function tweetShot(context, replyFunc, twitter_url, trans_args={}) {
                     
                     trans_place.appendChild(node_group_info);
                     trans_place.appendChild(node_trans_article);
-                    article.appendChild(trans_place);
+                    if (cover_origin) article.replaceWith(trans_place);
+                    else article.appendChild(trans_place);
                 }
                 document.querySelector("#react-root").scrollIntoView();
-            }, html_ready);
+            }, html_ready, trans_args.cover_origin);
         }
         else {
             await page.evaluate(() => {
@@ -78,7 +79,7 @@ function tweetShot(context, replyFunc, twitter_url, trans_args={}) {
                 footer.parentNode.removeChild(footer);
             });
         }
-        await page.waitFor(1500);
+        await page.waitFor(2000);
         let tweet_box = await page.$('article .css-1dbjc4n .r-vpgt9t').then((tweet_article) => {return tweet_article.boundingBox()});
         await page.setViewport({
             width: 800,
@@ -182,6 +183,7 @@ function cookTweet(context, replyFunc) {
         "装饰" : "text_decoration",
         "背景" : "background",
         "汉化组" : "group_info",
+        "覆盖" : "cover_origin",
         "group_html" : "group_html",
         "trans_html" : "trans_html",
         "style" : "style",
