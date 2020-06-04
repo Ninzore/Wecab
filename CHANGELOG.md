@@ -3,9 +3,10 @@
 ## 2020
 
 ### 6/04
-* 添加对Twitter移动版mobile.twitter网址的识别   
+* 烤推支持覆盖原文  
 
 ### 6/03
+* 添加对Twitter移动版mobile.twitter网址的识别   
 * 简化twitter指令  
   1. 取消看看xxTwitter>链接，现在默认发送链接  
   2. 取消看看xxTwitter>截图，转为使用twitter截图url  
