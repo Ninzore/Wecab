@@ -206,6 +206,9 @@ function cookTweet(context, replyFunc) {
         return;
     }
     
+    if ('cover_origin' in trans_args) trans_args.cover_origin = true;
+    else trans_args.cover_origin = false;
+    
     tweetShot(context, replyFunc, twitter_url, trans_args);
 }
 
