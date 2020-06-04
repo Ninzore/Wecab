@@ -91,7 +91,8 @@ Twitter相关功能在开机后会尝试测试Twitter连接，如果无法连接
 5. 大小 (对应 font-size)
 6. 装饰 (对应 text-decoration)
 7. 背景 (对应 background)
-8. style (CSS)
+8. 覆盖 (是否覆盖原文)
+9. style (CSS)
 
 例  
   * 烤制https://twitter.com....(单条Twitter网址)>字体=Mircosoft Yahei + 大小=20px + 背景=blue + 颜色=red + 装饰=underline wavy yellow + 汉化组=测试汉化组  
