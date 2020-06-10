@@ -378,6 +378,15 @@ function rtBiliByUrl(context){
     rtBilibili(context, "", 0, dynamic_id);
 }
 
+function rtBiliByB23(context) {
+    let url = /https:\/\/b23\.tv\/[0-9a-zA-Z]{6}/.exec(context.message)[0];
+    axios.get(url)
+        .then(res => {
+            let dynamic_id = /\/(\d+)\?/.exec(res.request.path)[1];
+            rtBilibili(context, "", 0, dynamic_id);
+        }).catch(err => console.error(err));
+}
+
 function bilibiliCheck (context) {
     if (/^看看.+?B站$/i.test(context.message)) {	
 		var num = 1;
@@ -405,8 +414,12 @@ function bilibiliCheck (context) {
         rtBilibili(context, name, num);
         return true;
 	}
-    else if (/^看看B站https:\/\/t.bilibili.com\/(\d+).+?/i.test(context.message)) {
+    else if (/^看看https:\/\/t.bilibili.com\/(\d+).+?/i.test(context.message)) {
         rtBiliByUrl(context);
+        return true;
+    }
+    else if (/^看看https:\/\/b23\.tv\/[0-9a-zA-Z]{6}$/i.test(context.message)) {
+        rtBiliByB23(context);
         return true;
     }
     else if (/^订阅.+?B站([>＞](仅转发|只看图|全部|视频更新))?/i.test(context.message)) {
