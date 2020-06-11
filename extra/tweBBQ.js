@@ -47,7 +47,7 @@ function tweetShot(context, replyFunc, twitter_url, trans_args={}) {
                 let footer = document.getElementsByClassName('css-1dbjc4n r-aqfbo4 r-1p0dtai r-1d2f490 r-12vffkv r-1xcajam r-zchlnj')[0];
                 footer.parentNode.removeChild(footer);
 
-                let article = document.querySelectorAll('article')[2].querySelector('[role=group]').parentElement;
+                let article = document.querySelectorAll('article')[0].querySelector('[role=group]').parentElement;
                 insert(article, html_ready.trans_article_html, html_ready.trans_group_html, cover_origin);
 
                 if (html_ready.reply_html != undefined) {
