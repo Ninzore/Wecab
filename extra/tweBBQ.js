@@ -35,7 +35,7 @@ function tweetShot(context, replyFunc, twitter_url, trans_args={}) {
             if (trans_args.reply_html != undefined) html_ready.reply_html = consistHTML(trans_args.reply, trans_args);
             if (trans_args.group_info == undefined) trans_args.group_info = "翻译自日文"
             if (trans_args.group_html == undefined) trans_group_html = ['<div dir="auto" style="margin-top: 8px; margin-bottom: 10px;  margin-left: 10px;">',
-                                                                        parseString(trans_args.group_info, {'color' : '#1DA1F2', 'size' : '13px'}), '</div>'].join("");
+                                                                        parseString(trans_args.group_info, {'color' : '#1DA1F2', 'size' : '15px'}), '</div>'].join("");
             else trans_group_html = ['<div dir="auto" style="margin-top: 8px; margin-bottom: 10px; margin-left: 10px;">', trans_args.group_html, '</div>'].join("");
 
             html_ready.trans_article_html = trans_article_html;
@@ -47,11 +47,11 @@ function tweetShot(context, replyFunc, twitter_url, trans_args={}) {
                 let footer = document.getElementsByClassName('css-1dbjc4n r-aqfbo4 r-1p0dtai r-1d2f490 r-12vffkv r-1xcajam r-zchlnj')[0];
                 footer.parentNode.removeChild(footer);
 
-                let i = 0;
-                let article = document.querySelectorAll('article')[i].querySelector('[role=group]').parentElement;
+                let article = document.querySelectorAll('article')[2].querySelector('[role=group]').parentElement;
                 insert(article, html_ready.trans_article_html, html_ready.trans_group_html, cover_origin);
+
                 if (html_ready.reply_html != undefined) {
-                    i++;
+                    article = document.querySelectorAll('article')[1].querySelector('[role=group]').parentElement;
                     insert(article, html_ready.reply_html, html_ready.trans_group_html, cover_origin);
                 }
           
@@ -68,7 +68,7 @@ function tweetShot(context, replyFunc, twitter_url, trans_args={}) {
                     node_trans_article.innerHTML = translation_html;
 
                     if (/^回复 \n@/.test(article.firstElementChild.innerText)) article = article.children[1].firstElementChild;
-                    else article = article.firstElementChild.firstElementChild;
+                    else article = article.firstElementChild;
 
                     trans_place.appendChild(node_group_info);
                     trans_place.appendChild(node_trans_article);
