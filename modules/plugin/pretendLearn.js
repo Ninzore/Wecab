@@ -78,7 +78,6 @@ function teach(context) {
 
         //如果没有错误就写入数据库
         if (!qes_err) {
-            if (/\[CQ:image/.test(ans)) ans = ans.replace(/\[CQ:image,file=.+,url=(.+)\]/g, '[CQ:image,file=$1]');
             mongodb(db_path, {useUnifiedTopology: true}).connect().then(async (mongo) => {
                 let qa_set = mongo.db('qa_set').collection("qa" + String(context.group_id));
                 await qa_set.updateOne({question : qes, mode : mode}, {$addToSet : {answers : ans}}, {upsert : true});
@@ -137,6 +136,7 @@ function remember(context) {
                 let result_text = qes_and_mode.join("\n");
                 text = `我想想，我有学过\n${result_text}`;
             }
+            if (/\[CQ:image/.test(text)) text = text.replace(/\[CQ:image,file=.+,url=(.+)\]/g, '[CQ:image,file=$1]');
             replyFunc(context, text)
         }).catch((err) => {console.log(err)});
         return true;
@@ -172,6 +172,7 @@ function rememberAll(context) {
                 let result_text = qes_and_mode.join("\n");
                 text = `我想想，我有学过\n${result_text}`;
             }
+            if (/\[CQ:image/.test(text)) text = text.replace(/\[CQ:image,file=.+,url=(.+)\]/g, '[CQ:image,file=$1]');
             replyFunc(context, text);
         }).catch((err) => {console.log(err)});
         return true;
@@ -257,7 +258,7 @@ function talk(context) {
             if (cplt_flag) break;
         }
         mongo.close();
-    }).catch((err) => {console.log(err)});
+    }).catch((err) => {console.error(err)});
 }
 
 function learn(context) {
