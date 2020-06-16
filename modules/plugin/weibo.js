@@ -1,9 +1,9 @@
-var axios = require('axios');
-var mongodb = require('mongodb').MongoClient;
+const axios = require('axios');
+const mongodb = require('mongodb').MongoClient;
 
 var db_port = 27017;
 var db_path = "mongodb://127.0.0.1:" + db_port;
-var replyFunc = (context, msg, at = false) => {console.log(msg)};
+var replyFunc = (context, msg, at = false) => {};
 
 function weiboReply(replyMsg) {
     replyFunc = replyMsg;
@@ -168,7 +168,6 @@ function unSubscribe(name, context) {
                         if (result.value.groups.length <= 1) await coll.deleteOne({_id : result.value._id});
                     }
                     replyFunc(context, text, true);
-                    // console.log(text)
                 }
             mongo.close();
         });
@@ -179,31 +178,53 @@ function unSubscribe(name, context) {
  * 每过x分钟检查一次订阅列表，如果订阅一个微博账号的群的数量是0就删除
  */
 function checkWeiboDynamic() {
+    let check_interval = 5 * 60 * 1000;
+    let i = 0;
     setInterval(() => {
         mongodb(db_path, {useUnifiedTopology: true}).connect().then(async mongo => {
             let coll = mongo.db('bot').collection('weibo');
             let subscribes = await coll.find({}).toArray();
-            for (let i = 0; i < subscribes.length; i++) {
-                let mblog = await getTimeline(subscribes[i].weibo_uid);
-                if (mblog == undefined) continue;
-                let last_mid = subscribes[i].mid;
-                let current_mid = mblog.mid;
-                if (current_mid > last_mid) {
-                    let groups = subscribes[i].groups;
-                    groups.forEach(group_id => {
-                        if (checkOption(mblog, subscribes[i][group_id])) {
-                            format(mblog, true).then(payload => replyFunc({group_id : group_id, message_type : "group"}, payload)).catch(err => console.error(err));
-                        }
-                        else;
-                    });
-                    coll.updateOne({weibo_uid : subscribes[i].weibo_uid},
-                                    {$set : {mid : current_mid}}, 
-                        (err, result) => {if (err) console.error(err + " database update error during checkWeibo");});
-                }
-            }
             mongo.close();
-        }).catch(err => console.error(err));;
-    }, 5 * 60000);
+            i = 0;
+            checkEach();
+
+            function checkEach() {
+                setTimeout(async function() {
+                    try{
+                        let stored_info = subscribes[i]
+                        let mblog = await getTimeline(stored_info.weibo_uid);
+                        let last_mid = stored_info.mid;
+                        let current_mid = mblog.mid;
+    
+                        if (current_mid > last_mid) {
+                            let groups = stored_info.groups;
+                            groups.forEach(group_id => {
+                                if (checkOption(mblog, stored_info[group_id])) {
+                                    format(mblog, true).then(payload => replyFunc({group_id : group_id, message_type : "group"}, payload)).catch(err => console.error(err));
+                                }
+                                else;
+                            });
+                            mongodb(db_path, {useUnifiedTopology: true}).connect().then(async mongo => {
+                                let coll = mongo.db('bot').collection('weibo');
+                                coll.updateOne({weibo_uid : stored_info.weibo_uid},
+                                    {$set : {mid : current_mid}}, 
+                                    (err, result) => {
+                                        if (err) console.error(err + " database update error during checkWeibo");
+                                        mongo.close();
+                                    });
+                            }).catch(err => console.error(err));
+                        }
+                        i++;
+                        if (i < subscribes.length) checkEach();
+                    } catch(err) {
+                        console.error(err, '\n', subscribes[i]);
+                        i++;
+                        if (i < subscribes.length) checkEach();
+                    }
+                }, (check_interval-subscribes.length*1000)/subscribes.length);
+            }
+        }).catch(err => console.error(err));
+    }, check_interval);
 
     function checkOption(mblog, option) {
         if (option == "all") return true;
@@ -428,7 +449,7 @@ function rtWeibo(name, num, context) {
  * @returns {boolean} 如果是这里的功能，返回true，否则为false
  */
 function weiboAggr(context) {
-    if (/看看(.+?)的?((第[0-9]?[一二三四五六七八九]?条)|(上*条)|(置顶)|(最新))?微博/.test(context.message)) {	
+    if (/^看看(.+?)的?((第[0-9]?[一二三四五六七八九]?条)|(上*条)|(置顶)|(最新))?微博/.test(context.message)) {	
 		let num = 1;
         let name = "";
         if (/置顶/.test(context.message)) (num = -1);
@@ -454,7 +475,7 @@ function weiboAggr(context) {
         rtWeibo(name, num, context);
         return true;
 	}
-    else if (/^看看微博\s?https:\/\/m.weibo.cn\/\d+\/\d+$/.test(context.message)) {
+    else if (/^看看\s?https:\/\/m.weibo.cn\/\d+\/\d+$/.test(context.message)) {
         let id = /https:\/\/m.weibo.cn\/\d+\/(\d+)/.exec(context.message)[1];
         rtSingleWeibo(id, context);
         return true;
