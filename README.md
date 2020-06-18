@@ -57,16 +57,21 @@ Twitter相关功能在开机后会尝试测试Twitter连接，如果无法连接
 进阶操作2. 遗忘的格式同上，也可变为 @bot忘掉/忘记xxx > 精确/模糊/正则，注意在模式为正则时为模糊匹配，  
 ^123$只需要输入123就行了  
   
-### 4. Pixiv看图  
+### 4. 教复读  
+@bot 并说 **复读**xxx，就可以学会复读  
+@bot 并说 **不准复读**xxx，就可以砸掉复读机  
+和上面一样也可以@bot 复读xxx>精确/模糊/正则  
+
+### 5. Pixiv看图  
 ***看看p站***后接p站图片id或者包含id的url，如果该id有多图会自动合并发送，最多同时发送9张  
   由于酷Q限制无法发送4M以上大小的图，此时会发送图片链接
 
-### 5. 翻译  
+### 6. 翻译  
 **翻译>** 后接需要翻译的外语句子，自动识别语言并翻译成中文  
 **中译x>** x为目标语言，可以是日韩英法德俄，后接中文，会翻译为目标语言  
 目前使用腾讯翻译
 
-### 6. 骰子  
+### 7. 骰子  
 可以扔出任意面数（<1000），任意个数(<10)的骰子，可以指定最小值，自动统计总分  
 用法的话，参考  
 .dice6  扔一个D6  
@@ -74,11 +79,11 @@ Twitter相关功能在开机后会尝试测试Twitter连接，如果无法连接
 .dice16,10  扔1个最低为10的D16  
 .dice20x3,10  扔3个最低为10的D20  
 
-### 7. Twitter截图    
+### 8. Twitter截图    
 使用Twitter/推特截图 https://twitter.com/xxxx  
 可以直接产生一张截图  
 
-### 8. Twitter烤制  
+### 9. Twitter烤制  
 烤制https://twitter.com....(单条Twitter网址)>>这里放翻译内容  
 这样就能直接生成一张带翻译的twitter截图  
 
@@ -97,7 +102,7 @@ Twitter相关功能在开机后会尝试测试Twitter连接，如果无法连接
 注：在使用style时其他装饰语句无效  
 
 例  
-  * 烤制https://twitter.com....(单条Twitter网址)>字体=Mircosoft Yahei + 大小=20px + 背景=blue + 颜色=red + 装饰=underline wavy yellow + 汉化组=测试汉化组  
+  * 烤制https://twitter.com....(单条Twitter网址)>翻译=什么什么东西+字体=Mircosoft Yahei + 大小=20px + 背景=blue + 颜色=red + 装饰=underline wavy yellow + 汉化组=测试汉化组  
   * 烤制https://twitter.com....(单条Twitter网址)>翻译=什么什么东西+style=background:#ffffff; text-shadow: 2px 2px; background-image: url("paper.gif");  
   
 更高级用法（在原Twitter上直接插入html），注：在使用html时其他所有参数无效  
