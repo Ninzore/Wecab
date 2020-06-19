@@ -437,12 +437,11 @@ function rtWeibo(name, num, context) {
     getUserId(name).then(uid => {
         if (uid) getTimeline(uid, num).then(res => {
             format(res).then(payload => {
-                replyFunc(context, payload)
-            })
-        })
+                replyFunc(context, payload);
+            }).catch(err => {console.error(err); replyFunc(context, "中途错误", true);});
+        }).catch(err => {console.error(err); replyFunc(context, "等下再试", true);});
         else replyFunc(context, "查无此人", true);
-    })
-}
+    }).catch(err => {console.error(err); replyFunc(context, "中途错误", true);});
 
 /**
  * @param {object} context 
