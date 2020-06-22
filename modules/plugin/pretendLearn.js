@@ -9,6 +9,10 @@ function learnReply(replyMsg, main_logger) {
     logger = main_logger;
 }
 
+function replaceImg(img) {
+    return img.replace(/\[CQ:image,file=.+,url=(.+)\]/ig, '[CQ:image,file=$1]');
+}
+
 /**
  * 教学环节
  * @param {object} context
@@ -30,8 +34,10 @@ function teach(context) {
         //如果没有错误就写入数据库
         if (!err) {
             mongodb(db_path, {useUnifiedTopology: true}).connect().then(async (mongo) => {
+                if (/\[CQ:image/.test(qes)) qes = replaceImg(qes);
+                if (/\[CQ:image/.test(ans)) ans = replaceImg(ans);
                 let qa_set = mongo.db('qa_set').collection("qa" + String(context.group_id));
-                await qa_set.updateOne({question : qes, mode : mode}, {$addToSet : {answers : ans}}, {upsert : true});
+                await qa_set.updateOne({question : qes, mode : mode}, {$set : {count : 0}, $addToSet : {answers : ans}}, {upsert : true});
                 mongo.close();
             }).catch((e) => {console.error(e)});
             text = "好我会了";
@@ -64,8 +70,9 @@ function record(context) {
 
         if (!err) {
             mongodb(db_path, {useUnifiedTopology: true}).connect().then(async (mongo) => {
+                if (/\[CQ:image/.test(repeat_word)) repeat_word = replaceImg(repeat_word);
                 let rp_set = mongo.db('qa_set').collection("repeat" + String(context.group_id));
-                await rp_set.updateOne({repeat_word : repeat_word}, {$set : {mode : mode}}, {upsert : true});
+                await rp_set.updateOne({repeat_word : repeat_word}, {$set : {mode : mode, count : 0}}, {upsert : true});
                 mongo.close();
             }).catch((err) => {console.error(err)});
             text = "复读机已就位：" + repeat_word;
@@ -148,6 +155,7 @@ function remember(context) {
         let text = "";
         let result = "";
         let mode = "exact";
+        if (/\[CQ:image/.test(ans)) ans = replaceImg(ans);
 
         mongodb(db_path, {useUnifiedTopology: true}).connect().then(async mongo => {
             let coll = mongo.db('qa_set').collection("qa" + String(context.group_id));
@@ -179,7 +187,7 @@ function remember(context) {
                 let result_text = qes_and_mode.join("\n");
                 text = `我想想，我有学过\n${result_text}`;
             }
-            if (/\[CQ:image/.test(text)) text = text.replace(/\[CQ:image,file=.+,url=(.+)\]/g, '[CQ:image,file=$1]');
+            if (/\[CQ:image/.test(text)) text = replaceImg(text);
             replyFunc(context, text)
         }).catch((err) => {console.log(err)});
         return true;
@@ -226,12 +234,55 @@ function rememberAll(context) {
             }
             if (set == "qa") word = element.question;
             else word = element.repeat_word;
-            if (/\[CQ:image/.test(word)) word = word.replace(/\[CQ:image,file=.+,url=(.+)\]/g, '[CQ:image,file=$1]');
+            if (/\[CQ:image/.test(word)) word = replaceImg(word);
             word_and_mode.push(`${word}，模式为${mode_name}`);
         });
         let result_text = word_and_mode.join("\n");
         return result_text;
     }
+}
+
+function rank(context) {
+    mongodb(db_path, {useUnifiedTopology: true}).connect().then(async mongo => {
+        let qa_set = mongo.db('qa_set').collection("qa" + String(context.group_id));
+        let qa_result = await qa_set.find({}).toArray();
+        let rp_set = mongo.db('qa_set').collection("repeat" + String(context.group_id));
+        let rp_result = await rp_set.find({}).toArray();
+        let text = [];
+        mongo.close();
+
+        if (qa_result.length < 1 && rp_result.length < 1) text.push("脑袋空空的啊");
+        else {
+            if (qa_result.length > 1) {
+                qa_result.sort((a, b) => {
+                    a.count = (a.count == undefined) ? 0 : a.count;
+                    b.count = (b.count == undefined) ? 0 : b.count;
+                    return b.count - a.count;
+                });
+                text.push(['问答词排名', rankText(qa_result)].join('\n'));
+            }
+
+            if (rp_result.length > 1) {
+                rp_result.sort((a, b) => {
+                    a.count = (a.count == undefined) ? 0 : a.count;
+                    b.count = (b.count == undefined) ? 0 : b.count;
+                    return a.count - b.count;
+                });
+                text.push(['复读词排名', rankText(rp_result)].join('\n'));
+            }
+            
+            function rankText(sorted) {
+                let rank_list = [];
+                for (let i = 0; i < ((sorted.length >= 5) ? 5 : sorted.length); i++) {
+                    rank_list.push(`${('question' in sorted[i]) ? sorted[i].question : sorted[i].repeat_word}，${('count' in sorted[i]) ? sorted[i].count : 0}次`);
+                }
+                return rank_list.join('\n');
+            }
+        }
+        text = text.join('\n\n');
+        if (/\[CQ:image/.test(text)) text = replaceImg(text);
+        replyFunc(context, text);
+    }).catch((err) => {console.error(err)});
 }
 
 function forget(context) {
@@ -246,6 +297,8 @@ function forget(context) {
         let text = "";
         let result = "";
         let mode = "exact";
+        if (/\[CQ:image/.test(qes)) qes = replaceImg(qes);
+
         mongodb(db_path, {useUnifiedTopology: true}).connect().then(async mongo => {
             let coll = mongo.db('qa_set').collection("qa" + String(context.group_id));
 
@@ -263,7 +316,7 @@ function forget(context) {
             }
             else result = await coll.findOneAndDelete({question : qes});
             if (result.value == null) text = "我都还没记住呢";
-            else text = `我已经完全忘记了${result.value.question}和它的${result.value.answers.length}个回应`;
+            else text = `我已经完全忘记了${replaceImg(result.value.question)}和它的${result.value.answers.length}个回应`;
 
             replyFunc(context, text);
             mongo.close();
@@ -286,7 +339,7 @@ function erase(context) {
             let result = await coll.findOneAndDelete({repeat_word : repeat_word});
 
             if (result.value == null) text = "我都还没记住呢";
-            else text = `记录已抹去：${result.value.repeat_word}`;
+            else text = `记录已抹去：${replaceImg(result.value.repeat_word)}`;
             replyFunc(context, text);
             mongo.close();
         }).catch((err) => {console.log(err)});
@@ -295,8 +348,8 @@ function erase(context) {
     else return false;
 }
 
-function reply(context) {
-    mongodb(db_path, {useUnifiedTopology: true}).connect().then(async mongo => {
+async function reply(context) {
+    return mongodb(db_path, {useUnifiedTopology: true}).connect().then(async mongo => {
         let coll = mongo.db('qa_set').collection("qa" + String(context.group_id));
         let order = ["exact", "regexp", "fuzzy"];
         
@@ -304,6 +357,9 @@ function reply(context) {
         let answers = [];
         let reg_exp = "";
         let cplt_flag = false;
+        let match = {};
+        let message = replaceImg(context.message);
+
         //按照order的顺序，循环检测匹配项
         for (let i = 0; i < order.length; i++) {
             result = await coll.find({mode : order[i]}).toArray();
@@ -311,35 +367,41 @@ function reply(context) {
                 for (let j = 0; j < result.length; j++) {
                     switch (result[j].mode) {
                         case "exact": {
-                            if (context.message == result[j].question) answers = result[j].answers;
+                            if (message == result[j].question) cplt_flag = true;
                             break;
                         }
                         case "fuzzy": {
-                            if (context.message.split(result[j].question).length > 1) answers = result[j].answers;
+                            if (message.split(result[j].question).length > 1) cplt_flag = true;
                             break;
                         }
                         case "regexp": {
                             reg_exp = new RegExp(result[j].question);
-                            if (reg_exp.test(context.message)) answers = result[j].answers;
+                            if (reg_exp.test(message)) cplt_flag = true;
                             break;
                         }
                     }
-                    if (answers.length > 0) {
-                        cplt_flag = true;
+                    if (cplt_flag) {
+                        match = result[j];
                         break;
                     }
                 }
             }
             if (cplt_flag) break;
         }
-        mongo.close();
-
+        
         if (cplt_flag) {
+            answers = match.answers;
             let rand = Math.floor(Math.random() * answers.length);
-            replyFunc(context, answers[rand]);
+            let text = replaceImg(answers[rand]);
+            replyFunc(context, text);
+            await coll.findOneAndUpdate({_id : match._id}, {$inc: {count : 1}});
+            mongo.close();
             return true;
         }
-        else return false;
+        else {
+            mongo.close();
+            return false;
+        }
     }).catch((err) => {console.error(err)});
 }
 
@@ -351,6 +413,8 @@ function repeat(context) {
         let result = [];
         let reg_exp = "";
         let flag = false;
+        let match = {};
+        let message = replaceImg(context.message);
 
         //按照order的顺序，循环检测匹配项
         for (let i = 0; i < order.length; i++) {
@@ -359,26 +423,31 @@ function repeat(context) {
                 for (let j = 0; j < result.length; j++) {
                     switch (result[j].mode) {
                         case "exact": {
-                            if (context.message == result[j].repeat_word) flag = true;
+                            if (message == result[j].repeat_word) flag = true;
                             break;
                         }
                         case "fuzzy": {
-                            if (context.message.indexOf(result[j].repeat_word) != -1) flag = true;
+                            if (message.indexOf(result[j].repeat_word) != -1) flag = true;
                             break;
                         }
                         case "regexp": {
                             reg_exp = new RegExp(result[j].repeat_word);
-                            if (reg_exp.test(context.message)) flag = true;
+                            if (reg_exp.test(message)) flag = true;
                             break;
                         }
                     }
+                    if (flag) {
+                        match = result[j];
+                        break;
+                    }
                 }
             }
-            if (flag == true) break;
+            if (flag) break;
         }
         if (flag == true && !logger.repeater[context.group_id].done) {
             logger.rptDone(context.group_id);
             replyFunc(context, context.message);
+            await coll.findOneAndUpdate({_id : match._id}, {$inc: {count : 1}});
         }
         mongo.close();
         return;
@@ -386,7 +455,9 @@ function repeat(context) {
 }
 
 function talk(context) {
-    if (!reply(context)) repeat(context);
+    reply(context).then(result => {
+        if (!result) repeat(context);
+    });
 }
 
 function learn(context) {
@@ -396,6 +467,10 @@ function learn(context) {
         else if (forget(context)) return true;
         else if (erase(context)) return true;
         else if (remember(context)) return true;
+        else if (/owner|admin/.test(context.sender.role) && /教学成果/.test(context.message)) {
+            rank(context);
+            return true;
+        }
         else if (/owner|admin/.test(context.sender.role) && /你学过什么/.test(context.message)) {
             rememberAll(context);
             return true
