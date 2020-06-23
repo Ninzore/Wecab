@@ -276,19 +276,19 @@ function checkWeiboSubs(context) {
 function textFilter(text) {
     // console.log(text)
     return text.replace(/<a href="\/status\/.*\d">/g, "")
-                .replace(/<a href='\/n\/.*?'>/g, "")
-                .replace(/<a  href=.*?>(#.+?#)<\/span><\/a>/g , "$1")  //tag
-                .replace(/<a  href=".+url-icon'.+<span class="surl-text">(.+)<\/span><\/a>/g, "$1超话")  //超话
-                .replace(/<span.+><img alt=(\[.+?\]).+<\/span>/g, "$1")  //表情
+                .replace(/<a href='\/n\/.+?'>(.+?)<\/a>/g, "$1")  //@
+                .replace(/<a  href="https:\/\/m.weibo.cn\/search.+?<span class="surl-text">(.+?)<\/span><\/a>/g, "$1")  //tag
+                .replace(/<a  href="https:\/\/m.weibo.cn\/p\/index\?extparam.+?<span class="surl-text">(.+?)<\/span><\/a>/g, "[$1超话]")  //超话
+                .replace(/<img alt=(\[.+?\]).+?\/>/g, "$1")  //表情
                 .replace(/<a data-url=\\?\"(.*?)\\?\".*?<\/a>/g, "$1")
                 .replace(/<a data-url=.*?href=\\?"(.*?)".*?>/g, '$1')
-                .replace(/<span class=\\"surl-text\\">(.*?)<\/span>/g, " $1")
-                .replace(/<img alt=.*?>/g, "")
                 .replace(/<img style=.*?>/g, "")
                 .replace(/<span.+?span>/g, "")
                 .replace(/<\/a>/g, "")
                 .replace(/<br \/>/g , "\n")
                 .replace(/&quot;/g , "'")
+                .replace(/&gt;/g , ">")
+                .replace(/&lt;/g , "<")
                 .replace(/网页链接/g, "")
                 .replace(/\\.*?秒拍视频/g, "");
 }
