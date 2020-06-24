@@ -2,61 +2,67 @@
   
 ## 2020
 
+### 6/24
+* Added: 添加一键清空该群所有订阅  
+* Fixed: html正则未完全匹配  
+[commit](https://github.com/Ninzore/Wecab/commit/6d051b1a6ecce1be0a43f8393701650805812516)
+
 ### 6/23
-* fix: 微博html正则未完全匹配
+* Fixed: 微博html正则未完全匹配
 
 ### 6/22
-* 新增对问答和复读进行计数 
+* Added: 新增对问答和复读进行计数  
+* Changed: 问答和复读收取图片时也变为url
 
 ### 6/19
-* 微博多加几个catch 
+* Others: 微博多加几个catch 
 
 ### 6/18
-* 加入复读  
+* Added: 加入复读  
 
 ### 6/16
-* 改变微博刷新机制防止触发反爬虫
+* Changed: 改变微博刷新机制防止触发反爬虫
 
 ### 6/14
-* 上次更新导致了无法触发图片的bug，修复
-* 教学部分发送图片时全部改为网络链接，避免删除酷Q缓存导致无法回复图片
+* Fixed: 上次更新导致了无法触发图片的bug，修复
+* Changed: 教学部分发送图片时全部改为网络链接，避免删除酷Q缓存导致无法回复图片
 
 ### 6/13
-* 教学时收录的图片改为网络地址
+* Changed: 教学时收录的图片改为网络地址
 
 ### 6/11
-* 解决无法烤制某些回复推的bug
+* Fixed: 解决无法烤制某些回复推的bug
 
 ### 6/10
-* 将“看看B站”简略为“看看”  
-* 支持b23短链接  
+* Changed: 将“看看B站”简略为“看看”  
+* Added: 支持b23短链接  
 
 ### 6/09
-* 修复烤推时无法找到node的错误    
+* Fixed: 修复烤推时无法找到node的错误    
 
 ### 6/04
-* 烤推支持覆盖原文  
+* Added: 烤推支持覆盖原文  
 
 ### 6/03
-* 添加对Twitter移动版mobile.twitter网址的识别   
-* 简化twitter指令  
-  1. 取消看看xxTwitter>链接，现在默认发送链接  
-  2. 取消看看xxTwitter>截图，转为使用twitter截图url  
-  3. 看看Twitter url改为 看看url，方便使用  
+* Added:  添加对Twitter移动版mobile.twitter网址的识别   
+* Changed: 简化twitter指令  
+   1. 取消看看xxTwitter>链接，现在默认发送链接  
+   2. 取消看看xxTwitter>截图，转为使用twitter截图url  
+   3. 看看Twitter url改为 看看url，方便使用  
   
 ### 6/02
-* 解决检查连接性出错的bug  
+* Fixed: 解决检查连接性出错的bug  
 
 ### 6/01
-* 解决在设置为'仅原创'时仍然会发送转发内容的bug  
+* Fixed: 解决在设置为'仅原创'时仍然会发送转发内容的bug  
 
 ### 5/29
-* 解决无法获取cookie的问题  
-* 解决订阅设定为‘仅原创’时依然会有转发twitter的问题  
+* Fixed: 解决无法获取cookie的问题  
+* Fixed: 解决订阅设定为‘仅原创’时依然会有转发twitter的问题  
 
 ### 5/27
-  * 解决截图不完整的bug  
-  * 解决有时页脚没有被正确删除的bug  
+* Fixed: 解决截图不完整的bug  
+* Fixed: 解决有时页脚没有被正确删除的bug  
 
 ### 5/26
   * 准备脱离原[CQ-Picfinder-Robot](https://github.com/Tsuk1ko/CQ-picfinder-robot)  
