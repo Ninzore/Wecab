@@ -21,7 +21,7 @@ function httpHeader(uid = 0, mid = 0) {
     let containerid = "107603" + uid;
     let since_id = mid;
     
-    headers = {
+    let headers = {
         "Host": "m.weibo.cn",
         "scheme": "https",
         "User-Agent": "Mozilla/5.0 (iPhone; CPU iPhone OS 12_2 like Mac OS X) AppleWebKit/605.1.15 (KHTML, like Gecko) Mobile/15E148",
@@ -29,14 +29,14 @@ function httpHeader(uid = 0, mid = 0) {
         "X-Requested-With":"XMLHttpRequest",
     }
 
-    params = {
+    let params = {
         "value": uid,
         "containerid": containerid,
     };
     //携带参数
     if (since_id != 0) params["since_id"] = since_id;
 
-    payload = {
+    let payload = {
         headers : headers,
         params : params
     }
@@ -333,8 +333,8 @@ async function format(mblog, textForm = false) {
     if ("pics" in mblog) {
         let pics = mblog.pics;
         let pic_str = "";
+        let pic_url = "";
         for (let pic of pics) {
-            pid = pic.pid;
             pic_url = pic.large.url;
             pic_str += `[CQ:image,cache=0,file=${pic_url}]`;
         }
