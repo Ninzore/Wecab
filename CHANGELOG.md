@@ -3,6 +3,10 @@
 ## 2020
 
 ### 6/29
+* Added: 添加一键清空该群所有Twitter订阅  
+[commit](https://github.com/Ninzore/Wecab/commit/d17cee9c7f701500c0ae03040dc8766cd7bb54ba)
+
+### 6/28
 * Added: 添加一键清空该群所有B站订阅  
 [commit](https://github.com/Ninzore/Wecab/commit/aa15b8048bf0e3857e5ecc0649be829514759006)
 
