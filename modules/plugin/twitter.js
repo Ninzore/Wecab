@@ -525,7 +525,7 @@ function twitterAggr(context) {
         return true;
     }
     else if (/^清空(推特|Twitter)订阅$/i.test(context.message)) {
-        if (/owner|admin/.test(context.sender.role) || context.user_id == admin) clearSubs(context, context.group_id);
+        if (/owner|admin/.test(context.sender.role)) clearSubs(context, context.group_id);
         else replyFunc(context, '您配吗？');
         return true;
     }
