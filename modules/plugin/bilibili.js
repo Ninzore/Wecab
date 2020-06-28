@@ -464,7 +464,7 @@ function bilibiliCheck (context) {
         return true;
     }
     else if (/^清空B站订阅$/.test(context.message)) {
-        if (/owner|admin/.test(context.sender.role) || context.user_id == admin) clearSubs(context, context.group_id);
+        if (/owner|admin/.test(context.sender.role)) clearSubs(context, context.group_id);
         else replyFunc(context, '您配吗？');
         return true;
     }
