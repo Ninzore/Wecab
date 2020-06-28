@@ -326,6 +326,30 @@ function checkSubs(context) {
 }
 
 /**
+ * @param {object} context
+ * @returns {} no return
+ */
+function clearSubs(context, group_id) {
+    mongodb(db_path, {useUnifiedTopology: true}).connect().then(async mongo => {
+        let coll = mongo.db('bot').collection('twitter');
+        try {
+            let matchs = await coll.find({groups : {$in : [group_id]}}).toArray();
+            if (matchs.length < 1) {replyFunc(context, `未见任何Twitter订阅`); return;}
+            for (let item of matchs) {
+                let res = await coll.findOneAndUpdate({_id : item._id}, {$pull : {groups : {$in : [group_id]}}, $unset : {[group_id] : []}}, {returnOriginal : false});
+                if (res.value.groups.length < 1) await coll.deleteOne({_id : res.value._id});
+            }
+            replyFunc(context, `清理了${matchs.length}个Twitter订阅`);
+        }
+        catch(err) {
+            console.error(err);
+            replyFunc(context, '中途错误，清理未完成');
+        }
+        finally {mongo.close();}
+    }).catch(err => console.error(err + " Twitter clearSubs error, group_id= " + group_id));
+}
+
+/**
  * 整理tweet_obj
  * @param {object} tweet Tweet object
  * @param {string} from_user Twitter用户名
@@ -498,6 +522,11 @@ function twitterAggr(context) {
     }
     else if (/^查看(推特|Twitter)订阅$/i.test(context.message)) {
         checkSubs(context);
+        return true;
+    }
+    else if (/^清空(推特|Twitter)订阅$/i.test(context.message)) {
+        if (/owner|admin/.test(context.sender.role) || context.user_id == admin) clearSubs(context, context.group_id);
+        else replyFunc(context, '您配吗？');
         return true;
     }
     else return false;
