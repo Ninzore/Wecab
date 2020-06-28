@@ -333,6 +333,30 @@ function checkBiliSubs(context) {
     });
 }
 
+/**
+ * @param {object} context
+ * @returns {} no return
+ */
+function clearSubs(context, group_id) {
+    mongodb(db_path, {useUnifiedTopology: true}).connect().then(async mongo => {
+        let coll = mongo.db('bot').collection('bilibili');
+        try {
+            let matchs = await coll.find({groups : {$in : [group_id]}}).toArray();
+            if (matchs.length < 1) {replyFunc(context, `未见任何B站订阅`); return;}
+            for (let item of matchs) {
+                let res = await coll.findOneAndUpdate({_id : item._id}, {$pull : {groups : {$in : [group_id]}}, $unset : {[group_id] : []}}, {returnOriginal : false});
+                if (res.value.groups.length < 1) await coll.deleteOne({_id : res.value._id});
+            }
+            replyFunc(context, `清理了${matchs.length}个B站订阅`);
+        }
+        catch(err) {
+            console.error(err);
+            replyFunc(context, '中途错误，清理未完成');
+        }
+        finally {mongo.close();}
+    }).catch(err => console.error(err + " weibo checkWeiboSubs error, group_id= " + group_id));
+}
+
 function sender(context, dynamicObj = {}, others = "", at = false) {
     let payload = "";
     if (Object.keys(dynamicObj).length != 0) {
@@ -437,6 +461,11 @@ function bilibiliCheck (context) {
     }
     else if (/^查看(订阅B站|B站订阅)$/i.test(context.message)) {
         checkBiliSubs(context);
+        return true;
+    }
+    else if (/^清空B站订阅$/.test(context.message)) {
+        if (/owner|admin/.test(context.sender.role) || context.user_id == admin) clearSubs(context, context.group_id);
+        else replyFunc(context, '您配吗？');
         return true;
     }
     else return false;
