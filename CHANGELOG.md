@@ -2,8 +2,12 @@
   
 ## 2020
 
+### 6/29
+* Added: 添加一键清空该群所有B站订阅  
+[commit](https://github.com/Ninzore/Wecab/commit/aa15b8048bf0e3857e5ecc0649be829514759006)
+
 ### 6/24
-* Added: 添加一键清空该群所有订阅  
+* Added: 添加一键清空该群所有微博订阅  
 * Fixed: html正则未完全匹配  
 [commit](https://github.com/Ninzore/Wecab/commit/6d051b1a6ecce1be0a43f8393701650805812516)
 
