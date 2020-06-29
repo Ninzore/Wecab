@@ -4,7 +4,7 @@
 
 ### 6/29
 * Added: 添加一键清空该群所有Twitter订阅  [commit](https://github.com/Ninzore/Wecab/commit/d17cee9c7f701500c0ae03040dc8766cd7bb54ba)
-* Fixed: 不准复读图片时的错误  [commit]https://github.com/Ninzore/Wecab/commit/867d96d7f0d02a8dba8247d1f385175d69b181e0
+* Fixed: 不准复读图片时的错误  [commit](https://github.com/Ninzore/Wecab/commit/867d96d7f0d02a8dba8247d1f385175d69b181e0)
 
 ### 6/28
 * Added: 添加一键清空该群所有B站订阅  
