@@ -333,7 +333,8 @@ function erase(context) {
     if (match_result != null) {
         let {groups : {repeat_word}} = match_result;
         let text = "";
-
+        if (/\[CQ:image/.test(repeat_word)) repeat_word = replaceImg(repeat_word);
+        
         mongodb(db_path, {useUnifiedTopology: true}).connect().then(async mongo => {
             let coll = mongo.db('qa_set').collection("repeat" + String(context.group_id));
             let result = await coll.findOneAndDelete({repeat_word : repeat_word});
