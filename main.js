@@ -262,7 +262,6 @@ function debugGroupMsg(e, context) {
 
 //群组消息处理
 function groupMsg(e, context) {
-    if (context.group_id == 543372349) console.log(context.message);
     if (commonHandle(e, context)) {
         e.stopPropagation();
         return;
