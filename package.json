@@ -1,15 +1,30 @@
 {
-  "name": "Wecab",
-  "version": "2.12.5",
-  "description": "最好的订阅制酷Q bot",
+  "name": "wecab",
+  "version": "1.0.0",
+  "description": "QQ上最好的订阅制bot",
   "main": "index.js",
+  "dependencies": {
+    "axios": "^0.19.2",
+    "cq-websocket": "1.8.1",
+    "esm": "3.1.0",
+    "fs": "0.0.1-security",
+    "fs-extra": "^9.0.0",
+    "lodash": "^4.17.15",
+    "lodash.combinations": "^18.9.19",
+    "mongodb": "^3.5.9",
+    "puppeteer": "^3.3.0",
+    "random-seed": "^0.3.0",
+    "seedrandom": "^3.0.5",
+    "sqlite": "^3.0.6"
+  },
+  "devDependencies": {},
   "scripts": {
     "start": "node index.js",
     "pm2start": "pm2 start ecosystem.config.js",
     "pm2stop": "pm2 stop ecosystem.config.js",
     "pm2restart": "pm2 restart ecosystem.config.js",
-    "pm2log": "pm2 logs CQPF",
-    "test": "echo \"Error: no test specified\" && exit 1"
+    "pm2log": "pm2 logs Wecab",
+    "test": "echo \\\"Error: no test specified\\\" && exit 1"
   },
   "repository": {
     "type": "git",
@@ -29,35 +44,5 @@
   "bugs": {
     "url": "https://github.com/Ninzore/Wecab/issues"
   },
-  "homepage": "",
-  "dependencies": {
-    "axios": "^0.19.2",
-    "canvas": "^2.6.1",
-    "cheerio": "^1.0.0-rc.3",
-    "co": "^4.6.0",
-    "cq-websocket": "1.8.1",
-    "cron-parser": "^2.13.0",
-    "esm": "3.1.0",
-    "fs-extra": "^9.0.0",
-    "https-proxy-agent": "^5.0.0",
-    "koa": "^2.11.0",
-    "koa-router": "^7.4.0",
-    "lodash": "^4.17.15",
-    "lodash.combinations": "^18.9.19",
-    "minimist": "^1.2.5",
-    "mongod": "^2.0.0",
-    "mongodb": "^3.5.7",
-    "mysql-co": "0.0.4",
-    "named-regexp-groups": "^1.0.5",
-    "nhentai-api": "^2.0.4",
-    "puppeteer": "^3.0.4",
-    "qs": "^6.9.2",
-    "querystring": "^0.2.0",
-    "random-seed": "^0.3.0",
-    "seedrandom": "^3.0.5",
-    "socks-proxy-agent": "^5.0.0",
-    "sqlite": "^3.0.6",
-    "tencentcloud-sdk-nodejs": "3.0.118"
-  },
-  "devDependencies": {}
+  "homepage": "https://github.com/Ninzore/Wecab#readme"
 }
