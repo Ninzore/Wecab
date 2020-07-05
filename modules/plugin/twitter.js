@@ -3,7 +3,7 @@ const mongodb = require('mongodb').MongoClient;
 
 var db_port = 27017;
 var db_path = "mongodb://127.0.0.1:" + db_port;
-let bearer_token = "Bearer AAAAAAAAAAAAAAAAAAAAANRILgAAAAAAnNwIzUejRCOuH5E6I8xnZz4puTs%3D1Zv7ttfk8LF81IUq16cHjhLTvJu4FA33AGWWjCpTnA"
+let bearer_token = "Bearer AAAAAAAAAAAAAAAAAAAAANRILgAAAAAAnNwIzUejRCOuH5E6I8xnZz4puTs%3D1Zv7ttfk8LF81IUq16cHjhLTvJu4FA33AGWWjCpTnA";
 let guest_token = "";
 let cookie = "";
 let connection = true;
@@ -249,39 +249,45 @@ function unSubscribe(name, context) {
  */
 function checkTwiTimeline() {
     if (!connection) return;
+    let check_interval = 5 * 60 * 1000;
     setInterval(() => {
         mongodb(db_path, {useUnifiedTopology: true}).connect().then(async mongo => {
             let coll = mongo.db('bot').collection('twitter');
             let subscribes = await coll.find({}).toArray();
             for (let i = 0; i < subscribes.length; i++) {
-                let tweet = (await getUserTimeline(subscribes[i].uid, 2, true))[0];
-                if (tweet == undefined) {
-                    tweet = (await getUserTimeline(subscribes[i].uid, 15, true))[0];
+                let tweet_list = await getUserTimeline(subscribes[i].uid, 10, true);
+                if (tweet_list == undefined) {
+                    tweet_list = await getUserTimeline(subscribes[i].uid, 20, true);
                     if (tweet == undefined) {
                         console.log(`这个人有问题${subscribes[i].name}`);
                         continue;
                     }
                 }
                 let last_tweet_id = subscribes[i].tweet_id;
-                let current_id = tweet.id_str;
+                let current_id = tweet_list[0].id_str;
                 if (current_id != last_tweet_id) {
                     let groups = subscribes[i].groups;
-                    groups.forEach(group_id => {
-                        if (checkOption(tweet, subscribes[i][group_id])) {
-                            format(tweet).then(payload => {
-                                payload += `\n\nhttps://twitter.com/${tweet.user.screen_name}/status/${current_id}`
-                                replyFunc({group_id : group_id, message_type : "group"}, payload);
-                            }).catch(err => console.error(err));
+                    for (let tweet of tweet_list) {
+                        if (tweet.id_str > last_tweet_id) {
+                            groups.forEach(group_id => {
+                                if (checkOption(tweet, subscribes[i][group_id])) {
+                                    format(tweet).then(payload => {
+                                        payload += `\n\nhttps://twitter.com/${tweet.user.screen_name}/status/${current_id}`
+                                        replyFunc({group_id : group_id, message_type : "group"}, payload);
+                                    }).catch(err => console.error(err));
+                                }
+                            });
                         }
-                    });
+                    }
+                    
                     coll.updateOne({uid : subscribes[i].uid},
-                                    {$set : {tweet_id : current_id, name : tweet.user.name}}, 
+                                    {$set : {tweet_id : current_id, name : tweet_list[0].user.name}}, 
                         (err, result) => {if (err) console.error(err + " database update error during checkTwitter");});
                 }
             }
             mongo.close();
         }).catch(err => console.error(err));
-    }, 5 * 60 * 1000);
+    }, check_interval);
 
     function checkOption(tweet, option) {
         if (option == "all") return true;
@@ -477,7 +483,7 @@ function twitterAggr(context) {
         else if (/最新/.test(context.message)) (num = 0);
         else if (/上上上条/.test(context.message)) (num = 3);
         else if (/上上条/.test(context.message)) (num = 2);
-        else if (/上条/.test(context.message)) (num = 1);
+        else if (/上一?条/.test(context.message)) (num = 1);
 	    else if (/第.+?条/.test(context.message)) {
             let temp = /第([0-9]|[一二三四五六七八九])条/.exec(context.message)[1];
             if (temp==0 || temp=="零") (num = 0);
@@ -492,7 +498,7 @@ function twitterAggr(context) {
             else if (temp==9 || temp=="九") (num = 8);
         }
         else num = 0;       
-        name = /看看(.+?)的?((第[0-9]?[一二三四五六七八九]?条)|(上*条)|(置顶)|(最新))?\s?(推特|Twitter)/i.exec(context.message)[1];
+        name = /看看(.+?)的?((第[0-9]?[一二三四五六七八九]?条)|(上*一?条)|(置顶)|(最新))?\s?(推特|Twitter)/i.exec(context.message)[1];
         rtTimeline(context, name, num);
         return true;
 	}
