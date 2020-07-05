@@ -2,6 +2,12 @@
   
 ## 2020
 
+### 7/05  
+* Fixed: 如果在检查区间发送多条Twitter，只会发送最新一条的bug，现在会正确发送所有新内容
+
+### 7/01  v1.0.0
+* New: 完全脱离CQ-picfinder,不依赖原项目
+
 ### 6/29
 * Added: 添加一键清空该群所有Twitter订阅  [commit](https://github.com/Ninzore/Wecab/commit/d17cee9c7f701500c0ae03040dc8766cd7bb54ba)
 * Fixed: 不准复读图片时的错误  [commit](https://github.com/Ninzore/Wecab/commit/867d96d7f0d02a8dba8247d1f385175d69b181e0)
