@@ -2,8 +2,11 @@
   
 ## 2020
 
+### 7/06  
+* Fixed: 图片太大时会使用小图，并提示 [commit](https://github.com/Ninzore/Wecab/commit/1091153a7c6b02c3f820b59d9c8c79da54a870ef)
+
 ### 7/05  
-* Fixed: 如果在检查区间发送多条Twitter，只会发送最新一条的bug，现在会正确发送所有新内容
+* Fixed: 如果在检查区间发送多条Twitter，只会发送最新一条的bug，现在会正确发送所有新内容 [commit](https://github.com/Ninzore/Wecab/commit/9c3e7b515c4f76b1123f2d86fa0890f7ceef7bef)
 
 ### 7/01  v1.0.0
 * New: 完全脱离CQ-picfinder,不依赖原项目
