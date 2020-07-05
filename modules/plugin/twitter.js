@@ -1,20 +1,21 @@
 const axios = require('axios');
 const mongodb = require('mongodb').MongoClient;
 
-var db_port = 27017;
-var db_path = "mongodb://127.0.0.1:" + db_port;
-let bearer_token = "Bearer AAAAAAAAAAAAAAAAAAAAANRILgAAAAAAnNwIzUejRCOuH5E6I8xnZz4puTs%3D1Zv7ttfk8LF81IUq16cHjhLTvJu4FA33AGWWjCpTnA";
+const db_port = 27017;
+const db_path = "mongodb://127.0.0.1:" + db_port;
+const bearer_token = "Bearer AAAAAAAAAAAAAAAAAAAAANRILgAAAAAAnNwIzUejRCOuH5E6I8xnZz4puTs%3D1Zv7ttfk8LF81IUq16cHjhLTvJu4FA33AGWWjCpTnA";
+const max_size = 4194304;
+
 let guest_token = "";
 let cookie = "";
 let connection = true;
-
 let option_map = {
     "仅原创" : "origin",
     "仅转发" : "rt_only",
     "只看图" : "pic_only",
     "全部" : "all"
 } 
-let replyFunc = (context, msg, at = false) => {console.log(msg)};
+let replyFunc = (context, msg, at = false) => {};
 
 /** 用value找key*/
 function findKey(obj, value) {
@@ -30,6 +31,15 @@ function twitterReply(replyMsg) {
 /** 检查网络情况，如果连不上Twitter那后面都不用做了*/
 function checkConnection() {
     return axios.get("https://twitter.com").then(res => {connection = (res.status == 200) ? true : false}).catch(err => connection = false);
+}
+
+function sizeCheck(url) {
+    return axios.get(url).then(res => {
+        return parseInt(res.headers["content-length"]) < max_size ? true : false;
+    }).catch(err => {
+        console.error(url, err.response.status);
+        return false;
+    });
 }
 
 function httpHeader() {
@@ -372,6 +382,7 @@ async function format(tweet) {
         return payload.join("\n");
     }
     let pics = "";
+    let src = "";
     if ("extended_entities" in tweet) {
         for (entity in tweet.extended_entities) {
             if (entity == "media") {
@@ -379,7 +390,8 @@ async function format(tweet) {
                 for (let i = 0; i < media.length; i++) {
                     text = text.replace(media[i].url, "");
                     if (media[i].type == "photo") {
-                        pics += (`[CQ:image,cache=0,file=${media[i].media_url_https.substring(0, media[i].media_url_https.length-4)}?format=jpg&name=4096x4096]`);
+                        src = [media[i].media_url_https.substring(0, media[i].media_url_https.length-4), '?format=jpg&name=4096x4096'].join("");
+                        pics += await sizeCheck(src) ? `[CQ:image,cache=0,file=${src}]` : `[CQ:image,cache=0,file=${media[i].media_url_https}] 注：这不是原图`;
                     }
                     else if (media[i].type == "animated_gif") {
                         pics += (`这是一张动图 [CQ:image,cache=0,file=${media[i].media_url_https}]`, `动起来看这里${media[i].video_info.variants[0].url}`);
@@ -498,7 +510,7 @@ function twitterAggr(context) {
             else if (temp==9 || temp=="九") (num = 8);
         }
         else num = 0;       
-        name = /看看(.+?)的?((第[0-9]?[一二三四五六七八九]?条)|(上*一?条)|(置顶)|(最新))?\s?(推特|Twitter)/i.exec(context.message)[1];
+        name = /看看(.+?)的?((第[0-9]?[一二三四五六七八九]?条)|(上{1,3}一?条)|(置顶)|(最新))?\s?(推特|Twitter)/i.exec(context.message)[1];
         rtTimeline(context, name, num);
         return true;
 	}
