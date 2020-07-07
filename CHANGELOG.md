@@ -2,11 +2,19 @@
   
 ## 2020
 
+### 7/07  V1.1.0
+* Added: Twitter订阅时的可选项更多，添加（包含转发，不要转发，仅回复，包含回复，不要回复）  
+* Change: 修改Twitter订阅查询机制  
+* 注：更新后与旧版本**不兼容**  
+[commit](https://github.com/Ninzore/Wecab/commit/1091153a7c6b02c3f820b59d9c8c79da54a870ef)
+
 ### 7/06  
-* Fixed: 图片太大时会使用小图，并提示 [commit](https://github.com/Ninzore/Wecab/commit/1091153a7c6b02c3f820b59d9c8c79da54a870ef)
+* Fixed: 图片太大时会使用小图，并提示  
+[commit](https://github.com/Ninzore/Wecab/commit/1091153a7c6b02c3f820b59d9c8c79da54a870ef)
 
 ### 7/05  
-* Fixed: 如果在检查区间发送多条Twitter，只会发送最新一条的bug，现在会正确发送所有新内容 [commit](https://github.com/Ninzore/Wecab/commit/9c3e7b515c4f76b1123f2d86fa0890f7ceef7bef)
+* Fixed: 如果在检查区间发送多条Twitter，只会发送最新一条的bug，现在会正确发送所有新内容  
+[commit](https://github.com/Ninzore/Wecab/commit/9c3e7b515c4f76b1123f2d86fa0890f7ceef7bef)
 
 ### 7/01  v1.0.0
 * New: 完全脱离CQ-picfinder,不依赖原项目
