@@ -1,26 +1,43 @@
 const axios = require('axios');
 const mongodb = require('mongodb').MongoClient;
 
-const db_port = 27017;
-const db_path = "mongodb://127.0.0.1:" + db_port;
-const bearer_token = "Bearer AAAAAAAAAAAAAAAAAAAAANRILgAAAAAAnNwIzUejRCOuH5E6I8xnZz4puTs%3D1Zv7ttfk8LF81IUq16cHjhLTvJu4FA33AGWWjCpTnA";
-const max_size = 4194304;
+const DB_PORT = 27017;
+const DB_PATH = "mongodb://127.0.0.1:" + DB_PORT;
+const BEARER_TOKEN = "Bearer AAAAAAAAAAAAAAAAAAAAANRILgAAAAAAnNwIzUejRCOuH5E6I8xnZz4puTs%3D1Zv7ttfk8LF81IUq16cHjhLTvJu4FA33AGWWjCpTnA";
+const MAX_SIZE = 4194304;
+const OPTION_MAP = {
+    "仅原创" : [1, 0, 0, 1],
+    "仅转发" : [0, 1, 0, 0],
+    "包含转发" : [1, 1, 0, 1],
+    "不要转发" : [1, 0, 1, 1],
+    "仅回复" : [0, 0, 1, 0],
+    "包含回复" : [1, 0, 1, 1],
+    "不要回复" : [1, 1, 0, 1],
+    "只看图" : [0, 0, 0, 1],
+    "全部" : [1, 1, 1, 1]
+} 
 
 let guest_token = "";
 let cookie = "";
 let connection = true;
-let option_map = {
-    "仅原创" : "origin",
-    "仅转发" : "rt_only",
-    "只看图" : "pic_only",
-    "全部" : "all"
-} 
-let replyFunc = (context, msg, at = false) => {};
+let replyFunc = (context, msg, at = false) => {console.log(msg)};
 
 /** 用value找key*/
-function findKey(obj, value) {
-    for (key in obj) {
-        if (obj[key] === value) return key;
+function toOptNl(option) {
+    let {origin, retweet, reply, pic} = option;
+    option = [origin, retweet, reply, pic];
+    for (key in OPTION_MAP) {
+        if (OPTION_MAP[key].join("") == option.join("")) return key;
+    }
+}
+
+function opt_dict(option_list) {
+    let [origin, retweet, reply, pic] = option_list;
+    return {
+        "origin" : origin,
+        "retweet" : retweet,
+        "reply" : reply,
+        "pic" : pic
     }
 }
 
@@ -33,9 +50,23 @@ function checkConnection() {
     return axios.get("https://twitter.com").then(res => {connection = (res.status == 200) ? true : false}).catch(err => connection = false);
 }
 
+function firstConnect() {
+    checkConnection().then(() => {
+        if (!connection) {
+            console.log("Twitter无法连接，功能暂停");
+        }
+        else {
+            getGuestToken();
+            setTimeout(() => getCookie(), 1000);
+            let get_cookie_routine = setInterval(() => getCookie(), 20*60*60*1000);
+            let get_gt_routine = setInterval(() => getGuestToken(), 0.9*60*60*1000);
+        }
+    });
+}
+
 function sizeCheck(url) {
     return axios.get(url).then(res => {
-        return parseInt(res.headers["content-length"]) < max_size ? true : false;
+        return parseInt(res.headers["content-length"]) < MAX_SIZE ? true : false;
     }).catch(err => {
         console.error(url, err.response.status);
         return false;
@@ -45,7 +76,7 @@ function sizeCheck(url) {
 function httpHeader() {
     return headers = {
         "origin" : "https://twitter.com",
-        "authorization" : bearer_token,
+        "authorization" : BEARER_TOKEN,
         "cookie" : cookie,
         "x-guest-token" : guest_token,
         "x-twitter-active-user" : "yes",
@@ -114,7 +145,7 @@ function getSingleTweet(tweet_id_str) {
         method:'GET',
         url: "https://api.twitter.com/1.1/statuses/lookup.json",
         headers : {
-            "authorization" : bearer_token,
+            "authorization" : BEARER_TOKEN,
         },
         params : {
             "id" : tweet_id_str,
@@ -137,17 +168,17 @@ function getSingleTweet(tweet_id_str) {
  * @param {number} count 获取数量，最大为200
  * @returns {Promise} 用户时间线，如果错误结果为false
  */
-function getUserTimeline(user_id, count = 2, include_rts = false) {
+function getUserTimeline(user_id, count = 2, include_rt = false, exclude_rp = true) {
     return axios({
         method:'GET',
         url: "https://api.twitter.com/1.1/statuses/user_timeline.json",
-        headers : {"Authorization" : bearer_token},
+        headers : {"Authorization" : BEARER_TOKEN},
        params : {
             // screen_name : screen_name,
             "user_id" : user_id,
             "count" : count,
-            "exclude_replies" : true,
-            "include_rts" : include_rts,
+            "exclude_replies" : exclude_rp,
+            "include_rts" : include_rt,
             "tweet_mode" : "extended"
         }
     }).then(res => {return res.data;
@@ -191,8 +222,9 @@ function searchUser(name) {
  */
 function subscribe(uid, option, context) {
     let group_id = context.group_id;
-    let option_nl = findKey(option_map, option);
-    mongodb(db_path, {useUnifiedTopology: true}).connect().then(async mongo => {
+    let option_nl = toOptNl(option);
+
+    mongodb(DB_PATH, {useUnifiedTopology: true}).connect().then(async mongo => {
         let coll = mongo.db('bot').collection('twitter');
         let res = await coll.find({uid : uid}).toArray();
         if (res.length == 0) {
@@ -233,12 +265,12 @@ function subscribe(uid, option, context) {
 function unSubscribe(name, context) {
     let group_id = context.group_id;
     let name_reg = new RegExp(name, 'i')
-    mongodb(db_path, {useUnifiedTopology: true}).connect().then(async mongo => {
+    mongodb(DB_PATH, {useUnifiedTopology: true}).connect().then(async mongo => {
         let coll = mongo.db('bot').collection('twitter');
         await coll.findOneAndUpdate({name : name_reg},
                                     {$pull : {groups : {$in : [group_id]}}, $unset : {[group_id] : []}},
             async (err, result) => {
-                if (err) console.log(err + "database subscribes delete error");
+                if (err) console.error(err + "database subscribes delete error");
                 else {
                     let text = "";
                     if (result.value == null || !result.value.groups.includes(group_id)) text = "小火汁你压根就没订阅嗷";
@@ -247,7 +279,6 @@ function unSubscribe(name, context) {
                         if (result.value.groups.length <= 1) await coll.deleteOne({_id : result.value._id});
                     }
                     replyFunc(context, text, true);
-                    // console.log(text)
                 }
             mongo.close();
         });
@@ -260,58 +291,67 @@ function unSubscribe(name, context) {
 function checkTwiTimeline() {
     if (!connection) return;
     let check_interval = 5 * 60 * 1000;
-    setInterval(() => {
-        mongodb(db_path, {useUnifiedTopology: true}).connect().then(async mongo => {
+
+    setInterval(async () => {
+        await mongodb(DB_PATH, {useUnifiedTopology: true}).connect().then(async mongo => {
             let coll = mongo.db('bot').collection('twitter');
             let subscribes = await coll.find({}).toArray();
-            for (let i = 0; i < subscribes.length; i++) {
-                let tweet_list = await getUserTimeline(subscribes[i].uid, 10, true);
-                if (tweet_list == undefined) {
-                    tweet_list = await getUserTimeline(subscribes[i].uid, 20, true);
-                    if (tweet == undefined) {
-                        console.log(`这个人有问题${subscribes[i].name}`);
-                        continue;
-                    }
-                }
-                let last_tweet_id = subscribes[i].tweet_id;
-                let current_id = tweet_list[0].id_str;
-                if (current_id != last_tweet_id) {
-                    let groups = subscribes[i].groups;
-                    for (let tweet of tweet_list) {
-                        if (tweet.id_str > last_tweet_id) {
-                            groups.forEach(group_id => {
-                                if (checkOption(tweet, subscribes[i][group_id])) {
-                                    format(tweet).then(payload => {
-                                        payload += `\n\nhttps://twitter.com/${tweet.user.screen_name}/status/${current_id}`
-                                        replyFunc({group_id : group_id, message_type : "group"}, payload);
-                                    }).catch(err => console.error(err));
+            mongo.close();
+            i = 0;
+            checkEach();
+        
+            function checkEach() {
+                setTimeout(async() => {
+                    try {
+                        let tweet_list = await getUserTimeline(subscribes[i].uid, 10, true, false);
+                        let last_tweet_id = subscribes[i].tweet_id;
+                        let current_id = tweet_list[0].id_str;
+                        if (current_id > last_tweet_id) {
+                            let groups = subscribes[i].groups;
+                            for (let tweet of tweet_list) {
+                                if (tweet.id_str > last_tweet_id) {
+                                    groups.forEach(group_id => {
+                                        if (checkOption(tweet, subscribes[i][group_id])) {
+                                            format(tweet).then(payload => {
+                                                payload += `\n\nhttps://twitter.com/${tweet.user.screen_name}/status/${current_id}`
+                                                replyFunc({group_id : group_id, message_type : "group"}, payload);
+                                            }).catch(err => console.error(err));
+                                        }
+                                    });
                                 }
+                            }
+                            await mongodb(DB_PATH, {useUnifiedTopology: true}).connect().then(async mongo => {
+                                let coll = mongo.db('bot').collection('twitter');
+                                await coll.updateOne({uid : subscribes[i].uid},
+                                                {$set : {tweet_id : current_id, name : tweet_list[0].user.name}}, 
+                                    (err, result) => {if (err) console.error(err + " database update error during checkTwitter");});
                             });
                         }
+                    } catch(err) {
+                        console.error(err, '\n', subscribes[i]);
+                    } finally {
+                        i++;
+                        if (i < subscribes.length) checkEach();
                     }
-                    
-                    coll.updateOne({uid : subscribes[i].uid},
-                                    {$set : {tweet_id : current_id, name : tweet_list[0].user.name}}, 
-                        (err, result) => {if (err) console.error(err + " database update error during checkTwitter");});
-                }
+                }, (check_interval-subscribes.length*1000)/subscribes.length);
             }
-            mongo.close();
-        }).catch(err => console.error(err));
-    }, check_interval);
+        });
+    }, check_interval)
 
     function checkOption(tweet, option) {
-        if (option == "all") return true;
         let status = "";
         if ("retweeted_status" in tweet || "retweeted_status_id_str" in tweet || /^RT @/.test(tweet.full_text)) status = "retweet";
-        else if ("media" in  tweet.entities && tweet.entities.media[0].type == "photo") status = "ori_with_pic";
+        else if ("in_reply_to_status_id" in tweet && tweet.in_reply_to_status_id != null) status = "reply";
+        else if ("media" in  tweet.entities && tweet.entities.media[0].type == "photo") status = "pic";
         else status = "origin"
 
-        if (option == "rt_only" && status == "retweet") return true;
-        else if (option == "pic_only" && status == "ori_with_pic") return true;
-        else if (option == "origin") {
-            if (status == "ori_with_pic" || status == "origin") return true;
+        switch (status) {
+            case "origin" : if (option.origin == 1) return true; break;
+            case "reply" : if (option.reply == 1) return true; break;
+            case "retweet" : if (option.retweet == 1) return true; break;
+            case "pic" : if (option.pic == 1) return true; break;
+            default : return false;
         }
-        else return false;
     }
 }
 
@@ -321,7 +361,7 @@ function checkTwiTimeline() {
  */
 function checkSubs(context) {
     let group_id = context.group_id;
-    mongodb(db_path, {useUnifiedTopology: true}).connect().then(async mongo => {
+    mongodb(DB_PATH, {useUnifiedTopology: true}).connect().then(async mongo => {
         let coll = mongo.db('bot').collection('twitter');
         await coll.find({groups : {$elemMatch : {$eq : group_id}}}, {projection: {_id : 0}})
             .toArray().then(result => {
@@ -329,7 +369,7 @@ function checkSubs(context) {
                     let name_list = [];
                     result.forEach(twitter_obj => {
                         let option_nl = "仅原创";
-                        option_nl = findKey(option_map, twitter_obj[group_id]);
+                        option_nl = toOptNl(twitter_obj[group_id]);
                         name_list.push(`${twitter_obj.name}，${option_nl}`);
                     });
                     let subs = "本群已订阅:\n" + name_list.join("\n");
@@ -346,7 +386,7 @@ function checkSubs(context) {
  * @returns {} no return
  */
 function clearSubs(context, group_id) {
-    mongodb(db_path, {useUnifiedTopology: true}).connect().then(async mongo => {
+    mongodb(DB_PATH, {useUnifiedTopology: true}).connect().then(async mongo => {
         let coll = mongo.db('bot').collection('twitter');
         try {
             let matchs = await coll.find({groups : {$in : [group_id]}}).toArray();
@@ -415,6 +455,10 @@ async function format(tweet) {
         payload.push("提到了", await format(quote_tweet));
         text = text.replace(tweet.quoted_status_permalink.url, "");
     }
+    if ("in_reply_to_status_id" in tweet && tweet.in_reply_to_status_id != null) {
+        let reply_tweet = await getSingleTweet(tweet.in_reply_to_status_id_str);
+        payload.push("回复了", await format(reply_tweet));
+    }
     if ("card" in tweet) {
         payload.push(tweet.binding_values.title.string_value, urlExpand(card.url));
     }
@@ -481,8 +525,8 @@ async function addSubByName(name, option_nl, context) {
         return true;
     }
     else {
-        let option = option_map[option_nl];
-        subscribe(user.id_str, option, context);
+        let option = opt_dict(OPTION_MAP[option_nl]) || opt_dict([1, 0, 0, 1]);
+        option = subscribe(user.id_str, option, context);
         return false;
     }
 }
@@ -528,8 +572,7 @@ function twitterAggr(context) {
         return true;
     }
     else if (connection && /^订阅.+的?(推特|Twitter)([>＞](仅转发|只看图|全部))?/i.test(context.message)) {
-        let {groups : {name, option_nl}} = /订阅(?<name>.+)的?(推特|Twitter)([>＞](?<option_nl>仅转发|只看图|全部))?/i.exec(context.message);
-        if (option_nl == undefined) option_nl = "仅原创"
+        let {groups : {name, option_nl}} = /订阅(?<name>.+)的?(推特|Twitter)([>＞](?<option_nl>.{2,4}))?/i.exec(context.message);
         addSubByName(name, option_nl, context);
         return true;
     }
@@ -550,20 +593,7 @@ function twitterAggr(context) {
     else return false;
 }
 
-function firstConnect() {
-    checkConnection().then(() => {
-        if (!connection) {
-            console.log("Twitter无法连接，功能暂停");
-        }
-        else {
-            getGuestToken();
-            setTimeout(() => getCookie(), 1000);
-            let get_cookie_routine = setInterval(() => getCookie(), 20*60*60*1000);
-            let get_gt_routine = setInterval(() => getGuestToken(), 0.9*60*60*1000);
-        }
-    });
-}
 
 firstConnect();
 
-module.exports = {twitterAggr, twitterReply, checkTwiTimeline};
+module.exports = {twitterAggr, twitterReply, checkTwiTimeline, clearSubs};
