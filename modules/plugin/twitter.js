@@ -313,7 +313,7 @@ function checkTwiTimeline() {
                                     groups.forEach(group_id => {
                                         if (checkOption(tweet, subscribes[i][group_id])) {
                                             format(tweet).then(payload => {
-                                                payload += `\n\nhttps://twitter.com/${tweet.user.screen_name}/status/${current_id}`
+                                                payload += `\n\nhttps://twitter.com/${tweet.user.screen_name}/status/${tweet.id_str}`
                                                 replyFunc({group_id : group_id, message_type : "group"}, payload);
                                             }).catch(err => console.error(err));
                                         }
@@ -411,7 +411,7 @@ function clearSubs(context, group_id) {
  * @param {string} from_user Twitter用户名
  * @returns Promise  排列完成的Tweet String
  */
-async function format(tweet) {
+async function format(tweet, end_point=false) {
     let payload = [];
     let text = "";
     if('full_text' in tweet) text = tweet.full_text;
@@ -455,9 +455,9 @@ async function format(tweet) {
         payload.push("提到了", await format(quote_tweet));
         text = text.replace(tweet.quoted_status_permalink.url, "");
     }
-    if ("in_reply_to_status_id" in tweet && tweet.in_reply_to_status_id != null) {
+    if ("in_reply_to_status_id" in tweet && tweet.in_reply_to_status_id != null && !end_point) {
         let reply_tweet = await getSingleTweet(tweet.in_reply_to_status_id_str);
-        payload.push("回复了", await format(reply_tweet));
+        payload.push("回复了", await format(reply_tweet, true));
     }
     if ("card" in tweet) {
         payload.push(tweet.binding_values.title.string_value, urlExpand(card.url));
@@ -494,8 +494,9 @@ function rtTimeline(context, name, num) {
         if (!user) replyFunc(context, "没这人");
         else if (user.protected == true) replyFunc(context, "这人的Twitter受保护");
         else {
-            getUserTimeline(user.id_str, 15).then(async timeline => {
-                if (timeline.length-1 < num) timeline = await getUserTimeline(user.id_str, 50);
+            getUserTimeline(user.id_str, 10).then(async timeline => {
+                if (timeline.length-1 < num) timeline = await getUserTimeline(user.id_str, 20);
+                console.log(timeline)
                 format(timeline[num]).then(tweet_string => {
                     let payload = [tweet_string, `https://twitter.com/${user.screen_name}/status/${timeline[num].id_str}`].join('\n\n');
                     replyFunc(context, payload);
@@ -525,9 +526,10 @@ async function addSubByName(name, option_nl, context) {
         return true;
     }
     else {
-        let option = opt_dict(OPTION_MAP[option_nl]) || opt_dict([1, 0, 0, 1]);
-        option = subscribe(user.id_str, option, context);
-        return false;
+        let option = OPTION_MAP[option_nl] || [1, 0, 0, 1];
+        option = opt_dict(option);
+        subscribe(user.id_str, option, context);
+        return true;
     }
 }
 
