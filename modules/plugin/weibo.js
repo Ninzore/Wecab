@@ -134,7 +134,7 @@ function subscribe(uid, option, context) {
                 (err, result) => {
                     if (err) console.error(err + " database subscribes update error");
                     else {
-                        // console.log(result)
+                        let text = "";
                         if (result.value.groups.includes(group_id)) text = "多次订阅有害我的身心健康";
                         else text = `已订阅${result.value.name}的微博，模式为${option_nl}`;
                         replyFunc(context, text, true);
@@ -191,8 +191,7 @@ function checkWeiboDynamic() {
 
             function checkEach() {
                 setTimeout(async function() {
-                    try{
-                        // console.log(subscribes[i].name, `i=${i+1}, len=${subscribes.length}`);
+                    try {
                         let stored_info = subscribes[i];
                         let mblog = await getTimeline(stored_info.weibo_uid);
                         let last_mid = stored_info.mid;
