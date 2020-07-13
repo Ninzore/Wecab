@@ -471,4 +471,4 @@ function bilibiliCheck (context) {
     else return false;
 }
 
-module.exports = {bilibiliCheck, checkBiliDynamic, bilibiliReply};
+module.exports = {bilibiliCheck, checkBiliDynamic, bilibiliReply, clearSubs};
