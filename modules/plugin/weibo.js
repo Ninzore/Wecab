@@ -540,4 +540,4 @@ function weiboAggr(context) {
     else return false;
 }
 
-export default {weiboAggr, checkWeiboDynamic, weiboReply};
+export default {weiboAggr, checkWeiboDynamic, weiboReply, clearSubs};
