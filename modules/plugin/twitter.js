@@ -494,9 +494,9 @@ function rtTimeline(context, name, num) {
         if (!user) replyFunc(context, "没这人");
         else if (user.protected == true) replyFunc(context, "这人的Twitter受保护");
         else {
-            getUserTimeline(user.id_str, 10).then(async timeline => {
-                if (timeline.length-1 < num) timeline = await getUserTimeline(user.id_str, 20);
-                console.log(timeline)
+            getUserTimeline(user.id_str, 20).then(async timeline => {
+                if (timeline.length-1 < num) timeline = await getUserTimeline(user.id_str, 50);
+                if (timeline.length-1 < num) timeline = await getUserTimeline(user.id_str, 1, true, false);
                 format(timeline[num]).then(tweet_string => {
                     let payload = [tweet_string, `https://twitter.com/${user.screen_name}/status/${timeline[num].id_str}`].join('\n\n');
                     replyFunc(context, payload);
