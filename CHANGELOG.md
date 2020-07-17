@@ -2,8 +2,14 @@
   
 ## 2020
 
+### 7/17  v1.1.3
+* 加入helpZen（禁言）模块
+
+### 7/16
+* Delete: 删除extra文件夹（没用）
+
 ### 7/14  v1.1.2
-* 看看xxTwitter有时会无效的bug
+* Fixed: 看看xxTwitter有时会无效的bug
 
 ### 7/10  V1.1.1
 * Fixed: 不加选项时添加订阅出错，订阅转发时url出错
