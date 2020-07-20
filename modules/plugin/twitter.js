@@ -534,11 +534,11 @@ async function addSubByName(name, option_nl, context) {
 }
 
 function twitterAggr(context) {
-    if (connection && /^看看(.+?)的?((第[0-9]?[一二三四五六七八九]?条)|(上*条)|(置顶)|(最新))?\s?(推特|Twitter)$/i.test(context.message)) {	
+    if (connection && /^看看(.+?)的?((第[0-9]?[一二三四五六七八九]?条)|(上*条)|(最新))?\s?(推特|Twitter)$/i.test(context.message)) {	
 		let num = 1;
         let name = "";
-        if (/置顶/.test(context.message)) (num = -1);
-        else if (/最新/.test(context.message)) (num = 0);
+//         if (/置顶/.test(context.message)) (num = -1);
+        if (/最新/.test(context.message)) (num = 0);
         else if (/上上上条/.test(context.message)) (num = 3);
         else if (/上上条/.test(context.message)) (num = 2);
         else if (/上一?条/.test(context.message)) (num = 1);
