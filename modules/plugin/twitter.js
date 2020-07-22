@@ -1,5 +1,8 @@
 const axios = require('axios');
 const mongodb = require('mongodb').MongoClient;
+const promisify = require('util').promisify;
+const exec = promisify(require('child_process').exec);
+const fs = require('fs-extra');
 
 const DB_PORT = 27017;
 const DB_PATH = "mongodb://127.0.0.1:" + DB_PORT;
@@ -209,7 +212,7 @@ function searchUser(name) {
         }
     }).then(res => {return res.data[0]
     }).catch(err => {
-        console.log(err.response.data);
+        console.error(err.response.data);
         return false;
     })
 }
@@ -434,7 +437,22 @@ async function format(tweet, end_point=false) {
                         pics += await sizeCheck(src) ? `[CQ:image,cache=0,file=${src}]` : `[CQ:image,cache=0,file=${media[i].media_url_https}] 注：这不是原图`;
                     }
                     else if (media[i].type == "animated_gif") {
-                        pics += (`这是一张动图 [CQ:image,cache=0,file=${media[i].media_url_https}]`, `动起来看这里${media[i].video_info.variants[0].url}`);
+                        try {
+                            await exec(`ffmpeg -i ${media[i].video_info.variants[0].url} -loop 0 -y ${__dirname}/temp.gif`)
+                                .then(async ({stdout, stderr}) => {
+                                    if (stdout.length == 0) {
+                                        if (fs.statSync(`${__dirname}/temp.gif`).size < MAX_SIZE) {
+                                            let gif = fs.readFileSync(`${__dirname}/temp.gif`);
+                                            let base64gif = Buffer.from(gif, 'binary').toString('base64');
+                                            pics += `[CQ:image,file=base64://${base64gif}]`;
+                                        }
+                                        else pics += `这是一张动图 [CQ:image,cache=0,file=${media[i].media_url_https}]` + `动起来看这里${media[i].video_info.variants[0].url}`;
+                                    }
+                                })
+                        } catch(err) {
+                            console.error(err);
+                            pics += `这是一张动图 [CQ:image,cache=0,file=${media[i].media_url_https}]` + `动起来看这里${media[i].video_info.variants[0].url}`;
+                        }
                     }
                     else if (media[i].type == "video") {
                         let mp4obj = [];
@@ -537,7 +555,6 @@ function twitterAggr(context) {
     if (connection && /^看看(.+?)的?((第[0-9]?[一二三四五六七八九]?条)|(上*条)|(最新))?\s?(推特|Twitter)$/i.test(context.message)) {	
 		let num = 1;
         let name = "";
-//         if (/置顶/.test(context.message)) (num = -1);
         if (/最新/.test(context.message)) (num = 0);
         else if (/上上上条/.test(context.message)) (num = 3);
         else if (/上上条/.test(context.message)) (num = 2);
