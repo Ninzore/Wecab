@@ -146,7 +146,7 @@ function getCookie() {
 function getSingleTweet(tweet_id_str) {
     return axios({
         method:'GET',
-        url: "https://api.twitter.com/1.1/statuses/lookup.json",
+        url: "https://api.twitter.com/1.1/statuses/show.json",
         headers : {
             "authorization" : BEARER_TOKEN,
         },
@@ -155,9 +155,14 @@ function getSingleTweet(tweet_id_str) {
             "include_entities" : "true",
             "include_ext_alt_text" : "true",
             "include_card_uri" : "true",
-            "tweet_mode" : "extended"
+            "tweet_mode" : "extended",
+            "include_ext_media_color" : "true",
+            "include_ext_media_availability" : "true",
+            "include_cards" : "1",
+            "cards_platform" : "Web-12",
+            
         }
-    }).then(res => {return res.data[0]; 
+    }).then(res => {return res.data; 
     }).catch(err => {
         console.error(err.response.data);
         return false;
@@ -200,6 +205,29 @@ function getUserTimeline(user_id, count = 2, include_rt = false, exclude_rp = tr
  * @returns {Promise} user_object，如果没有或者错误会返回false
  */
 function searchUser(name) {
+    let header = httpHeader();
+    header["x-guest-token"] = guest_token;
+    return axios({
+        method : "GET",
+        url : "https://api.twitter.com/1.1/users/search.json",
+        headers : header,
+        params : {
+            "q": name,
+            "count": 1,
+        }
+    }).then(res => {return res.data[0]
+    }).catch(err => {
+        console.log(err.response.data);
+        return false;
+    })
+}
+
+/** 
+ * 
+ * @param {string} name 用户名称
+ * @returns {Promise} user_object，如果没有或者错误会返回false
+ */
+function fetch(name) {
     let header = httpHeader();
     header["x-guest-token"] = guest_token;
     return axios({
@@ -299,36 +327,44 @@ function checkTwiTimeline() {
         await mongodb(DB_PATH, {useUnifiedTopology: true}).connect().then(async mongo => {
             let coll = mongo.db('bot').collection('twitter');
             let subscribes = await coll.find({}).toArray();
+            if (subscribes != undefined && subscribes.length > 0) {
+                i = 0;
+                checkEach();
+            }
+            else {
+                subscribes = await coll.find({}).toArray();
+                subscribes != undefined ? console.log(subscribes.length) : console.error("twitter database error")
+            }
             mongo.close();
-            i = 0;
-            checkEach();
-        
+
             function checkEach() {
                 setTimeout(async() => {
                     try {
                         let tweet_list = await getUserTimeline(subscribes[i].uid, 10, true, false);
-                        let last_tweet_id = subscribes[i].tweet_id;
-                        let current_id = tweet_list[0].id_str;
-                        if (current_id > last_tweet_id) {
-                            let groups = subscribes[i].groups;
-                            for (let tweet of tweet_list) {
-                                if (tweet.id_str > last_tweet_id) {
-                                    groups.forEach(group_id => {
-                                        if (checkOption(tweet, subscribes[i][group_id])) {
-                                            format(tweet).then(payload => {
-                                                payload += `\n\nhttps://twitter.com/${tweet.user.screen_name}/status/${tweet.id_str}`
-                                                replyFunc({group_id : group_id, message_type : "group"}, payload);
-                                            }).catch(err => console.error(err));
-                                        }
-                                    });
+                        if (tweet_list != undefined) {
+                            let last_tweet_id = subscribes[i].tweet_id;
+                            let current_id = tweet_list[0].id_str;
+                            if (current_id > last_tweet_id) {
+                                let groups = subscribes[i].groups;
+                                for (let tweet of tweet_list) {
+                                    if (tweet.id_str > last_tweet_id) {
+                                        groups.forEach(group_id => {
+                                            if (checkOption(tweet, subscribes[i][group_id])) {
+                                                format(tweet).then(payload => {
+                                                    payload += `\n\nhttps://twitter.com/${tweet.user.screen_name}/status/${tweet.id_str}`
+                                                    replyFunc({group_id : group_id, message_type : "group"}, payload);
+                                                }).catch(err => console.error(err));
+                                            }
+                                        });
+                                    }
                                 }
+                                await mongodb(DB_PATH, {useUnifiedTopology: true}).connect().then(async mongo => {
+                                    let coll = mongo.db('bot').collection('twitter');
+                                    await coll.updateOne({uid : subscribes[i].uid},
+                                                    {$set : {tweet_id : current_id, name : tweet_list[0].user.name}}, 
+                                        (err, result) => {if (err) console.error(err + " database update error during checkTwitter");});
+                                });
                             }
-                            await mongodb(DB_PATH, {useUnifiedTopology: true}).connect().then(async mongo => {
-                                let coll = mongo.db('bot').collection('twitter');
-                                await coll.updateOne({uid : subscribes[i].uid},
-                                                {$set : {tweet_id : current_id, name : tweet_list[0].user.name}}, 
-                                    (err, result) => {if (err) console.error(err + " database update error during checkTwitter");});
-                            });
                         }
                     } catch(err) {
                         console.error(err, '\n', subscribes[i]);
@@ -478,7 +514,34 @@ async function format(tweet, end_point=false) {
         payload.push("回复了", await format(reply_tweet, true));
     }
     if ("card" in tweet) {
-        payload.push(tweet.binding_values.title.string_value, urlExpand(card.url));
+        // payload.push(tweet.binding_values.title.string_value, urlExpand(card.url));
+        if (/poll\dchoice/.test(tweet.card.name)) {
+            if ("image_large" in tweet.card.binding_values) {
+                payload.push(`[CQ:image,cache=0,file=${tweet.card.binding_values.image_large.url}]`);
+            }
+
+            let end_time = new Intl.DateTimeFormat('zh-Hans-CN', {month: 'short', day: '2-digit', hour: '2-digit', minute: '2-digit', timeZone: 'Asia/Shanghai'})
+                .format(new Date(tweet.card.binding_values.end_datetime_utc.string_value))
+            payload.push("", tweet.card.binding_values.counts_are_final.boolean_value === true ? "投票已结束" 
+                : `正在投票,结束时间${end_time}`);
+            let nchoice = parseInt(/\d/.exec(tweet.card.name)[0]);
+            let count = "";
+            let lable = "";
+            for (i = 1; i < nchoice + 1; i++) {
+                lable = tweet.card.binding_values[`choice${i}_label`].string_value;
+                count = tweet.card.binding_values[`choice${i}_count`].string_value;
+                payload.push(`${lable}:  ${count}`);
+            }
+        }
+        else if (/summary/.test(tweet.card.name)) {
+            if ("photo_image_full_size_original" in tweet.card.binding_values) {
+                if (sizeCheck(tweet.card.binding_values.photo_image_full_size_original.image_value.url)) {
+                    payload.push(`[CQ:image,cache=0,file=${tweet.card.binding_values.photo_image_full_size_original.image_value.url}]`);
+                }
+                else payload.push(`[CQ:image,cache=0,file=${tweet.card.binding_values.photo_image_full_size_large.image_value.url}]`);
+            }
+            payload.push(tweet.card.binding_values.title.string_value, tweet.card.binding_values.description.string_value);
+        }
     }
     if ("urls" in tweet.entities && tweet.entities.urls.length > 0) {
         for (let i = 0; i <  tweet.entities.urls.length; i++) {
