@@ -404,11 +404,31 @@ function rtBiliByUrl(context){
 
 function rtBiliByB23(context) {
     let url = /https:\/\/b23\.tv\/[0-9a-zA-Z]{6}/.exec(context.message)[0];
-    axios.get(url)
-        .then(res => {
-            let dynamic_id = /\/(\d+)\?/.exec(res.request.path)[1];
-            rtBilibili(context, "", 0, dynamic_id);
-        }).catch(err => console.error(err));
+    axios.head(url, {
+        headers : {
+            "Accept" : "application/json",
+            "Accept-Language" : "zh-CN,zh;q=0.9,en;q=0.8,zh-TW;q=0.7",
+            "User-Agent" : "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/84.0.4147.89 Safari/537.36",
+            "Host" : "b23.tv"
+        }
+    }).catch(res => {
+        // when using head methon there will be a Z_BUF_ERROR, code -5
+            if (res.errno === -5) {
+                path = res.request.path;
+                if (/^\/video/.test(path)) {
+                    let bv = path.substring(0, path.indexOf("?"));
+                    replyFunc(context, ["https://bilibili.com", bv].join(""));
+                }
+                else {
+                    let dynamic_id = /\d{18}/.exec(path)[0];
+                    rtBilibili(context, "", 0, dynamic_id);
+                }
+            }
+            else {
+                console.error(res.errno, res.code);
+                replyFunc(context, "出错啦");
+            }
+        });
 }
 
 function bilibiliCheck (context) {
