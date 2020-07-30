@@ -15,7 +15,6 @@ import pokemon from './modules/plugin/pokemon';
 import pretendLearn from "./modules/plugin/pretendLearn";
 import translate from "./modules/plugin/translate";
 import pixivImage from "./modules/plugin/pixivImage";
-import recordMsg from "./modules/plugin/recordMsg";
 import helpZen from "./modules/plugin/zen";
 import nbnhhsh from "./modules/plugin/nbnhhsh";
 
