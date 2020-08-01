@@ -272,7 +272,6 @@ function groupMsg(e, context) {
              bilibili.bilibiliCheck(context) ||
              twitter.twitterAggr(context) ||
              pixivImage.pixivCheck(context, replyMsg, bot) ||
-             recordMsg.response(context, replyMsg) ||
              helpZen(context, replyMsg, bot, rand) ||
              translate.transEntry(context) ||
              pokemon.pokemonCheck(context, replyMsg)) {
