@@ -261,6 +261,9 @@ function debugGroupMsg(e, context) {
 
 //群组消息处理
 function groupMsg(e, context) {
+    let text_bak = context.message;
+    context.message = pretendLearn.replaceEqual(context);
+    
     if (commonHandle(e, context)) {
         e.stopPropagation();
         return;
@@ -284,6 +287,7 @@ function groupMsg(e, context) {
         return;
     }
     else if (setting.repeat.enable) {
+        context.message = text_bak;
         //复读（
         //随机复读，rptLog得到当前复读次数
         if (logger.rptLog(group_id, user_id, context.message) >= setting.repeat.times && getRand() <= setting.repeat.probability) {
