@@ -1,9 +1,12 @@
-const axios = require('axios');
+import axios from 'axios';
+import config from '../config';
 const mongodb = require('mongodb').MongoClient;
+
+const admin = parseInt(config.picfinder.admin);
 
 var db_port = 27017;
 var db_path = "mongodb://127.0.0.1:" + db_port;
-var replyFunc = (context, msg, at = false) => {};
+var replyFunc = (context, msg, at = false) => {console.log(msg)};
 
 function weiboReply(replyMsg) {
     replyFunc = replyMsg;
@@ -17,10 +20,8 @@ function weiboReply(replyMsg) {
 function httpHeader(uid = 0, mid = 0) {
     let containerid = "107603" + uid;
     let since_id = mid;
-    // let page_url = "https://m.weibo.cn/u/" + uid;
-    // let url = "https://m.weibo.cn/api/container/getIndex";
     
-    headers = {
+    let headers = {
         "Host": "m.weibo.cn",
         "scheme": "https",
         "User-Agent": "Mozilla/5.0 (iPhone; CPU iPhone OS 12_2 like Mac OS X) AppleWebKit/605.1.15 (KHTML, like Gecko) Mobile/15E148",
@@ -28,14 +29,14 @@ function httpHeader(uid = 0, mid = 0) {
         "X-Requested-With":"XMLHttpRequest",
     }
 
-    params = {
+    let params = {
         "value": uid,
         "containerid": containerid,
     };
     //携带参数
     if (since_id != 0) params["since_id"] = since_id;
 
-    payload = {
+    let payload = {
         headers : headers,
         params : params
     }
@@ -133,7 +134,7 @@ function subscribe(uid, option, context) {
                 (err, result) => {
                     if (err) console.error(err + " database subscribes update error");
                     else {
-                        // console.log(result)
+                        let text = "";
                         if (result.value.groups.includes(group_id)) text = "多次订阅有害我的身心健康";
                         else text = `已订阅${result.value.name}的微博，模式为${option_nl}`;
                         replyFunc(context, text, true);
@@ -178,7 +179,7 @@ function unSubscribe(name, context) {
  * 每过x分钟检查一次订阅列表，如果订阅一个微博账号的群的数量是0就删除
  */
 function checkWeiboDynamic() {
-    let check_interval = 5 * 60 * 1000;
+    let check_interval = 6 * 60 * 1000;
     let i = 0;
     setInterval(() => {
         mongodb(db_path, {useUnifiedTopology: true}).connect().then(async mongo => {
@@ -190,8 +191,8 @@ function checkWeiboDynamic() {
 
             function checkEach() {
                 setTimeout(async function() {
-                    try{
-                        let stored_info = subscribes[i]
+                    try {
+                        let stored_info = subscribes[i];
                         let mblog = await getTimeline(stored_info.weibo_uid);
                         let last_mid = stored_info.mid;
                         let current_mid = mblog.mid;
@@ -252,7 +253,6 @@ function checkWeiboSubs(context) {
         let coll = mongo.db('bot').collection('weibo');
         await coll.find({groups : {$elemMatch : {$eq : group_id}}}, {projection: {_id : 0}})
             .toArray().then(result => {
-                // console.log(result);
                 if (result.length > 0) {
                     let name_list = [];
                     result.forEach(weibo_obj => {
@@ -270,25 +270,50 @@ function checkWeiboSubs(context) {
 }
 
 /**
+ * @param {object} context
+ * @returns {} no return
+ */
+function clearSubs(context, group_id) {
+    mongodb(db_path, {useUnifiedTopology: true}).connect().then(async mongo => {
+        let coll = mongo.db('bot').collection('weibo');
+        try {
+            let matchs = await coll.find({groups : {$in : [group_id]}}).toArray();
+            if (matchs.length < 1) {replyFunc(context, `未见任何微博订阅`); return;}
+            for (let item of matchs) {
+                let res = await coll.findOneAndUpdate({_id : item._id}, {$pull : {groups : {$in : [group_id]}}, $unset : {[group_id] : []}}, {returnOriginal : false});
+                if (res.value.groups.length < 1) await coll.deleteOne({_id : res.value._id});
+            }
+            replyFunc(context, `清理了${matchs.length}个微博订阅`);
+        }
+        catch(err) {
+            console.error(err);
+            replyFunc(context, '中途错误，清理未完成');
+        }
+        finally {mongo.close();}
+    }).catch(err => console.error(err + " weibo checkWeiboSubs error, group_id= " + group_id));
+}
+
+/**
  * @param {string} text 需要过滤的html
  * @returns {string} 处理完成
  */
 function textFilter(text) {
     // console.log(text)
-    return text.replace(/<a href="\/status\/.*\d">/g, "")
-                .replace(/<a href='\/n\/.*?'>/g, "")
-                .replace(/<a  href=.*?>(#.+?#)<\/span><\/a>/g , "$1")  //tag
-                .replace(/<a  href=".+url-icon'.+<span class="surl-text">(.+)<\/span><\/a>/g, "$1超话")  //超话
-                .replace(/<span.+><img alt=(\[.+?\]).+<\/span>/g, "$1")  //表情
+    return text.replace(/[\r\n]/g, "")
+                .replace(/<a href="\/status\/.*\d">/g, "")
+                .replace(/<a href='\/n\/.+?'>(.+?)<\/a>/g, "$1")  //@
+                .replace(/<a  href="https:\/\/m.weibo.cn\/search.+?<span class="surl-text">(.+?)<\/span><\/a>/g, "$1")  //tag
+                .replace(/<a  href="https:\/\/m.weibo.cn\/p\/index\?extparam.+?<span class="surl-text">(.+?)<\/span><\/a>/g, "[$1超话]")  //超话
+                .replace(/<span class="url-icon"><img alt=(\[.+?\]).+?\/><\/span>/g, "$1")  //表情
                 .replace(/<a data-url=\\?\"(.*?)\\?\".*?<\/a>/g, "$1")
                 .replace(/<a data-url=.*?href=\\?"(.*?)".*?>/g, '$1')
-                .replace(/<span class=\\"surl-text\\">(.*?)<\/span>/g, " $1")
-                .replace(/<img alt=.*?>/g, "")
                 .replace(/<img style=.*?>/g, "")
                 .replace(/<span.+?span>/g, "")
-                .replace(/<\/a>/g, "")
+                .replace(/<a.+<\/a>/g, "")
                 .replace(/<br \/>/g , "\n")
                 .replace(/&quot;/g , "'")
+                .replace(/&gt;/g , ">")
+                .replace(/&lt;/g , "<")
                 .replace(/网页链接/g, "")
                 .replace(/\\.*?秒拍视频/g, "");
 }
@@ -307,8 +332,8 @@ async function format(mblog, textForm = false) {
     if ("pics" in mblog) {
         let pics = mblog.pics;
         let pic_str = "";
+        let pic_url = "";
         for (let pic of pics) {
-            pid = pic.pid;
             pic_url = pic.large.url;
             pic_str += `[CQ:image,cache=0,file=${pic_url}]`;
         }
@@ -416,7 +441,7 @@ async function addSubByName(name, option_nl, context) {
  * @param {string} option_nl 偏好设置，可以是"仅原创"，"包含转发"，"仅带图"
  * @param {object} context
  */
-async function addSubByUid(url, option_nl, context) {
+function addSubByUid(url, option_nl, context) {
     axios.get(url, {params : httpHeader().headers}).then(res => {
         let temp = /https:\/\/m.weibo.cn(\/(\d+)\/\d+|\/u\/(\d+))/.exec(url);
         let uid = temp[2] ? temp[2] : temp[3]
@@ -437,11 +462,11 @@ function rtWeibo(name, num, context) {
     getUserId(name).then(uid => {
         if (uid) getTimeline(uid, num).then(res => {
             format(res).then(payload => {
-                replyFunc(context, payload)
-            })
-        })
+                replyFunc(context, payload);
+            }).catch(err => {console.error(err); replyFunc(context, "中途错误", true);});
+        }).catch(err => {console.error(err); replyFunc(context, "等下再试", true);});
         else replyFunc(context, "查无此人", true);
-    })
+    }).catch(err => {console.error(err); replyFunc(context, "中途错误", true);});
 }
 
 /**
@@ -506,7 +531,12 @@ function weiboAggr(context) {
         checkWeiboSubs(context);
         return true;
     }
+    else if (/^清空微博订阅$/.test(context.message)) {
+        if (/owner|admin/.test(context.sender.role) || context.user_id == admin) clearSubs(context, context.group_id);
+        else replyFunc(context, '您配吗？');
+        return true;
+    }
     else return false;
 }
 
-module.exports = {weiboAggr, checkWeiboDynamic, weiboReply};
+export default {weiboAggr, checkWeiboDynamic, weiboReply, clearSubs};

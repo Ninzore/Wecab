@@ -1,33 +1,28 @@
 # Wecab 
 
-Web Content Aggregation Bot 网络内容聚合机器人  
-争做基于酷Q的最好的订阅制机器人  
-前身是给Tsuk1ko的CQ-picfinder-robot V2.12做的小挂件，基本稳定，至少目前看起来很稳而且从没翻车  
+### Web Content Aggregation Bot 网络内容聚合机器人  
+#### 最好的综合型订阅制机器人  
+前身是给[CQ-picfinder-robot](https://github.com/Tsuk1ko/CQ-picfinder-robot)做的小挂件（已完全脱离）  
 如果有bug请复制pm2log中的错误信息并提交issus，我会尽快解决（可能） 
 觉得好用不妨点个Star谢谢  
-  
-[更新日志](https://github.com/Ninzore/CQ-picfinder-robot-add-on/blob/master/CHANGELOG.md)
+
+[Wiki](https://github.com/Ninzore/Wecab/wiki)  
+[更新日志](https://github.com/Ninzore/Wecab/blob/master/CHANGELOG.md)
 
 ## 特色  
 1. 所有不需要申请任何api，包括微博，B站，Twitter，翻译，即插即用  
 2. 群组分离，互不干扰  
 
-**注意！！！**
-1. main基于V2.12.4修改，2.12.4可以直接复制main.js，~~2.11.12版以外的版本需要把main_edit.js里面的东西复制到main的337行左右~~ 
-  改的地方太多了直接复制吧
-2. 需要先安装[原版](https://github.com/Tsuk1ko/CQ-picfinder-robot)再复制这边的文件到文件夹  
-3. 需要安装MongoDB，没装的参考官方教程https://docs.mongodb.com/manual/installation/ ，端口是默认端口不要改，然后使用mongorestore将dump文件夹中的东西恢复到mongodb中，这样才能使用小游戏功能，当然如果不用的话也可以，删除main中所有pokemon相关的语句就行  
-4. 需要npm install mongodb，seedrandom和puppeteer  
-5. 把别的东西放到module/plugin里  
+**注意！！！**  
+需要安装MongoDB，没装的参考官方教程https://docs.mongodb.com/manual/installation/ ，端口是默认端口不要改，然后使用mongorestore将dump文件夹中的东西恢复到mongodb中，这样才能使用小游戏功能，当然如果不用的话也可以，删除main中所有pokemon相关的语句就行  
 
 ## 部件列表  
 正在缓慢更新中  
 TODO:  
-1. 准备脱离原[CQ-Picfinder-robot](https://github.com/Tsuk1ko/CQ-picfinder-robot)，可能之后会改个名并且更方便安装  
-2. 烤推emoji支持  
-3. Pixiv订阅  
-4. 接入RSSHub 
-5. 小游戏更新(不存在的)  
+1. Pixiv订阅  
+2. 接入RSSHub 
+3. 从MongoDB换到SQLite
+4. 小游戏更新(不存在的)  
 
 ### 1. 看微博，B站，Twitter动态  
 用 “看看**谁谁上条**微博/B站/Twitter/推特”，谁谁是要看的人的名字，上条可以改，可以要求看置顶，上条，上上条，上上上条.....，也可以直接写第x条，x范围是0~9  
@@ -56,17 +51,24 @@ Twitter相关功能在开机后会尝试测试Twitter连接，如果无法连接
 进阶操作1. 教学的格式可变为 @bot 我教你xxx>yyy>精确/模糊/正则  
 进阶操作2. 遗忘的格式同上，也可变为 @bot忘掉/忘记xxx > 精确/模糊/正则，注意在模式为正则时为模糊匹配，  
 ^123$只需要输入123就行了  
+@bot 并说**教学成果**可以查看计数
   
-### 4. Pixiv看图  
+### 4. 教复读  
+@bot 并说 **复读**xxx，就可以学会复读  
+@bot 并说 **不准复读**xxx，就可以砸掉复读机  
+和上面一样也可以@bot 复读xxx>精确/模糊/正则  
+@bot 并说**教学成果**可以查看计数  
+
+### 5. Pixiv看图  
 ***看看p站***后接p站图片id或者包含id的url，如果该id有多图会自动合并发送，最多同时发送9张  
   由于酷Q限制无法发送4M以上大小的图，此时会发送图片链接
 
-### 5. 翻译  
+### 6. 翻译  
 **翻译>** 后接需要翻译的外语句子，自动识别语言并翻译成中文  
 **中译x>** x为目标语言，可以是日韩英法德俄，后接中文，会翻译为目标语言  
 目前使用腾讯翻译
 
-### 6. 骰子  
+### 7. 骰子  
 可以扔出任意面数（<1000），任意个数(<10)的骰子，可以指定最小值，自动统计总分  
 用法的话，参考  
 .dice6  扔一个D6  
@@ -74,40 +76,6 @@ Twitter相关功能在开机后会尝试测试Twitter连接，如果无法连接
 .dice16,10  扔1个最低为10的D16  
 .dice20x3,10  扔3个最低为10的D20  
 
-### 7. Twitter截图    
-使用Twitter/推特截图 https://twitter.com/xxxx  
-可以直接产生一张截图  
-
-### 8. Twitter烤制  
-烤制https://twitter.com....(单条Twitter网址)>>这里放翻译内容  
-这样就能直接生成一张带翻译的twitter截图  
-
-高级用法（使用CSS方式装饰原Twitter）  
-使用>标识，并在后面添加参数:  
-1. 汉化组 (汉化组名称，会被标识在原本的‘翻译推文’处)
-2. 回复 (烤制回复推时填写)
-3. 字体 (对应 font-family)
-4. 颜色 (对应 color)
-5. 大小 (对应 font-size)
-6. 装饰 (对应 text-decoration)
-7. 背景 (对应 background)
-8. 覆盖 (是否覆盖原文)
-9. style (CSS)
-
-注：在使用style时其他装饰语句无效  
-
-例  
-  * 烤制https://twitter.com....(单条Twitter网址)>字体=Mircosoft Yahei + 大小=20px + 背景=blue + 颜色=red + 装饰=underline wavy yellow + 汉化组=测试汉化组  
-  * 烤制https://twitter.com....(单条Twitter网址)>翻译=什么什么东西+style=background:#ffffff; text-shadow: 2px 2px; background-image: url("paper.gif");  
-  
-更高级用法（在原Twitter上直接插入html），注：在使用html时其他所有参数无效  
-使用参数，并且使用>标识:  
-1. group_html (‘翻译推文’处的html)
-2. trans_html (汉化文本处的html)  
-
-例
-  * 烤制https://twitter.com....(单条Twitter网址)>group_html=....（汉化组部分html） + trans_html= ......（翻译部分html）
-  
 ### 8.简单直接宝可梦  
 **注意！！！** 使用前必须先将下载dump然后用mongorestore存进mongoDB  
    首先一切操作都需要‘捕捉’后才能进行，所有首先进行‘捕捉’吧   
@@ -123,6 +91,7 @@ Twitter相关功能在开机后会尝试测试Twitter连接，如果无法连接
    除了对战，其他功能都可以私聊进行，使用***宝可梦帮助***就能查看帮助(废话   
    这游戏bug频出  
   
+  
 ## Extra   
 基于各种奇怪需求开发的部件，需要把extra文件夹中除了main的放到plugin里，并且替换之前的main  
 1. 匹配句子发送音频，参考recordMsg文件  
@@ -130,15 +99,18 @@ Twitter相关功能在开机后会尝试测试Twitter连接，如果无法连接
 3. 能不能好好说话，来自[nbnhhsh项目](https://github.com/itorr/nbnhhsh) 现在因为太吵了就注释掉了
 
 ## 以下内容因为版本更迭暂不支持  
-### 2. 图片分类  
+### 1. Twitter截图, 烤制
+已脱离
+
+### 3. 图片分类  
 可以请求不同种类的P站图片，数据库为本地储存的MongoDB，setu_database里是我自己扒了10多个tag并手工删减了一些不太行的，可以用MongoDB恢复到数据库，不需要的话可以自己用pxer扒  
 
-### 3. 看漫画  
+### 4. 看漫画  
 实现了自动翻页，暂停自动翻页，跳页，手动翻页之类的功能  
 可以和狗群员一起看漫画，没什么卵用，语句是 看看漫画  
 需要指定本地漫画的地址（对你得把漫画下载到本地），从1.jpg开始
 
-### 4. 获取少前新人/皮肤的大破图  
+### 5. 获取少前新人/皮肤的大破图  
 来源是少前台服官网，需要手动触发，语句为“康康新枪/皮肤”
 
 ### 6. 少前帮助  

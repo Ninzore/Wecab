@@ -2,49 +2,128 @@
   
 ## 2020
 
+### 8/13  v1.2.0
+* Add: 建立等式功能
+* Fix: 教学模块细微调整适应go-cqhttp
+
+### 8/01  v1.1.9
+* Fix: 调用了未引用的函数
+
+### 7/31  v1.1.8
+* Fix: 调用了不存在的文件
+
+### 7/26  v1.1.7
+* Fix: 转发b23短链时，如果重定向目标为视频会报错
+* Add: 转发b23短链时，如果重定向目标为视频则会发送视频链接
+
+### 7/24  v1.1.6
+* Add: 现在Twitter会转发投票内容以及更丰富的card内容
+* Update: Twitter模块其他小改进
+
+### 7/22  v1.1.5
+* Update: 转发时会给出gif动图而不是mp4链接（过大时仍然会给出链接）
+
+### 7/20  v1.1.4
+* Update: 删除twitter查看置顶（目前有问题）
+
+### 7/17  v1.1.3
+* 加入helpZen（禁言）模块
+
+### 7/16
+* Delete: 删除extra文件夹（没用）
+
+### 7/14  v1.1.2
+* Fixed: 看看xxTwitter有时会无效的bug
+
+### 7/10  V1.1.1
+* Fixed: 不加选项时添加订阅出错，订阅转发时url出错
+
+### 7/07  V1.1.0
+* Added: Twitter订阅时的可选项更多，添加（包含转发，不要转发，仅回复，包含回复，不要回复）  
+* Change: 修改Twitter订阅查询机制  
+* 注：更新后与旧版本**不兼容**  
+[commit](https://github.com/Ninzore/Wecab/commit/1091153a7c6b02c3f820b59d9c8c79da54a870ef)
+
+### 7/06  
+* Fixed: 图片太大时会使用小图，并提示  
+[commit](https://github.com/Ninzore/Wecab/commit/1091153a7c6b02c3f820b59d9c8c79da54a870ef)
+
+### 7/05  
+* Fixed: 如果在检查区间发送多条Twitter，只会发送最新一条的bug，现在会正确发送所有新内容  
+[commit](https://github.com/Ninzore/Wecab/commit/9c3e7b515c4f76b1123f2d86fa0890f7ceef7bef)
+
+### 7/01  v1.0.0
+* New: 完全脱离CQ-picfinder,不依赖原项目
+
+### 6/29
+* Added: 添加一键清空该群所有Twitter订阅  [commit](https://github.com/Ninzore/Wecab/commit/d17cee9c7f701500c0ae03040dc8766cd7bb54ba)
+* Fixed: 不准复读图片时的错误  [commit](https://github.com/Ninzore/Wecab/commit/867d96d7f0d02a8dba8247d1f385175d69b181e0)
+
+### 6/28
+* Added: 添加一键清空该群所有B站订阅  
+[commit](https://github.com/Ninzore/Wecab/commit/aa15b8048bf0e3857e5ecc0649be829514759006)
+
+### 6/24
+* Added: 添加一键清空该群所有微博订阅  
+* Fixed: html正则未完全匹配  
+[commit](https://github.com/Ninzore/Wecab/commit/6d051b1a6ecce1be0a43f8393701650805812516)
+
+### 6/23
+* Fixed: 微博html正则未完全匹配
+
+### 6/22
+* Added: 新增对问答和复读进行计数  
+* Changed: 问答和复读收取图片时也变为url
+
+### 6/19
+* Others: 微博多加几个catch 
+
+### 6/18
+* Added: 加入复读  
+
 ### 6/16
-* 改变微博刷新机制防止触发反爬虫
+* Changed: 改变微博刷新机制防止触发反爬虫
 
 ### 6/14
-* 上次更新导致了无法触发图片的bug，修复
-* 教学部分发送图片时全部改为网络链接，避免删除酷Q缓存导致无法回复图片
+* Fixed: 上次更新导致了无法触发图片的bug，修复
+* Changed: 教学部分发送图片时全部改为网络链接，避免删除酷Q缓存导致无法回复图片
 
 ### 6/13
-* 教学时收录的图片改为网络地址
+* Changed: 教学时收录的图片改为网络地址
 
 ### 6/11
-* 解决无法烤制某些回复推的bug
+* Fixed: 解决无法烤制某些回复推的bug
 
 ### 6/10
-* 将“看看B站”简略为“看看”  
-* 支持b23短链接  
+* Changed: 将“看看B站”简略为“看看”  
+* Added: 支持b23短链接  
 
 ### 6/09
-* 修复烤推时无法找到node的错误    
+* Fixed: 修复烤推时无法找到node的错误    
 
 ### 6/04
-* 烤推支持覆盖原文  
+* Added: 烤推支持覆盖原文  
 
 ### 6/03
-* 添加对Twitter移动版mobile.twitter网址的识别   
-* 简化twitter指令  
-  1. 取消看看xxTwitter>链接，现在默认发送链接  
-  2. 取消看看xxTwitter>截图，转为使用twitter截图url  
-  3. 看看Twitter url改为 看看url，方便使用  
+* Added:  添加对Twitter移动版mobile.twitter网址的识别   
+* Changed: 简化twitter指令  
+   1. 取消看看xxTwitter>链接，现在默认发送链接  
+   2. 取消看看xxTwitter>截图，转为使用twitter截图url  
+   3. 看看Twitter url改为 看看url，方便使用  
   
 ### 6/02
-* 解决检查连接性出错的bug  
+* Fixed: 解决检查连接性出错的bug  
 
 ### 6/01
-* 解决在设置为'仅原创'时仍然会发送转发内容的bug  
+* Fixed: 解决在设置为'仅原创'时仍然会发送转发内容的bug  
 
 ### 5/29
-* 解决无法获取cookie的问题  
-* 解决订阅设定为‘仅原创’时依然会有转发twitter的问题  
+* Fixed: 解决无法获取cookie的问题  
+* Fixed: 解决订阅设定为‘仅原创’时依然会有转发twitter的问题  
 
 ### 5/27
-  * 解决截图不完整的bug  
-  * 解决有时页脚没有被正确删除的bug  
+* Fixed: 解决截图不完整的bug  
+* Fixed: 解决有时页脚没有被正确删除的bug  
 
 ### 5/26
   * 准备脱离原[CQ-Picfinder-Robot](https://github.com/Tsuk1ko/CQ-picfinder-robot)  
