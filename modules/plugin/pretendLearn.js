@@ -3,6 +3,7 @@ const mongodb = require('mongodb').MongoClient;
 const db_path = "mongodb://127.0.0.1:27017";
 var replyFunc = (context, msg, at = false) => {console.log(msg)};
 let logger;
+let equals = {}
 
 function learnReply(replyMsg, main_logger) {
     replyFunc = replyMsg;
@@ -10,7 +11,27 @@ function learnReply(replyMsg, main_logger) {
 }
 
 function replaceImg(img) {
-    return img.replace(/\[CQ:image,file=.+,url=(.+)\]/ig, '[CQ:image,file=$1]');
+    return img.replace(/\[CQ:image,.+?url=(http:.+?\d+)\/[\d]+-[\d]+-([\d\w]+)\/0\?term=2\]/ig, '[CQ:image,file=$1/0-0-$2/0?term=2]');
+}
+
+function checkPermission(context) {
+    if (/owner|admin/.test(context.sender.role)) return true;
+    else {
+        replyFunc(context, "您配吗");
+        return false;
+    }
+}
+
+function initialise() {
+    mongodb(db_path, {useUnifiedTopology: true}).connect().then(async (mongo) => {
+        let db = mongo.db('qa_set');
+        let colls = await db.listCollections({name : /^equation/}, {nameOnly : true}).toArray();
+        for (let coll of colls) {
+            equals[/(\d+)/.exec(coll.name)[1]] = 
+                await db.collection(coll.name).find({}, {projection : {_id : false}}).toArray();
+        }
+        mongo.close();
+    }).catch((e) => {console.error(e)});
 }
 
 /**
@@ -30,12 +51,13 @@ function teach(context) {
 
         let text = "";
         let {err, error_text, mode} = check(qes, mode_name);
-
+        
         //如果没有错误就写入数据库
         if (!err) {
             mongodb(db_path, {useUnifiedTopology: true}).connect().then(async (mongo) => {
                 if (/\[CQ:image/.test(qes)) qes = replaceImg(qes);
                 if (/\[CQ:image/.test(ans)) ans = replaceImg(ans);
+
                 let qa_set = mongo.db('qa_set').collection("qa" + String(context.group_id));
                 await qa_set.updateOne({question : qes, mode : mode}, {$set : {count : 0}, $addToSet : {answers : ans}}, {upsert : true});
                 mongo.close();
@@ -49,6 +71,41 @@ function teach(context) {
     }
     else return false;
 }
+
+function makeEqual(context) {
+    let eql_reg = RegExp(/建立等式\s?(?<lhs>.+?)\s?(?<!(file|url|term))[=＝]\s?(?<rhs>.+)/);
+    if (eql_reg.test(context.message) && context.group_id) {
+        if (!checkPermission(context)) return true;
+        let {lhs, rhs} = eql_reg.exec(context.message).groups;
+        if (/\[CQ:image/.test(lhs)) lhs = replaceImg(lhs);
+        lhs = lhs.trim();
+        rhs = rhs.trim();
+        let lhs_min_len = 4;
+        let rhs_min_len = 4;
+        if (lhs.length < lhs_min_len || rhs.length < rhs_min_len) {
+            replyFunc(context, `等式两边长度都必须分别大于${lhs_min_len}和${rhs_min_len}`);
+        }
+        else if (/\[CQ/.test(rhs)) {
+            replyFunc(context, "等式右侧不能包含图片");
+        }
+        else {
+            
+            mongodb(db_path, {useUnifiedTopology: true}).connect().then(async (mongo) => {
+                let coll = mongo.db('qa_set').collection("equation" + String(context.group_id));
+                await coll.updateOne({lhs : lhs}, {$set : {rhs : rhs}}, {upsert : true});
+                equals[context.group_id] = await coll.find({}, {projection : {_id : false}}).toArray();
+                mongo.close();
+            }).catch((err) => {
+                replyFunc(context, "不灵光，没学会，过会儿再来");
+                console.error(err);
+            });
+            replyFunc(context, `我寻思这 ${lhs} 好像和 ${rhs} 一样是吧`);
+        }
+        return true;
+    }
+    else return false;
+}
+
 
 /**
  * 教学环节
@@ -141,9 +198,13 @@ function check(word, mode_name) {
     return {err : err, error_text : text, mode : mode};
 }
 
+/**
+ * 用响应词反推关键词
+ * @param {object} context
+ */
 function remember(context) {
-    let common = new RegExp(/\s?(?:想一?想|回忆)\s?(?<ans>.+)/i);
-    let specific = new RegExp(/\s?(?:想一?想|回忆)\s?(?<ans>.+?)\s?[＞>]\s?(?<mode_name>精确|模糊|正则)/i);
+    let common = new RegExp(/\s?(?:想一?想|回忆)\s?(?<ans>.+)/);
+    let specific = new RegExp(/\s?(?:想一?想|回忆)\s?(?<ans>.+?)\s?[＞>]\s?(?<mode_name>精确|模糊|正则)/);
 
     let match_result = context.message.match(specific);
     if (match_result == undefined) {
@@ -189,17 +250,22 @@ function remember(context) {
             }
             if (/\[CQ:image/.test(text)) text = replaceImg(text);
             replyFunc(context, text)
-        }).catch((err) => {console.log(err)});
+        }).catch((err) => {console.error(err)});
         return true;
     }
     else return false;
 }
 
+/**
+ * 返回该组所有词汇
+ * @param {object} context
+ */
 function rememberAll(context) {
     let common = new RegExp(/\s?你学过什么/);
     let match_result = context.message.match(common);
 
     if (match_result != null) {
+        if (!checkPermission(context)) return true;
         mongodb(db_path, {useUnifiedTopology: true}).connect().then(async mongo => {
             let qa_set = mongo.db('qa_set').collection("qa" + String(context.group_id));
             let qa_result = await qa_set.find({}).toArray();
@@ -242,47 +308,73 @@ function rememberAll(context) {
     }
 }
 
+/**
+ * 按照触发次数排个序
+ * @param {object} context
+ */
 function rank(context) {
-    mongodb(db_path, {useUnifiedTopology: true}).connect().then(async mongo => {
-        let qa_set = mongo.db('qa_set').collection("qa" + String(context.group_id));
-        let qa_result = await qa_set.find({}).toArray();
-        let rp_set = mongo.db('qa_set').collection("repeat" + String(context.group_id));
-        let rp_result = await rp_set.find({}).toArray();
-        let text = [];
-        mongo.close();
+    if (/教学成果/.test(context.message)) {
+        if (!checkPermission(context)) return true;
+        mongodb(db_path, {useUnifiedTopology: true}).connect().then(async mongo => {
+            let qa_set = mongo.db('qa_set').collection("qa" + String(context.group_id));
+            let qa_result = await qa_set.find({}).toArray();
+            let rp_set = mongo.db('qa_set').collection("repeat" + String(context.group_id));
+            let rp_result = await rp_set.find({}).toArray();
+            let text = [];
+            mongo.close();
 
-        if (qa_result.length < 1 && rp_result.length < 1) text.push("脑袋空空的啊");
-        else {
-            if (qa_result.length > 1) {
-                qa_result.sort((a, b) => {
-                    a.count = (a.count == undefined) ? 0 : a.count;
-                    b.count = (b.count == undefined) ? 0 : b.count;
-                    return b.count - a.count;
-                });
-                text.push(['问答词排名', rankText(qa_result)].join('\n'));
-            }
-
-            if (rp_result.length > 1) {
-                rp_result.sort((a, b) => {
-                    a.count = (a.count == undefined) ? 0 : a.count;
-                    b.count = (b.count == undefined) ? 0 : b.count;
-                    return a.count - b.count;
-                });
-                text.push(['复读词排名', rankText(rp_result)].join('\n'));
-            }
-            
-            function rankText(sorted) {
-                let rank_list = [];
-                for (let i = 0; i < ((sorted.length >= 5) ? 5 : sorted.length); i++) {
-                    rank_list.push(`${('question' in sorted[i]) ? sorted[i].question : sorted[i].repeat_word}，${('count' in sorted[i]) ? sorted[i].count : 0}次`);
+            if (qa_result.length < 1 && rp_result.length < 1) text.push("脑袋空空的啊");
+            else {
+                if (qa_result.length > 1) {
+                    qa_result.sort((a, b) => {
+                        a.count = (a.count == undefined) ? 0 : a.count;
+                        b.count = (b.count == undefined) ? 0 : b.count;
+                        return b.count - a.count;
+                    });
+                    text.push(['问答词排名', rankText(qa_result)].join('\n'));
                 }
-                return rank_list.join('\n');
+
+                if (rp_result.length > 1) {
+                    rp_result.sort((a, b) => {
+                        a.count = (a.count == undefined) ? 0 : a.count;
+                        b.count = (b.count == undefined) ? 0 : b.count;
+                        return a.count - b.count;
+                    });
+                    text.push(['复读词排名', rankText(rp_result)].join('\n'));
+                }
+                
+                function rankText(sorted) {
+                    let rank_list = [];
+                    for (let i = 0; i < ((sorted.length >= 5) ? 5 : sorted.length); i++) {
+                        rank_list.push(`${('question' in sorted[i]) ? sorted[i].question : sorted[i].repeat_word}，${('count' in sorted[i]) ? sorted[i].count : 0}次`);
+                    }
+                    return rank_list.join('\n');
+                }
             }
+            text = text.join('\n\n');
+            if (/\[CQ:image/.test(text)) text = replaceImg(text);
+            replyFunc(context, text);
+            return true;
+        }).catch((err) => {console.error(err)});
+    }
+    else return false;
+}
+
+function recallEquations(context) {
+    if (!/你觉得哪些一样/.test(context.message)) return false;
+    if (!checkPermission(context)) return true;
+    let group_equal = equals[context.group_id];
+    let text = [];
+
+    if (group_equal != undefined && group_equal.length > 0) {
+        text.push("我寻思这些好像都对：");
+        for (let pair of group_equal) {
+            text.push([pair.lhs, "=", pair.rhs].join(" "));
         }
-        text = text.join('\n\n');
-        if (/\[CQ:image/.test(text)) text = replaceImg(text);
-        replyFunc(context, text);
-    }).catch((err) => {console.error(err)});
+        text = text.join("\n");
+    }
+    else text = "我有学过吗？";
+    replyFunc(context, text);
 }
 
 function forget(context) {
@@ -326,6 +418,53 @@ function forget(context) {
     else return false;
 }
 
+function makeUnequal(context) {
+    if (/等式不成立.+/.test(context.message) && context.group_id) {
+        if (!checkPermission(context)) return true;
+        let half_eql = /等式不成立(.+)/.exec(context.message)[1].trim().split(/((?<!(file|url|term))[=＝])/, 3).filter(elem => elem && elem.length > 0);
+        if (half_eql.length < 2) {
+            replyFunc(context, "格式错了");
+            return true;
+        }
+        else {
+            mongodb(db_path, {useUnifiedTopology: true}).connect().then(async mongo => {
+                let coll = mongo.db('qa_set').collection("equation" + String(context.group_id));
+                let word = "";
+                let side = "";
+                
+                switch ((/((?<!(file|url|term))[=＝])/.test(half_eql[0]))) {
+                    case true : {
+                        word = half_eql[1];
+                        side = "rhs";
+                        break;
+                    }
+                    default : {
+                        word = half_eql[0];
+                        side = "lhs";
+                        break;
+                    }
+                }
+                if (/\[CQ:image/.test(word)) word = replaceImg(word);
+
+                let result = await coll.findOneAndDelete({[side] : word.trim()});
+                if (result.value == null) text = "我都还没记住呢";
+                else {
+                    text = `我感觉这 ${result.value.lhs} 好像不等于 ${result.value.rhs} 哦`;
+                    equals[context.group_id] = await coll.find({}, {projection : {_id : false}}).toArray();
+                }
+                replyFunc(context, text);
+                mongo.close();
+                return true;
+            }).catch((err) => {
+                console.error(err);
+                replyFunc(context, "中途错误");
+                return true;
+            }); 
+        }
+    }
+    else return false;
+}
+
 function erase(context) {
     let common = new RegExp(/不准复读\s?(?<repeat_word>.+)/);
     let match_result = context.message.match(common);
@@ -334,7 +473,7 @@ function erase(context) {
         let {groups : {repeat_word}} = match_result;
         let text = "";
         if (/\[CQ:image/.test(repeat_word)) repeat_word = replaceImg(repeat_word);
-        
+            
         mongodb(db_path, {useUnifiedTopology: true}).connect().then(async mongo => {
             let coll = mongo.db('qa_set').collection("repeat" + String(context.group_id));
             let result = await coll.findOneAndDelete({repeat_word : repeat_word});
@@ -343,7 +482,10 @@ function erase(context) {
             else text = `记录已抹去：${replaceImg(result.value.repeat_word)}`;
             replyFunc(context, text);
             mongo.close();
-        }).catch((err) => {console.log(err)});
+        }).catch((err) => {
+            replyFunc(context, "中途错误");
+            console.error(err);
+        });
         return true;
     }
     else return false;
@@ -406,6 +548,20 @@ async function reply(context) {
     }).catch((err) => {console.error(err)});
 }
 
+
+function replaceEqual(context) {
+    let group_equal = equals[context.group_id];
+    if (group_equal != undefined && group_equal.length > 0) {
+        let text = context.message;
+        if (/\[CQ:image/.test(text)) text = replaceImg(text);
+        for (let pair of group_equal) {
+            if (text == pair.lhs) return pair.rhs;
+        }
+        return text;
+    }
+    else return context.message;
+}
+
 function repeat(context) {
     mongodb(db_path, {useUnifiedTopology: true}).connect().then(async mongo => {
         let coll = mongo.db('qa_set').collection("repeat" + String(context.group_id));
@@ -464,21 +620,20 @@ function talk(context) {
 function learn(context) {
     if ("group_id" in context) {
         if (teach(context)) return true;
+        else if (makeEqual(context)) return true;
         else if (record(context)) return true;
         else if (forget(context)) return true;
+        else if (makeUnequal(context)) return true;
         else if (erase(context)) return true;
         else if (remember(context)) return true;
-        else if (/owner|admin/.test(context.sender.role) && /教学成果/.test(context.message)) {
-            rank(context);
-            return true;
-        }
-        else if (/owner|admin/.test(context.sender.role) && /你学过什么/.test(context.message)) {
-            rememberAll(context);
-            return true
-        }
+        else if (recallEquations(context)) return true;
+        else if (rank(context)) return true;
+        else if (rememberAll(context)) return true;
         else return false;
     }
     else return false;
 }
 
-module.exports = {learn, talk, learnReply};
+initialise();
+
+module.exports = {learn, talk, replaceEqual, learnReply};
