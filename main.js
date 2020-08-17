@@ -169,19 +169,9 @@ bot.on('socket.connecting', (wsType, attempts) => console.log(`${getTime()} 连�
 //connect
 bot.connect();
 
-//自动帮自己签到（诶嘿
 //以及每日需要更新的一些东西
 setInterval(() => {
-    if (bot.isReady() && logger.canAdminSign()) {
-        setTimeout(() => {
-            if (setting.admin > 0) {
-                bot('send_like', {
-                    user_id: setting.admin,
-                    times: 10,
-                });
-            }
-        }, 60 * 1000);
-    }
+    if (bot.isReady() && logger.canAdminSign()) {}
 }, 60 * 60 * 1000);
 
 function notice(context) {
