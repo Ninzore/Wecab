@@ -213,26 +213,8 @@ function privateAndAtMsg(e, context) {
         e.stopPropagation();
         return;
     }
-    if (pixivImage.pixivCheck(context, replyMsg, bot) ||
-        pretendLearn.learn(context) ||
-        pokemon.pokemonCheck(context, replyMsg)) {
-        e.stopPropagation();
-        return;
-    }
-    if (signReg.exec(context.message)) {
-        //签到
-        e.stopPropagation();
-        if (logger.canSign(context.user_id)) {
-            bot('send_like', {
-                user_id: context.user_id,
-                times: 10,
-            });
-            return setting.replys.sign;
-        } else return setting.replys.signed;
-    } else {
-        //其他指令
-        return setting.replys.default;
-    }
+    //其他指令
+    return setting.replys.default;
 }
 
 //调试模式
@@ -253,6 +235,7 @@ function debugGroupMsg(e, context) {
 function groupMsg(e, context) {
     let text_bak = context.message;
     context.message = pretendLearn.replaceEqual(context);
+    translate.orientedTrans(context);
     
     if (commonHandle(e, context)) {
         e.stopPropagation();
