@@ -8,6 +8,7 @@ let qtk = "";
 let fy_guid = "";
 
 let target = [];
+
 let replyFunc = (context, msg, at = false) => {};
 
 function transReply(replyMsg) {
@@ -55,7 +56,7 @@ function translate(sourceLang, targetLang, sourceText, context, reply) {
             "qtv" : qtv,
             "source" : sourceLang,
             "target" : targetLang,
-            "sourceText" : sourceText
+            "sourceText" : sourceText.replace(/&amp/g, "&").replace(/&#91/g, "[").replace(/&#93/g, "]")
         }
     }).then(res => {
         let targetText = "";
@@ -81,10 +82,12 @@ function toTargetLang(lang_opt) {
 
 function orientedTrans(context) {
     if (target.indexOf(context.user_id) != -1) {
-        let text = context.message.replace(/\[CQ.+?\]/, "");
-        translate("auto", "zh", text, context, false);
+        let text = context.message.replace(/\[CQ.+\]/, "");
+        if (text.length < 3) return;
+        if (/[\u4e00-\u9fa5]+/.test(text) && !/[\u3040-\u30FF]/.test(text)) translate("zh", "jp", text, context, false);
+        else translate("auto", "zh", text, context, false);
     }
-    else return false;
+    else return;
 }
 
 function pointTo(context, user_id) {
@@ -110,20 +113,20 @@ function viewTarget(context) {
 function transEntry(context) {
     if (/翻译[>＞].+/.test(context.message)) {
         let sourceText = context.message.substring(3, context.message.length);
-        translate("auto", "zh", sourceText, context);
+        translate("auto", "zh", sourceText, context, true);
         return true;
     }
     else if (/中译[日韩英法德俄][>＞].+/.test(context.message)) {
         let target_lang = toTargetLang(/中译(.)[>＞]/.exec(context.message)[1]);
-        translate("zh", target_lang, /中译.[>＞](.+)/.exec(context.message)[1], context);
+        translate("zh", target_lang, /中译.[>＞](.+)/.exec(context.message)[1], context, true);
         return true;
     }
-    else if (/^开始定向翻译(\s?\d{9,10}?)?$/.test(context.message)) {
+    else if (/^开始定向翻译(\s?(\d{9,10}?|\[CQ:at,qq=\d+\])\s?)?$/.test(context.message)) {
         let user_id = /\d+/.exec(context.message) || context.user_id;
         pointTo(context, user_id);
         return true;
     }
-    else if (/^停止定向翻译(\s?\d{9,10}?)?$/.test(context.message)) {
+    else if (/^停止定向翻译(\s?(\d{9,10}?|\[CQ:at,qq=\d+\])\s?)?$/.test(context.message)) {
         let user_id = /\d+/.exec(context.message) || context.user_id;
         unpoint(context, user_id);
         return true;
