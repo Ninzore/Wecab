@@ -1,5 +1,5 @@
 import { version } from './package.json';
-import CQWebsocket from 'cq-websocket';
+import { CQWebSocket } from 'cq-websocket';
 import config from './modules/config';
 import CQ from './modules/CQcode';
 import Logger from './modules/Logger';
@@ -18,11 +18,10 @@ import pixivImage from "./modules/plugin/pixivImage";
 import helpZen from "./modules/plugin/zen";
 import nbnhhsh from "./modules/plugin/nbnhhsh";
 
-//常量
-const setting = config.picfinder;
+// 初始化开始
+const setting = config.bot;
+const bot = new CQWebSocket(config.cqws);
 const rand = RandomSeed.create();
-const signReg = new RegExp(setting.regs.sign);
-const bot = new CQWebsocket(config);
 const logger = new Logger();
 
 weibo.weiboReply(replyMsg);

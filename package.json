@@ -1,20 +1,20 @@
 {
   "name": "wecab",
-  "version": "1.2.2",
+  "version": "1.2.3",
   "description": "QQ上最好的订阅制bot",
   "main": "index.js",
   "dependencies": {
     "axios": "^0.20.0",
     "cq-websocket": "^2.1.1",
-    "esm": "3.1.0",
-    "fs": "0.0.1-security",
-    "fs-extra": "^9.0.0",
+    "esm": "^3.2.25",
+    "fs-extra": "^9.0.1",
     "lodash": "^4.17.20",
-    "lodash.combinations": "^18.9.19",
-    "mongodb": "^3.5.9",
+    "mongodb": "^3.6.1",
+    "pm2": "^4.4.1",
     "random-seed": "^0.3.0",
     "seedrandom": "^3.0.5",
-    "sqlite": "^3.0.6"
+    "sqlite": "^4.0.14",
+    "sqlite3": "^5.0.0"
   },
   "devDependencies": {},
   "scripts": {

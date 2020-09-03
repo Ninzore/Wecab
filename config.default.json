@@ -1,14 +1,16 @@
 
 {
-    "host": "127.0.0.1",
-    "port": 6700,
-    "enableAPI": true,
-    "enableEvent": true,
-    "access_token": "",
-    "reconnection": true,
-    "reconnectionAttempts": 10,
-    "reconnectionDelay": 5000,
-    "picfinder": {
+    "cqws": {
+        "host": "127.0.0.1",
+        "port": 6700,
+        "enableAPI": true,
+        "enableEvent": true,
+        "access_token": "",
+        "reconnection": true,
+        "reconnectionAttempts": 10,
+        "reconnectionDelay": 5000
+    },
+    "bot": {
         "debug": false,
         "admin": -1,
         "autoAddFriend": false,
@@ -19,15 +21,6 @@
             "times": 3,
             "probability": 40,
             "commonProb": 0.2
-        },
-        "regs": {
-            "sign": "我(.*)签到"
-        },
-        "replys": {
-            "default": "",
-            "sign": "签到成功，送您10个赞！",
-            "signed": "您今天已经签到过啦_(:3」∠)_"
         }
-        
     }
 }
