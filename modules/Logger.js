@@ -27,23 +27,8 @@ function updateBanListFile() {
  */
 class Logger {
     constructor() {
-        this.searchMode = []; //搜图模式
         this.repeater = []; //复读
-        this.searchCount = []; //搜索次数记录
-        this.hsaSign = []; //每日签到
         this.date = new Date().getDate();
-        this.adminSigned = false; //自动帮自己签到的标志
-
-        setInterval(() => {
-            //每日初始化
-            let nowDate = new Date().getDate();
-            if (this.date != nowDate) {
-                this.date = nowDate;
-                this.searchCount = [];
-                this.hsaSign = [];
-                this.adminSigned = false;
-            }
-        }, config.picfinder.searchModeTimeout * 1000);
     }
 
     static ban(type, id) {
@@ -62,18 +47,6 @@ class Logger {
         if (banList.u.includes(u)) return true;
         if (g != 0 && banList.g.includes(g)) return true;
         return false;
-    }
-
-    /**
-     * 管理员是否可以签到（用于自动签到）
-     *
-     * @returns 可以或不可以
-     * @memberof Logger
-     */
-    canAdminSign() {
-        if (this.adminSigned) return false;
-        this.adminSigned = true;
-        return true;
     }
 
     /**
@@ -112,50 +85,6 @@ class Logger {
      */
     rptDone(g) {
         this.repeater[g].done = true;
-    }
-
-    /**
-     * 判断用户是否可以搜图
-     *
-     * @param {number} u QQ号
-     * @param {*} limit 限制
-     * @param {string} [key='search']
-     * @returns 允许搜图则返回true，否则返回false
-     * @memberof Logger
-     */
-    canSearch(u, limit, key = 'search') {
-        if (!this.searchCount[u]) this.searchCount[u] = {};
-
-        if (key == 'setu') {
-            if (!this.searchCount[u][key])
-                this.searchCount[u][key] = {
-                    date: 0,
-                    count: 0,
-                };
-            const setuLog = this.searchCount[u][key];
-            if (setuLog.date + limit.cd * 1000 <= new Date().getTime() && limit.value == 0) return true;
-            if (setuLog.date + limit.cd * 1000 > new Date().getTime() || setuLog.count >= limit.value) return false;
-            return true;
-        }
-
-        if (limit == 0) return true;
-        if (!this.searchCount[u][key]) this.searchCount[u][key] = 0;
-        if (this.searchCount[u][key] < limit) return true;
-        return false;
-    }
-
-
-    /**
-     * 用户是否可以签到
-     *
-     * @param {number} u QQ号
-     * @returns 可以则返回true，已经签到过则返回false
-     * @memberof Logger
-     */
-    canSign(u) {
-        if (this.hsaSign.includes(u)) return false;
-        this.hsaSign.push(u);
-        return true;
     }
 }
 
