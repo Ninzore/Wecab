@@ -7,7 +7,7 @@ let qtv = "";
 let qtk = "";
 let fy_guid = "";
 
-let target = [];
+let target = {};
 
 let replyFunc = (context, msg, at = false) => {};
 
@@ -46,7 +46,7 @@ function initialise() {
 }
 
 
-function translate(sourceLang, targetLang, sourceText, context, reply) {
+function translate(sourceLang, targetLang, sourceText, context, reply = true) {
     axios({
         url : TENCENT_TRANS_API,
         method : "POST",
@@ -56,15 +56,15 @@ function translate(sourceLang, targetLang, sourceText, context, reply) {
             "qtv" : qtv,
             "source" : sourceLang,
             "target" : targetLang,
-            "sourceText" : sourceText.replace(/&amp/g, "&").replace(/&#91/g, "[").replace(/&#93/g, "]")
+            "sourceText" : sourceText.replace(/&amp;/g, "&").replace(/&#91;/g, "[").replace(/&#93;/g, "]")
         }
     }).then(res => {
         let targetText = "";
         for (let i in res.data.translate.records) {
             targetText += res.data.translate.records[i].targetText;
         }
-        trans_text = reply ? targetText : `[${targetText}]`;
-        replyFunc(context, trans_text, reply);
+        trans_text = reply ? `[CQ:reply,id=${context.message_id}]${targetText}` : `${targetText}`;
+        replyFunc(context, trans_text);
     }).catch(err => console.error(err))
 }
 
@@ -81,25 +81,28 @@ function toTargetLang(lang_opt) {
 }
 
 function orientedTrans(context) {
-    if (target.indexOf(context.user_id) != -1) {
+    if (target[context.group_id] != undefined && target[context.group_id].some(aim => {return aim == context.user_id})) {
+        if (/(开始|停止)定向翻译/.test(context.message)) return;
         let text = context.message.replace(/\[CQ.+\]/, "");
         if (text.length < 3) return;
-        if (/[\u4e00-\u9fa5]+/.test(text) && !/[\u3040-\u30FF]/.test(text)) translate("zh", "jp", text, context, false);
-        else translate("auto", "zh", text, context, false);
+        if (/[\u4e00-\u9fa5]+/.test(text) && !/[\u3040-\u30FF]/.test(text)) translate("zh", "jp", text, context, true);
+        else translate("auto", "zh", text, context, true);
     }
     else return;
 }
 
 function pointTo(context, user_id) {
-    target.push(parseInt(user_id));
+    if (target[context.group_id] === undefined) target[context.group_id] = [];
+    target[context.group_id].push(parseInt(user_id));
     replyFunc(context, `接下来${user_id}说的每句话都会被翻译`);
     return;
 }
 
 function unpoint(context, user_id) {
     if (Array.isArray(user_id)) user_id = parseInt(user_id[0]);
-    if (target.indexOf(user_id) != -1) {
-        target = target.filter(id => {return id != user_id});
+    if (target[context.group_id] != undefined && 
+    target[context.group_id].some(aim => {return aim == user_id})) {
+        target[context.group_id] = target[context.group_id].filter(id => id != user_id);
         replyFunc(context, `对${user_id}的定向翻译已停止`);
     }
     else replyFunc(context, `${user_id}不在定向翻译列表中`);
@@ -112,13 +115,13 @@ function viewTarget(context) {
 
 function transEntry(context) {
     if (/翻译[>＞].+/.test(context.message)) {
-        let sourceText = context.message.substring(3, context.message.length);
-        translate("auto", "zh", sourceText, context, true);
+        let sourceText = context.message.substring(3, context.message.length, true);
+        translate("auto", "zh", sourceText, context, false);
         return true;
     }
     else if (/中译[日韩英法德俄][>＞].+/.test(context.message)) {
         let target_lang = toTargetLang(/中译(.)[>＞]/.exec(context.message)[1]);
-        translate("zh", target_lang, /中译.[>＞](.+)/.exec(context.message)[1], context, true);
+        translate("zh", target_lang, /中译.[>＞](.+)/.exec(context.message)[1], context, false);
         return true;
     }
     else if (/^开始定向翻译(\s?(\d{9,10}?|\[CQ:at,qq=\d+\])\s?)?$/.test(context.message)) {
