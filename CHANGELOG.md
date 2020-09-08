@@ -2,6 +2,22 @@
   
 ## 2020
 
+### 9/06  v1.2.4
+Update: 现在不会翻译buff不能跨组了
+Update: 定向翻译改为使用回复形式进行
+Fix: 转义正则错误
+
+### 9/03  v1.2.3
+* Update: 更新package
+* Update: 更新config格式
+* Update: 调整对config的引用
+
+### 9/02  v1.2.2
+* Update: 支持使用at挂buff，增加对日语和中文的判断
+
+### 8/31  v1.2.1
+* Add: 添加定向翻译功能
+
 ### 8/13  v1.2.0
 * Add: 建立等式功能
 * Fix: 教学模块细微调整适应go-cqhttp

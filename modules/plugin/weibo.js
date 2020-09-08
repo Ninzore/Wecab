@@ -2,11 +2,11 @@ import axios from 'axios';
 import config from '../config';
 const mongodb = require('mongodb').MongoClient;
 
-const admin = parseInt(config.picfinder.admin);
+const admin = parseInt(config.bot.admin);
 
 var db_port = 27017;
 var db_path = "mongodb://127.0.0.1:" + db_port;
-var replyFunc = (context, msg, at = false) => {console.log(msg)};
+var replyFunc = (context, msg, at = false) => {};
 
 function weiboReply(replyMsg) {
     replyFunc = replyMsg;

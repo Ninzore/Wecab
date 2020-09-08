@@ -1,5 +1,5 @@
 import { version } from './package.json';
-import CQWebsocket from 'cq-websocket';
+import { CQWebSocket } from 'cq-websocket';
 import config from './modules/config';
 import CQ from './modules/CQcode';
 import Logger from './modules/Logger';
@@ -18,11 +18,10 @@ import pixivImage from "./modules/plugin/pixivImage";
 import helpZen from "./modules/plugin/zen";
 import nbnhhsh from "./modules/plugin/nbnhhsh";
 
-//常量
-const setting = config.picfinder;
+// 初始化开始
+const setting = config.bot;
+const bot = new CQWebSocket(config.cqws);
 const rand = RandomSeed.create();
-const signReg = new RegExp(setting.regs.sign);
-const bot = new CQWebsocket(config);
 const logger = new Logger();
 
 weibo.weiboReply(replyMsg);
@@ -169,19 +168,9 @@ bot.on('socket.connecting', (wsType, attempts) => console.log(`${getTime()} 连�
 //connect
 bot.connect();
 
-//自动帮自己签到（诶嘿
 //以及每日需要更新的一些东西
 setInterval(() => {
-    if (bot.isReady() && logger.canAdminSign()) {
-        setTimeout(() => {
-            if (setting.admin > 0) {
-                bot('send_like', {
-                    user_id: setting.admin,
-                    times: 10,
-                });
-            }
-        }, 60 * 1000);
-    }
+    if (bot.isReady() && logger.canAdminSign()) {}
 }, 60 * 60 * 1000);
 
 function notice(context) {
@@ -223,26 +212,8 @@ function privateAndAtMsg(e, context) {
         e.stopPropagation();
         return;
     }
-    if (pixivImage.pixivCheck(context, replyMsg, bot) ||
-        pretendLearn.learn(context) ||
-        pokemon.pokemonCheck(context, replyMsg)) {
-        e.stopPropagation();
-        return;
-    }
-    if (signReg.exec(context.message)) {
-        //签到
-        e.stopPropagation();
-        if (logger.canSign(context.user_id)) {
-            bot('send_like', {
-                user_id: context.user_id,
-                times: 10,
-            });
-            return setting.replys.sign;
-        } else return setting.replys.signed;
-    } else {
-        //其他指令
-        return setting.replys.default;
-    }
+    //其他指令
+    return setting.replys.default;
 }
 
 //调试模式
@@ -263,6 +234,7 @@ function debugGroupMsg(e, context) {
 function groupMsg(e, context) {
     let text_bak = context.message;
     context.message = pretendLearn.replaceEqual(context);
+    translate.orientedTrans(context);
     
     if (commonHandle(e, context)) {
         e.stopPropagation();

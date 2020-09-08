@@ -1,5 +1,5 @@
 import config from '../config';
-var admin = parseInt(config.picfinder.admin);
+var admin = parseInt(config.bot.admin);
 
 function helpZen(context, replyFunc, bot, rand) {
     if (context.sender.role != "admin" && /^(来干我啊|口我|我超勇的).?$/.test(context.message)) {
