@@ -14,8 +14,24 @@
 2. 群组分离，互不干扰  
 
 **注意！！！**  
-# MongoDB似乎并不好安装
+# MongoDB不好安装
+ windows系统安装教程
+ https://www.runoob.com/mongodb/mongodb-window-install.html
+ 
+ linux-Ubuntu 18.04.4 LTS 
+ wget -O mongodb-linux-x86_64-ubuntu1804-4.2.9.tar https://fastdl.mongodb.org/linux/mongodb-linux-x86_64-ubuntu1804-4.2.9.tgz
+ tar -zxvf mongodb-linux-x86_64-ubuntu1804-4.2.9.tar
+ cd mongodb-linux-x86_64-ubuntu1804-4.2.9
+ sudo cp /home/user/coolq/mongodb-linux-x86_64-ubuntu1804-4.2.9/bin/* /usr/local/bin/
+ sudo mkdir -p /var/lib/mongo
+ sudo mkdir -p /var/log/mongodb
+ sudo chown 777 /var/lib/mongo     # Or substitute another user 我不清楚权限问题，755大概也行
+ sudo chown 777 /var/log/mongodb   # Or substitute another user
+ mongod --dbpath /var/lib/mongo --logpath /var/log/mongodb/mongod.log --fork
+ docker版 https://github.com/shitianshiwa/docker-wine-go-cqhttp
+
 需要安装MongoDB，没装的参考官方教程https://docs.mongodb.com/manual/installation/ ，端口是默认端口不要改，然后使用mongorestore将dump文件夹中的东西恢复到mongodb中，这样才能使用小游戏功能，当然如果不用的话也可以，删除main中所有pokemon相关的语句就行  
+pixiv功能是基于pixiv.cat的，默认已注释掉
 
 ## 部件列表  
 正在缓慢更新中  
