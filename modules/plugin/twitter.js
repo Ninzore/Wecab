@@ -561,14 +561,14 @@ function clearSubs(context, group_id) {
  * @param {string} from_user Twitter用户名
  * @returns Promise  排列完成的Tweet String
  */
-async function format(tweet, useruid, end_point = false) {
+async function format(tweet, useruid = -1, end_point = false) {
     let payload = [];
     let text = "";
     if ('full_text' in tweet) text = tweet.full_text;
     else text = tweet.text;
     if ("retweeted_status" in tweet) {
         let rt_status = await format(tweet.retweeted_status)
-        payload.push(`来自${tweet.user.name}(推特用户id：${useruid})的Twitter\n转推了`, rt_status);
+        payload.push(`来自${tweet.user.name}${useruid!=-1?"(推特用户id："+useruid+")的Twitter\n转推了":""}`, rt_status);
         return payload.join("\n");
     }
     let pics = "";
@@ -665,7 +665,7 @@ async function format(tweet, useruid, end_point = false) {
             text = text.replace(tweet.entities.urls[i].url, tweet.entities.urls[i].expanded_url);
         }
     }
-    payload.unshift(`${tweet.user.name}(推特用户id：${useruid})的Twitter`, text);
+    payload.unshift(`${tweet.user.name}${useruid!=-1?"(推特用户id："+useruid+")的Twitter\n转推了":""}`, text);
     return payload.join("\n");
 }
 
@@ -689,8 +689,8 @@ function urlExpand(twitter_short_url) {
 
 function rtTimeline(context, name, num) {
     searchUser(name).then(user => {
-        if (!user) replyFunc(context, "没这人");
-        else if (user.protected == true) replyFunc(context, "这人的Twitter受保护");
+        if (!user) replyFunc(context, "未找到该推特");
+        else if (user.protected == true) replyFunc(context, "该Twitter受到保护，无法浏览");
         else {
             getUserTimeline(user.id_str, 20).then(async timeline => {
                 if (timeline.length - 1 < num) timeline = await getUserTimeline(user.id_str, 50);
