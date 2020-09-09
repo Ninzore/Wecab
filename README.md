@@ -19,16 +19,17 @@
  https://www.runoob.com/mongodb/mongodb-window-install.html
  
  linux-Ubuntu 18.04.4 LTS 
- wget -O mongodb-linux-x86_64-ubuntu1804-4.2.9.tar https://fastdl.mongodb.org/linux/mongodb-linux-x86_64-ubuntu1804-4.2.9.tgz
- tar -zxvf mongodb-linux-x86_64-ubuntu1804-4.2.9.tar
- cd mongodb-linux-x86_64-ubuntu1804-4.2.9
- sudo cp /home/user/coolq/mongodb-linux-x86_64-ubuntu1804-4.2.9/bin/* /usr/local/bin/
- sudo mkdir -p /var/lib/mongo
- sudo mkdir -p /var/log/mongodb
- sudo chown 777 /var/lib/mongo     # Or substitute another user 我不清楚权限问题，755大概也行
- sudo chown 777 /var/log/mongodb   # Or substitute another user
- mongod --dbpath /var/lib/mongo --logpath /var/log/mongodb/mongod.log --fork
- docker版 https://github.com/shitianshiwa/docker-wine-go-cqhttp
+* wget -O mongodb-linux-x86_64-ubuntu1804-4.2.9.tar https://fastdl.mongodb.org/linux/mongodb-linux-x86_64-ubuntu1804-4.2.9.tgz
+* tar -zxvf mongodb-linux-x86_64-ubuntu1804-4.2.9.tar
+* cd mongodb-linux-x86_64-ubuntu1804-4.2.9
+* sudo cp /home/user/coolq/mongodb-linux-x86_64-ubuntu1804-4.2.9/bin/* /usr/local/bin/
+* sudo mkdir -p /var/lib/mongo
+* sudo mkdir -p /var/log/mongodb
+* sudo chown 777 /var/lib/mongo     # Or substitute another user 我不清楚权限问题，755大概也行
+* sudo chown 777 /var/log/mongodb   # Or substitute another user
+* mongod --dbpath /var/lib/mongo --logpath /var/log/mongodb/mongod.log --fork
+
+docker版 https://github.com/shitianshiwa/docker-wine-go-cqhttp
 
 需要安装MongoDB，没装的参考官方教程https://docs.mongodb.com/manual/installation/ ，端口是默认端口不要改，然后使用mongorestore将dump文件夹中的东西恢复到mongodb中，这样才能使用小游戏功能，当然如果不用的话也可以，删除main中所有pokemon相关的语句就行  
 pixiv功能是基于pixiv.cat的，默认已注释掉
@@ -45,7 +46,7 @@ TODO:
 用 “看看**谁谁上条**微博/B站/Twitter/推特”，谁谁是要看的人的名字，上条可以改，可以要求看置顶，上条，上上条，上上上条.....，也可以直接写第x条，x范围是0~9  
 反微博小程序，会自动把微博小程序内容给抓出来，造福PC用户  
 也可以用 **看看 url**，url为单条微博/B站/Twitter的网址，在app里，选分享链接就好，支持b23短链接  
-Twitter可以在后面加>截图以使用自动截图功能，如果有字变成方块了，你可能需要安装字体，推荐安装一套Google Noto Fonts  
+Twitter可以在后面加>截图以使用自动截图功能，如果有字变成方块了，你可能需要安装字体，推荐安装一套Google Noto Fonts（截图已没）  
 
 ### 2. 订阅微博，B博，Twitter
 用 “订阅**谁谁**微博/B站/Twitter”就好，取消订阅用“取消订阅**谁谁**微博/B站/Twitter”，每5分钟检查一次  
@@ -58,7 +59,7 @@ Twitter可以在后面加>截图以使用自动截图功能，如果有字变成
   
 Twitter相关功能在开机后会尝试测试Twitter连接，如果无法连接时不会工作的  
   
-### 3. 教说话  
+### 3. 教说话 （没开） 
 ***注意*** 每个群的问答库都是分卡的，私聊教说话暂时无效以后可能会有这方面的更新，可以学习图片   
 基础操作1. @bot 并说 **我教你**xxx > yyy，就可以学会一个问答，一个关键词可以关联多个回应词，随机抽取  
 基础操作2. @bot 并说 **忘记/忘掉** xxx 就能删除关键词以及所有回应  
@@ -70,13 +71,13 @@ Twitter相关功能在开机后会尝试测试Twitter连接，如果无法连接
 ^123$只需要输入123就行了  
 @bot 并说**教学成果**可以查看计数
   
-### 4. 教复读  
+### 4. 教复读 （没开）
 @bot 并说 **复读**xxx，就可以学会复读  
 @bot 并说 **不准复读**xxx，就可以砸掉复读机  
 和上面一样也可以@bot 复读xxx>精确/模糊/正则  
 @bot 并说**教学成果**可以查看计数  
 
-### 5. Pixiv看图  
+### 5. Pixiv看图 （没开）
 ***看看p站***后接p站图片id或者包含id的url，如果该id有多图会自动合并发送，最多同时发送9张  
   由于酷Q限制无法发送4M以上大小的图，此时会发送图片链接
 
@@ -85,7 +86,7 @@ Twitter相关功能在开机后会尝试测试Twitter连接，如果无法连接
 **中译x>** x为目标语言，可以是日韩英法德俄，后接中文，会翻译为目标语言  
 目前使用腾讯翻译
 
-### 7. 骰子  
+### 7. 骰子（没开）  
 可以扔出任意面数（<1000），任意个数(<10)的骰子，可以指定最小值，自动统计总分  
 用法的话，参考  
 .dice6  扔一个D6  
@@ -93,7 +94,7 @@ Twitter相关功能在开机后会尝试测试Twitter连接，如果无法连接
 .dice16,10  扔1个最低为10的D16  
 .dice20x3,10  扔3个最低为10的D20  
 
-### 8.简单直接宝可梦  
+### 8.简单直接宝可梦 （没开）  
 **注意！！！** 使用前必须先将下载dump然后用mongorestore存进mongoDB  
    首先一切操作都需要‘捕捉’后才能进行，所有首先进行‘捕捉’吧   
    旅行：使用旅行可以在丰源地区的52个区域中随机旅行到一个地方  
