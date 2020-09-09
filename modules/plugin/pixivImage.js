@@ -1,3 +1,5 @@
+const logger2 = require('../logger2'); //日志功能
+
 var axios = require("axios");
 
 var deleteMsg = true;
@@ -57,7 +59,7 @@ function sender(replyFunc, context, payload, bot, delete_flag) {
                 }, 60 * 1000);
         })
         .catch(err => {
-            console.error(`${new Date().toLocaleString()} [error] delete msg\n${err}`);
+            logger2.error(`${new Date().toLocaleString()} [error]pixiv delete msg\n${err}`);
         });
 }
 

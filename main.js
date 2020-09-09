@@ -17,6 +17,7 @@ import translate from "./modules/plugin/translate";
 //import pixivImage from "./modules/plugin/pixivImage";
 //import helpZen from "./modules/plugin/zen";
 import nbnhhsh from "./modules/plugin/nbnhhsh";
+import logger2 from './modules/logger2'; //日志功能
 
 // 初始化开始
 const setting = config.bot;
@@ -47,7 +48,7 @@ bot.on('request.friend', context => {
                 if (ans != a) approve = false;
             });
         } catch (e) {
-            console.error(e);
+            logger2.error(e);
             approve = false;
         }
     }
@@ -147,14 +148,14 @@ if (setting.debug) {
 }
 
 //连接相关监听
-bot.on('socket.connecting', (wsType, attempts) => console.log(`${getTime()} 连接中[${wsType}]#${attempts}`))
-    .on('socket.failed', (wsType, attempts) => console.log(`${getTime()} 连接失败[${wsType}]#${attempts}`))
+bot.on('socket.connecting', (wsType, attempts) => logger2.info(`${getTime()} 连接中[${wsType}]#${attempts}`))
+    .on('socket.failed', (wsType, attempts) => logger2.info(`${getTime()} 连接失败[${wsType}]#${attempts}`))
     .on('socket.error', (wsType, err) => {
-        console.error(`${getTime()} 连接错误[${wsType}]`);
-        console.error(err);
+        logger2.error(`${getTime()} 连接错误[${wsType}]`);
+        logger2.error(err);
     })
     .on('socket.connect', (wsType, sock, attempts) => {
-        console.log(`${getTime()} 连接成功[${wsType}]#${attempts}`);
+        logger2.info(`${getTime()} 连接成功[${wsType}]#${attempts}`);
         if (setting.admin > 0) {
             setTimeout(() => {
                 bot('send_private_msg', {

@@ -1,3 +1,5 @@
+const logger2 = require('../logger2'); //日志功能
+
 const axios = require('axios');
 const mongodb = require('mongodb').MongoClient;
 const promisify = require('util').promisify;
@@ -24,7 +26,7 @@ let guest_token = "";
 let cookie = "";
 let connection = true;
 let replyFunc = (context, msg, at = false) => {
-    console.log(msg)
+    logger2.info("推特：" + msg)
 };
 
 /** 用value找key*/
@@ -65,7 +67,7 @@ function checkConnection() {
 function firstConnect() {
     checkConnection().then(() => {
         if (!connection) {
-            console.log("Twitter无法连接，功能暂停");
+            logger2.info("Twitter无法连接，功能暂停");
         } else {
             getGuestToken();
             setTimeout(() => getCookie(), 1000);
@@ -79,7 +81,7 @@ function sizeCheck(url) {
     return axios.get(url).then(res => {
         return parseInt(res.headers["content-length"]) < MAX_SIZE ? true : false;
     }).catch(err => {
-        console.error(url, err.response.status);
+        logger2.error("推特0：" + url, err.response.status);
         return false;
     });
 }
@@ -118,7 +120,7 @@ function getGuestToken() {
         headers: headers
     }).then(res => {
         guest_token = res.data.guest_token;
-    }).catch(err => console.log(err.response.data))
+    }).catch(err => logger2.info("推特1：" + err.response.data))
 }
 
 /** 获取一个cookie，后面要用*/
@@ -144,7 +146,7 @@ function getCookie() {
             else if (temp = /(_twitter_sess=.+?);/.exec(res.headers["set-cookie"][i])) twitter_sess = temp[1];
         }
         cookie = `dnt=1; fm=0; csrf_same_site_set=1; csrf_same_site=1; gt=${guest_token}; ${ct0}${guest_id}${personalization_id}${twitter_sess}`;
-    }).catch(err => console.error('Twitter cookie设置出错，错误：', err.response.status, err.response.statusText));
+    }).catch(err => logger2.error('Twitter cookie设置出错，错误：', err.response.status, err.response.statusText));
 }
 
 /** 
@@ -175,7 +177,7 @@ function getSingleTweet(tweet_id_str) {
     }).then(res => {
         return res.data;
     }).catch(err => {
-        console.error(err.response.data);
+        logger2.error("推特2：" + err.response.data);
         return false;
     });
 }
@@ -205,7 +207,7 @@ function getUserTimeline(user_id, count = 2, include_rt = false, exclude_rp = tr
     }).then(res => {
         return res.data;
     }).catch(err => {
-        console.error(err.response.data);
+        logger2.error("推特3：" + err.response.data);
         return false;
     });
 }
@@ -232,7 +234,7 @@ function searchUser(name) {
     }).then(res => {
         return res.data[0]
     }).catch(err => {
-        console.log(err.response.data);
+        logger2.info("推特4：" + err.response.data);
         return false;
     })
 }
@@ -256,7 +258,7 @@ function fetch(name) {
     }).then(res => {
         return res.data[0]
     }).catch(err => {
-        console.error(err.response.data);
+        logger2.error("推特5：" + err.response.data);
         return false;
     })
 }
@@ -294,8 +296,8 @@ function subscribe(uid, option, context) {
                     [group_id]: option
                 },
                 (err) => {
-                    if (err) console.error(err + " Twitter subscribes insert error");
-                    else replyFunc(context, `已订阅${name}的Twitter，模式为${option_nl}`, true);
+                    if (err) logger2.error(err + " Twitter subscribes insert error");
+                    else replyFunc(context, `已订阅${name}(推特用户id：${uid})的Twitter，模式为${option_nl}`, true);
                 });
         } else {
             coll.findOneAndUpdate({
@@ -309,32 +311,35 @@ function subscribe(uid, option, context) {
                     }
                 },
                 (err, result) => {
-                    if (err) console.error(err + " Twitter subscribes update error");
+                    if (err) logger2.error(err + " Twitter subscribes update error");
                     else {
                         if (result.value.groups.includes(group_id)) text = "多次订阅有害我的身心健康";
-                        else text = `已订阅${result.value.name}的Twitter，模式为${option_nl}`;
+                        else text = `已订阅${result.value.name}(推特用户id：${uid})的Twitter，模式为${option_nl}`;
                         replyFunc(context, text, true);
                     }
                 });
         }
         mongo.close();
-    }).catch(err => console.error(err + " Twitter subscribe error, uid= " + uid));
+    }).catch(err => logger2.error(err + " Twitter subscribe error, uid= " + uid));
 }
 
 /**
  * 取消订阅
- * @param {string} name Twitter用户名
+ * @param {string} uid Twitter用户id
  * @param {object} context
  */
-function unSubscribe(name, context) {
+// * @param {string} name Twitter用户名
+
+function unSubscribe(uid, context) {
     let group_id = context.group_id;
-    let name_reg = new RegExp(name, 'i')
+    //let name_reg = new RegExp(name, 'i')
     mongodb(DB_PATH, {
         useUnifiedTopology: true
     }).connect().then(async mongo => {
         let coll = mongo.db('bot').collection('twitter');
         await coll.findOneAndUpdate({
-                name: name_reg
+                uid: uid,
+                //name: name_reg
             }, {
                 $pull: {
                     groups: {
@@ -346,12 +351,12 @@ function unSubscribe(name, context) {
                 }
             },
             async(err, result) => {
-                if (err) console.error(err + "database subscribes delete error");
+                if (err) logger2.error("推特：" + err + "database subscribes delete error");
                 else {
                     let text = "";
                     if (result.value == null || !result.value.groups.includes(group_id)) text = "小火汁你压根就没订阅嗷";
                     else {
-                        text = "已取消订阅" + result.value.name + "的Twitter";
+                        text = "已取消订阅" + result.value.name + "(推特用户id：" + uid + ")" + "的Twitter";
                         if (result.value.groups.length <= 1) await coll.deleteOne({
                             _id: result.value._id
                         });
@@ -360,7 +365,7 @@ function unSubscribe(name, context) {
                 }
                 mongo.close();
             });
-    }).catch(err => console.error(err + "Twitter unsubscribe error, uid= " + uid));
+    }).catch(err => logger2.error(err + "Twitter unsubscribe error, uid= " + uid));
 }
 
 /**
@@ -368,7 +373,7 @@ function unSubscribe(name, context) {
  */
 function checkTwiTimeline() {
     if (!connection) return;
-    let check_interval = 10 * 60 * 1000; //10分钟一次
+    let check_interval = 6 * 60 * 1000; //6分钟一次
 
     setInterval(async() => {
         await mongodb(DB_PATH, {
@@ -381,7 +386,7 @@ function checkTwiTimeline() {
                 checkEach();
             } else {
                 subscribes = await coll.find({}).toArray();
-                subscribes != undefined ? console.log(subscribes.length) : console.error("twitter database error")
+                subscribes != undefined ? logger2.info("推特订阅数：" + subscribes.length) : logger2.error("twitter database error")
             }
             mongo.close();
 
@@ -390,7 +395,7 @@ function checkTwiTimeline() {
                     try {
                         let tweet_list = await getUserTimeline(subscribes[i].uid, 10, true, false);
                         if (tweet_list != undefined) {
-                            let last_tweet_id = subscribes[i].tweet_id;
+                            let last_tweet_id = subscribes[i].tweet_id; //最新一条推特id
                             let current_id = tweet_list[0].id_str;
                             if (current_id > last_tweet_id) {
                                 let groups = subscribes[i].groups;
@@ -398,13 +403,13 @@ function checkTwiTimeline() {
                                     if (tweet.id_str > last_tweet_id) {
                                         groups.forEach(group_id => {
                                             if (checkOption(tweet, subscribes[i][group_id])) {
-                                                format(tweet).then(payload => {
+                                                format(tweet, subscribes[i].uid).then(payload => {
                                                     payload += `\n\nhttps://twitter.com/${tweet.user.screen_name}/status/${tweet.id_str}`
                                                     replyFunc({
                                                         group_id: group_id,
                                                         message_type: "group"
                                                     }, payload);
-                                                }).catch(err => console.error(err));
+                                                }).catch(err => logger2.error("推特6：" + err));
                                             }
                                         });
                                     }
@@ -422,13 +427,13 @@ function checkTwiTimeline() {
                                             }
                                         },
                                         (err, result) => {
-                                            if (err) console.error(err + " database update error during checkTwitter");
+                                            if (err) logger2.error("推特：" + err + " database update error during checkTwitter");
                                         });
                                 });
                             }
                         }
                     } catch (err) {
-                        console.error(err, '\n', subscribes[i]);
+                        logger2.error("推特：" + err, '\n', subscribes[i]);
                     } finally {
                         i++;
                         if (i < subscribes.length) checkEach();
@@ -464,6 +469,7 @@ function checkTwiTimeline() {
     }
 }
 
+//查看推特订阅列表
 /**
  * @param {object} context
  * @returns {} no return
@@ -491,14 +497,14 @@ function checkSubs(context) {
                     result.forEach(twitter_obj => {
                         let option_nl = "仅原创";
                         option_nl = toOptNl(twitter_obj[group_id]);
-                        name_list.push(`${twitter_obj.name}，${option_nl}`);
+                        name_list.push(`${twitter_obj.name}，推特用户id：${twitter_obj.uid}，${option_nl}`);
                     });
                     let subs = "本群已订阅:\n" + name_list.join("\n");
                     replyFunc(context, subs, true);
                 } else replyFunc(context, "你一无所有", true);
             })
         mongo.close();
-    }).catch(err => console.error(err + " Twitter checkWeiboSubs error, group_id= " + group_id));
+    }).catch(err => logger2.error(err + " Twitter checkWeiboSubs error, group_id= " + group_id));
 }
 
 /**
@@ -541,12 +547,12 @@ function clearSubs(context, group_id) {
             }
             replyFunc(context, `清理了${matchs.length}个Twitter订阅`);
         } catch (err) {
-            console.error(err);
+            logger2.error("推特清理订阅：" + err);
             replyFunc(context, '中途错误，清理未完成');
         } finally {
             mongo.close();
         }
-    }).catch(err => console.error(err + " Twitter clearSubs error, group_id= " + group_id));
+    }).catch(err => logger2.error(err + " Twitter clearSubs error, group_id= " + group_id));
 }
 
 /**
@@ -555,14 +561,14 @@ function clearSubs(context, group_id) {
  * @param {string} from_user Twitter用户名
  * @returns Promise  排列完成的Tweet String
  */
-async function format(tweet, end_point = false) {
+async function format(tweet, useruid, end_point = false) {
     let payload = [];
     let text = "";
     if ('full_text' in tweet) text = tweet.full_text;
     else text = tweet.text;
     if ("retweeted_status" in tweet) {
         let rt_status = await format(tweet.retweeted_status)
-        payload.push(`来自${tweet.user.name}的Twitter\n转推了`, rt_status);
+        payload.push(`来自${tweet.user.name}(推特用户id：${useruid})的Twitter\n转推了`, rt_status);
         return payload.join("\n");
     }
     let pics = "";
@@ -592,7 +598,7 @@ async function format(tweet, end_point = false) {
                                     }
                                 })
                         } catch (err) {
-                            console.error(err);
+                            logger2.error("推特动图：" + err);
                             pics += `这是一张动图 [CQ:image,cache=0,file=${media[i].media_url_https}]` + `动起来看这里${media[i].video_info.variants[0].url}`;
                         }
                     } else if (media[i].type == "video") {
@@ -659,7 +665,7 @@ async function format(tweet, end_point = false) {
             text = text.replace(tweet.entities.urls[i].url, tweet.entities.urls[i].expanded_url);
         }
     }
-    payload.unshift(`${tweet.user.name}的Twitter`, text);
+    payload.unshift(`${tweet.user.name}(推特用户id：${useruid})的Twitter`, text);
     return payload.join("\n");
 }
 
@@ -676,7 +682,7 @@ function urlExpand(twitter_short_url) {
     }).then(res => {
         return /URL=(http.+?)">/.exec(res.data)[1];
     }).catch(err => {
-        console.error(err.response.data);
+        logger2.error("推特7：" + err.response.data);
         return false;
     });
 }
@@ -692,7 +698,7 @@ function rtTimeline(context, name, num) {
                 format(timeline[num]).then(tweet_string => {
                     let payload = [tweet_string, `https://twitter.com/${user.screen_name}/status/${timeline[num].id_str}`].join('\n\n');
                     replyFunc(context, payload);
-                }).catch(err => console.error(err));
+                }).catch(err => logger2.error("推特rtTimeline：" + err));
             });
         }
     });
@@ -774,8 +780,8 @@ function twitterAggr(context) {
         addSubByName(name, option_nl, context);
         return true;
     } else if (/^取消订阅.+的?(推特|Twitter)$/i.test(context.message)) {
-        let name = /取消订阅(.+)的?(推特|Twitter)/i.exec(context.message)[1];
-        unSubscribe(name, context);
+        let uid = /取消订阅(.+)的?(推特|Twitter)/i.exec(context.message)[1];
+        unSubscribe(uid, context);
         return true;
     } else if (/^查看(推特|Twitter)订阅$/i.test(context.message)) {
         checkSubs(context);

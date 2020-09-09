@@ -1,7 +1,9 @@
+const logger2 = require('../logger2'); //日志功能
+
 var axios = require('axios');
 
 const API_URL = 'https://lab.magiconch.com/api/nbnhhsh/guess';
-let replyFunc = (context, msg, at = false) => {console.log(msg)};
+let replyFunc = (context, msg, at = false) => { logger2.info("nbnhhsh:" + msg) };
 
 function reply(replyMsg) {
     replyFunc = replyMsg;
@@ -9,10 +11,10 @@ function reply(replyMsg) {
 
 function letItGuess(heihua) {
     return axios({
-        method : "POST",
-        url : API_URL,
-        data : {"text" : heihua}
-    }).then(res => {return res.data}).catch(err => console.log(err.response.data))
+        method: "POST",
+        url: API_URL,
+        data: { "text": heihua }
+    }).then(res => { return res.data }).catch(err => logger2.info("nbnhhsh1:" + err.response.data))
 }
 
 function findAndGuess(context) {
@@ -23,8 +25,7 @@ function findAndGuess(context) {
         letItGuess(heihua).then(guess => {
             if (guess != undefined) replyOnrigin(context, guess);
         })
-    }
-    else return;
+    } else return;
 }
 
 function replyOnrigin(context, guess) {
@@ -34,10 +35,9 @@ function replyOnrigin(context, guess) {
         if ('trans' in guess[i]) {
             nameReg = new RegExp(guess[i].name, "i");
             guessText = guessText.replace(nameReg, guess[i].trans[0]);
-        }
-        else continue;
+        } else continue;
     }
     replyFunc(context, "翻译一下：" + guessText)
 }
 
-module.exports = {findAndGuess, reply};
+module.exports = { findAndGuess, reply };

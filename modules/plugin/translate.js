@@ -1,3 +1,5 @@
+const logger2 = require('../logger2'); //日志功能
+
 var axios = require("axios");
 
 const TENCENT_TRANS_INIT = "https://fanyi.qq.com/";
@@ -65,7 +67,7 @@ function translate(sourceLang, targetLang, sourceText, context, reply = true) {
         }
         trans_text = reply ? `[CQ:reply,id=${context.message_id}]${targetText}` : `${targetText}`;
         replyFunc(context, trans_text);
-    }).catch(err => console.error(err))
+    }).catch(err => logger2.error("翻译：" + err))
 }
 
 function toTargetLang(lang_opt) {

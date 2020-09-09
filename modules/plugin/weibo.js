@@ -1,7 +1,7 @@
 import axios from 'axios';
 import config from '../config';
 const mongodb = require('mongodb').MongoClient;
-
+const logger2 = require('../logger2'); //日志功能
 const admin = parseInt(config.bot.admin);
 
 var db_port = 27017;
@@ -63,7 +63,7 @@ function getUserId(user_name = "") {
                 return false;
             } else if (response.data.data.cards.length > 0) return response.data.data.cards[1].card_group[0].user.id;
         })
-        .catch(err => { console.error(err); });
+        .catch(err => { logger2.error("微博：" + err); });
 }
 
 /**
@@ -95,10 +95,10 @@ function getTimeline(uid, num = -1) {
                     card_num_seq[i + 1] = temp;
                 }
             }
-            // console.log(card_num_seq)
+            // logger2.info(card_num_seq)
             return response.data.data.statuses[card_num_seq[0]];
         } else return response.data.data.statuses[num];
-    }).catch(err => console.error(err + " weibo getTimeline error, uid= " + uid));
+    }).catch(err => logger2.error(err + " weibo getTimeline error, uid= " + uid));
 }
 
 /**
@@ -121,7 +121,7 @@ function subscribe(uid, option, context) {
             let screen_name = mblog.user.screen_name;
             coll.insertOne({ weibo_uid: uid, name: screen_name, mid: mid, groups: [group_id], [group_id]: option },
                 (err) => {
-                    if (err) console.error(err + " database subscribes insert error");
+                    if (err) logger2.error(err + "微博 database subscribes insert error");
                     else replyFunc(context, `已订阅${screen_name}的微博，模式为${option_nl}`, true);
                 });
         } else {
@@ -132,18 +132,18 @@ function subscribe(uid, option, context) {
                     }
                 },
                 (err, result) => {
-                    if (err) console.error(err + " database subscribes update error");
+                    if (err) logger2.error(err + "微博 database subscribes update error");
                     else {
                         let text = "";
                         if (result.value.groups.includes(group_id)) text = "多次订阅有害我的身心健康";
                         else text = `已订阅${result.value.name}的微博，模式为${option_nl}`;
                         replyFunc(context, text, true);
-                        // console.log(text)
+                        // logger2.info(text)
                     }
                 });
         }
         mongo.close();
-    }).catch(err => console.error(err + "weibo subscribe error, uid= " + uid));
+    }).catch(err => logger2.error(err + "weibo subscribe error, uid= " + uid));
 }
 
 /**
@@ -164,7 +164,7 @@ function unSubscribe(name, context) {
                 }
             },
             async(err, result) => {
-                if (err) console.log(err + "database subscribes delete error");
+                if (err) logger2.info("微博：" + err + "database subscribes delete error");
                 else {
                     let text = "";
                     if (result.value == null || !result.value.groups.includes(group_id)) text = "小火汁你压根就没订阅嗷";
@@ -176,14 +176,14 @@ function unSubscribe(name, context) {
                 }
                 mongo.close();
             });
-    }).catch(err => console.error(err + "weibo unsubscribe error, uid= " + uid));
+    }).catch(err => logger2.error(err + "weibo unsubscribe error, uid= " + uid));
 }
 
 /**
  * 每过x分钟检查一次订阅列表，如果订阅一个微博账号的群的数量是0就删除
  */
 function checkWeiboDynamic() {
-    let check_interval = 10 * 60 * 1000;
+    let check_interval = 6 * 60 * 1000;
     let i = 0;
     setInterval(() => {
         mongodb(db_path, { useUnifiedTopology: true }).connect().then(async mongo => {
@@ -208,28 +208,28 @@ function checkWeiboDynamic() {
                             let groups = stored_info.groups;
                             groups.forEach(group_id => {
                                 if (checkOption(mblog, stored_info[group_id])) {
-                                    format(mblog, true).then(payload => replyFunc({ group_id: group_id, message_type: "group" }, payload)).catch(err => console.error(err));
+                                    format(mblog, true).then(payload => replyFunc({ group_id: group_id, message_type: "group" }, payload)).catch(err => logger2.error("微博1：" + err));
                                 } else;
                             });
                             mongodb(db_path, { useUnifiedTopology: true }).connect().then(async mongo => {
                                 let coll = mongo.db('bot').collection('weibo');
                                 coll.updateOne({ weibo_uid: stored_info.weibo_uid }, { $set: { mid: current_mid } },
                                     (err, result) => {
-                                        if (err) console.error(err + " database update error during checkWeibo");
+                                        if (err) logger2.error("微博2：" + err + " database update error during checkWeibo");
                                         mongo.close();
                                     });
-                            }).catch(err => console.error(err));
+                            }).catch(err => logger2.error("微博3：" + err));
                         }
                         i++;
                         if (i < subscribes.length) checkEach();
                     } catch (err) {
-                        console.error(err, '\n', subscribes[i]);
+                        logger2.error("微博4：" + err, '\n', subscribes[i]);
                         i++;
                         if (i < subscribes.length) checkEach();
                     }
                 }, (check_interval - subscribes.length * 1000) / subscribes.length);
             }
-        }).catch(err => console.error(err));
+        }).catch(err => logger2.error("微博5：" + err));
     }, check_interval);
 
     function checkOption(mblog, option) {
@@ -269,7 +269,7 @@ function checkWeiboSubs(context) {
                 } else replyFunc(context, "你一无所有", true);
             })
         mongo.close();
-    }).catch(err => console.error(err + " weibo checkWeiboSubs error, group_id= " + group_id));
+    }).catch(err => logger2.error(err + " weibo checkWeiboSubs error, group_id= " + group_id));
 }
 
 /**
@@ -293,10 +293,10 @@ function clearSubs(context, group_id) {
             }
             replyFunc(context, `清理了${matchs.length}个微博订阅`);
         } catch (err) {
-            console.error(err);
+            logger2.error("微博清理：" + err);
             replyFunc(context, '中途错误，清理未完成');
         } finally { mongo.close(); }
-    }).catch(err => console.error(err + " weibo checkWeiboSubs error, group_id= " + group_id));
+    }).catch(err => logger2.error(err + " weibo checkWeiboSubs error, group_id= " + group_id));
 }
 
 /**
@@ -304,7 +304,7 @@ function clearSubs(context, group_id) {
  * @returns {string} 处理完成
  */
 function textFilter(text) {
-    // console.log(text)
+    // logger2.info(text)
     return text.replace(/[\r\n]/g, "")
         .replace(/<a href="\/status\/.*\d">/g, "")
         .replace(/<a href='\/n\/.+?'>(.+?)<\/a>/g, "$1") //@
@@ -362,7 +362,7 @@ async function format(mblog, textForm = false) {
         let rt_weibo = await format(mblog.retweeted_status);
         payload = payload.concat("转发自: " + rt_weibo)
     }
-    // console.log(payload)
+    // logger2.info(payload)
     if (textForm = true) payload = payload.join("\n");
     return payload;
 }
@@ -436,7 +436,7 @@ function rtSingleWeibo(id, context) {
     axios.get("https://m.weibo.cn/statuses/show?id=" + id, { headers: httpHeader().headers }).then(async res => {
         let payload = await format(res.data.data, true);
         replyFunc(context, payload);
-    }).catch(err => console.error(err));
+    }).catch(err => logger2.error("微博6：" + err));
 }
 
 /**
@@ -472,7 +472,7 @@ function addSubByUid(url, option_nl, context) {
         subscribe(uid, option, context);
     }).catch(err => {
         replyFunc(context, "无法订阅这个人", true);
-        console.error(err);
+        logger2.error("微博7：" + err);
     });
 }
 
@@ -487,16 +487,16 @@ function rtWeibo(name, num, context) {
             format(res).then(payload => {
                 replyFunc(context, payload);
             }).catch(err => {
-                console.error(err);
+                logger2.error("微博8：" + err);
                 replyFunc(context, "中途错误", true);
             });
         }).catch(err => {
-            console.error(err);
+            logger2.error("微博9：" + err);
             replyFunc(context, "等下再试", true);
         });
         else replyFunc(context, "查无此人", true);
     }).catch(err => {
-        console.error(err);
+        logger2.error("微博10：" + err);
         replyFunc(context, "中途错误", true);
     });
 }
