@@ -17,16 +17,16 @@ function transReply(replyMsg) {
 
 function httpHeader(with_cookie = false) {
     let headers = {
-        "Host" : "fanyi.qq.com",
-        "Origin" : "https://fanyi.qq.com",
-        "Referer" : "https://fanyi.qq.com",
-        "DNT" : 1,
-        "Sec-Fetch-Dest" : "empty",
-        "Sec-Fetch-Mode" : "cors",
-        "Accept" : "application/json, text/javascript, */*; q=0.01",
-        "Accept-Encoding" : "gzip, deflate, br",
-        "Accept-Language" : "zh-CN,zh;q=0.9,en-US;q=0.8,en;q=0.7,ja;q=0.6",
-        "User-Agent" : "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/81.0.4044.122 Safari/537.36"
+        "Host": "fanyi.qq.com",
+        "Origin": "https://fanyi.qq.com",
+        "Referer": "https://fanyi.qq.com",
+        "DNT": 1,
+        "Sec-Fetch-Dest": "empty",
+        "Sec-Fetch-Mode": "cors",
+        "Accept": "application/json, text/javascript, */*; q=0.01",
+        "Accept-Encoding": "gzip, deflate, br",
+        "Accept-Language": "zh-CN,zh;q=0.9,en-US;q=0.8,en;q=0.7,ja;q=0.6",
+        "User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/81.0.4044.122 Safari/537.36"
     }
     if (with_cookie) headers.cookie = `qtv=${qtv}; qtk=${qtk}; fy_guid=${fy_guid};`
     return headers;
@@ -35,9 +35,9 @@ function httpHeader(with_cookie = false) {
 
 function initialise() {
     axios({
-        url : TENCENT_TRANS_INIT,
-        method : "GET",
-        headers : httpHeader()
+        url: TENCENT_TRANS_INIT,
+        method: "GET",
+        headers: httpHeader()
     }).then(res => {
         qtv = /qtv = "(.+)"/.exec(res.data)[1];
         qtk = /qtk = "(.+)"/.exec(res.data)[1];
@@ -48,15 +48,15 @@ function initialise() {
 
 function translate(sourceLang, targetLang, sourceText, context, reply = true) {
     axios({
-        url : TENCENT_TRANS_API,
-        method : "POST",
-        headers : httpHeader(true),
-        data : {
-            "qtk" : qtk,
-            "qtv" : qtv,
-            "source" : sourceLang,
-            "target" : targetLang,
-            "sourceText" : sourceText.replace(/&amp;/g, "&").replace(/&#91;/g, "[").replace(/&#93;/g, "]")
+        url: TENCENT_TRANS_API,
+        method: "POST",
+        headers: httpHeader(true),
+        data: {
+            "qtk": qtk,
+            "qtv": qtv,
+            "source": sourceLang,
+            "target": targetLang,
+            "sourceText": sourceText.replace(/&amp;/g, "&").replace(/&#91;/g, "[").replace(/&#93;/g, "]")
         }
     }).then(res => {
         let targetText = "";
@@ -70,25 +70,24 @@ function translate(sourceLang, targetLang, sourceText, context, reply = true) {
 
 function toTargetLang(lang_opt) {
     let target_lang = {
-        "日" : "jp",
-        "韩" : "kr",
-        "英" : "en",
-        "法" : "fr",
-        "德" : "de",
-        "俄" : "ru"
+        "日": "jp",
+        "韩": "kr",
+        "英": "en",
+        "法": "fr",
+        "德": "de",
+        "俄": "ru"
     }
     return target_lang[lang_opt];
 }
 
 function orientedTrans(context) {
-    if (target[context.group_id] != undefined && target[context.group_id].some(aim => {return aim == context.user_id})) {
+    if (target[context.group_id] != undefined && target[context.group_id].some(aim => { return aim == context.user_id })) {
         if (/(开始|停止)定向翻译/.test(context.message)) return;
         let text = context.message.replace(/\[CQ.+\]/, "");
         if (text.length < 3) return;
         if (/[\u4e00-\u9fa5]+/.test(text) && !/[\u3040-\u30FF]/.test(text)) translate("zh", "jp", text, context, true);
         else translate("auto", "zh", text, context, true);
-    }
-    else return;
+    } else return;
 }
 
 function pointTo(context, user_id) {
@@ -100,12 +99,11 @@ function pointTo(context, user_id) {
 
 function unpoint(context, user_id) {
     if (Array.isArray(user_id)) user_id = parseInt(user_id[0]);
-    if (target[context.group_id] != undefined && 
-    target[context.group_id].some(aim => {return aim == user_id})) {
+    if (target[context.group_id] != undefined &&
+        target[context.group_id].some(aim => { return aim == user_id })) {
         target[context.group_id] = target[context.group_id].filter(id => id != user_id);
         replyFunc(context, `对${user_id}的定向翻译已停止`);
-    }
-    else replyFunc(context, `${user_id}不在定向翻译列表中`);
+    } else replyFunc(context, `${user_id}不在定向翻译列表中`);
 }
 
 function viewTarget(context) {
@@ -118,31 +116,26 @@ function transEntry(context) {
         let sourceText = context.message.substring(3, context.message.length, true);
         translate("auto", "zh", sourceText, context, false);
         return true;
-    }
-    else if (/中译[日韩英法德俄][>＞].+/.test(context.message)) {
+    } else if (/中译[日韩英法德俄][>＞].+/.test(context.message)) {
         let target_lang = toTargetLang(/中译(.)[>＞]/.exec(context.message)[1]);
         translate("zh", target_lang, /中译.[>＞](.+)/.exec(context.message)[1], context, false);
         return true;
-    }
-    else if (/^开始定向翻译(\s?(\d{9,10}?|\[CQ:at,qq=\d+\])\s?)?$/.test(context.message)) {
+    } else if (/^开始定向翻译(\s?(\d{9,10}?|\[CQ:at,qq=\d+\])\s?)?$/.test(context.message)) {
         let user_id = /\d+/.exec(context.message) || context.user_id;
         pointTo(context, user_id);
         return true;
-    }
-    else if (/^停止定向翻译(\s?(\d{9,10}?|\[CQ:at,qq=\d+\])\s?)?$/.test(context.message)) {
+    } else if (/^停止定向翻译(\s?(\d{9,10}?|\[CQ:at,qq=\d+\])\s?)?$/.test(context.message)) {
         let user_id = /\d+/.exec(context.message) || context.user_id;
         unpoint(context, user_id);
         return true;
-    }
-    else if (/^定向翻译列表$/.test(context.message)) {
+    } else if (/^定向翻译列表$/.test(context.message)) {
         if (/owner|admin/.test(context.sender.role)) viewTarget(context);
-        else replyFunc(context, "您配吗");
+        else replyFunc(context, "无权限");
         return true;
-    }
-    else return false;
+    } else return false;
 }
 
 initialise()
 let renewToken = setInterval(initialise, 3600000);
 
-module.exports = {transReply, transEntry, orientedTrans};
+module.exports = { transReply, transEntry, orientedTrans };
