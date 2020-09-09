@@ -1,7 +1,7 @@
 {
     "cqws": {
         "host": "127.0.0.1",
-        "port": 6701,
+        "port": 6700,
         "enableAPI": true,
         "enableEvent": true,
         "access_token": "",
