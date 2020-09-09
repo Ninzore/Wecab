@@ -10,12 +10,12 @@ import broadcast from './modules/broadcast';
 import weibo from './modules/plugin/weibo';
 import bilibili from './modules/plugin/bilibili';
 import twitter from './modules/plugin/twitter';
-import dice from './modules/plugin/dice';
-import pokemon from './modules/plugin/pokemon';
-import pretendLearn from "./modules/plugin/pretendLearn";
+//import dice from './modules/plugin/dice';
+//import pokemon from './modules/plugin/pokemon';
+//import pretendLearn from "./modules/plugin/pretendLearn";
 import translate from "./modules/plugin/translate";
-import pixivImage from "./modules/plugin/pixivImage";
-import helpZen from "./modules/plugin/zen";
+//import pixivImage from "./modules/plugin/pixivImage";
+//import helpZen from "./modules/plugin/zen";
 import nbnhhsh from "./modules/plugin/nbnhhsh";
 
 // 初始化开始
@@ -27,7 +27,7 @@ const logger = new Logger();
 weibo.weiboReply(replyMsg);
 bilibili.bilibiliReply(replyMsg);
 twitter.twitterReply(replyMsg);
-pretendLearn.learnReply(replyMsg, logger);
+//pretendLearn.learnReply(replyMsg, logger);
 translate.transReply(replyMsg);
 nbnhhsh.reply(replyMsg);
 
@@ -142,8 +142,8 @@ if (setting.debug) {
     //群组
     bot.on('message.group', groupMsg);
     //提醒
-    bot.on('notice.group_increase', notice);
-    bot.on('notice.group_decrease', notice);
+    //bot.on('notice.group_increase', notice);
+    //bot.on('notice.group_decrease', notice);
 }
 
 //连接相关监听
@@ -159,7 +159,7 @@ bot.on('socket.connecting', (wsType, attempts) => console.log(`${getTime()} 连�
             setTimeout(() => {
                 bot('send_private_msg', {
                     user_id: setting.admin,
-                    message: `已上线[${wsType}]#${attempts}`,
+                    message: `wecab已上线[${wsType}]#${attempts}`,
                 });
             }, 5000);
         }
@@ -169,9 +169,9 @@ bot.on('socket.connecting', (wsType, attempts) => console.log(`${getTime()} 连�
 bot.connect();
 
 //以及每日需要更新的一些东西
-setInterval(() => {
+/*setInterval(() => {
     if (bot.isReady() && logger.canAdminSign()) {}
-}, 60 * 60 * 1000);
+}, 60 * 60 * 1000);*/
 
 function notice(context) {
     context.message_type = 'group';
@@ -195,7 +195,7 @@ function commonHandle(e, context) {
         return true;
     }
     if (args.version) {
-        replyMsg(context, version);
+        replyMsg(context, "wecab版本:" + version);
         return true;
     }
     if (args.about) {
@@ -233,32 +233,32 @@ function debugGroupMsg(e, context) {
 //群组消息处理
 function groupMsg(e, context) {
     let text_bak = context.message;
-    context.message = pretendLearn.replaceEqual(context);
+    //context.message = pretendLearn.replaceEqual(context);
     translate.orientedTrans(context);
-    
+
     if (commonHandle(e, context)) {
         e.stopPropagation();
         return;
     }
- 
+
     const { group_id, user_id } = context;
 
     if (weibo.weiboAggr(context, replyMsg) ||
-             bilibili.bilibiliCheck(context) ||
-             twitter.twitterAggr(context) ||
-             pixivImage.pixivCheck(context, replyMsg, bot) ||
-             helpZen(context, replyMsg, bot, rand) ||
-             translate.transEntry(context) ||
-             pokemon.pokemonCheck(context, replyMsg)) {
+        bilibili.bilibiliCheck(context) ||
+        twitter.twitterAggr(context) ||
+        /*pixivImage.pixivCheck(context, replyMsg, bot) ||*/
+        /*helpZen(context, replyMsg, bot, rand) ||*/
+        translate.transEntry(context)
+        /*||
+               pokemon.pokemonCheck(context, replyMsg)*/
+    ) {
         e.stopPropagation();
         return;
-    }
-    else if (/^\.dice.+/g.exec(context.message)) {
-        dice(context, replyMsg, rand);
+    } else if (/^\.dice.+/g.exec(context.message)) {
+        //dice(context, replyMsg, rand);
         e.stopPropagation();
         return;
-    }
-    else if (setting.repeat.enable) {
+    } else if (setting.repeat.enable) {
         context.message = text_bak;
         //复读（
         //随机复读，rptLog得到当前复读次数
@@ -275,7 +275,7 @@ function groupMsg(e, context) {
             }, 1000);
         } else {
             // if (getRand() <= 80) pretendLearn.talk(context);
-            pretendLearn.talk(context);
+            //pretendLearn.talk(context);
         }
     }
 }
@@ -335,10 +335,9 @@ function getTime() {
 function parseArgs(str, enableArray = false, _key = null) {
     const m = minimist(
         str
-            .replace(/(--\w+)(?:\s*)(\[CQ:)/g, '$1 $2')
-            .replace(/(\[CQ:[^\]]+\])(?:\s*)(--\w+)/g, '$1 $2')
-            .split(' '),
-        {
+        .replace(/(--\w+)(?:\s*)(\[CQ:)/g, '$1 $2')
+        .replace(/(\[CQ:[^\]]+\])(?:\s*)(--\w+)/g, '$1 $2')
+        .split(' '), {
             boolean: true,
         }
     );
