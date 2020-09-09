@@ -1,8 +1,7 @@
-
 {
     "cqws": {
         "host": "127.0.0.1",
-        "port": 6700,
+        "port": 6701,
         "enableAPI": true,
         "enableEvent": true,
         "access_token": "",
@@ -17,7 +16,7 @@
         "addFriendAnswers": [],
         "autoAddGroup": false,
         "repeat": {
-            "enable": true,
+            "enable": false,
             "times": 3,
             "probability": 40,
             "commonProb": 0.2
@@ -26,5 +25,6 @@
             "default": "",
             "debug": ""
         }
+
     }
 }
