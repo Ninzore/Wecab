@@ -14,7 +14,8 @@
     "random-seed": "^0.3.0",
     "seedrandom": "^3.0.5",
     "sqlite": "^4.0.14",
-    "sqlite3": "^5.0.0"
+    "sqlite3": "^5.0.0",
+    "winston": "^3.2.1"
   },
   "devDependencies": {},
   "scripts": {
