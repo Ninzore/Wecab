@@ -14,6 +14,7 @@
 2. 群组分离，互不干扰  
 
 **注意！！！**  
+# MongoDB似乎并不好安装
 需要安装MongoDB，没装的参考官方教程https://docs.mongodb.com/manual/installation/ ，端口是默认端口不要改，然后使用mongorestore将dump文件夹中的东西恢复到mongodb中，这样才能使用小游戏功能，当然如果不用的话也可以，删除main中所有pokemon相关的语句就行  
 
 ## 部件列表  
