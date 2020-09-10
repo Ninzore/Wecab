@@ -57,7 +57,7 @@ function twitterReply(replyMsg) {
     replyFunc = replyMsg;
 }
 
-/** 检查网络情况，如果连不上Twitter那后面都不用做了*/
+/** 检查网络情况，如果连不上twitter那后面都不用做了*/
 function checkConnection() {
     return axios.get("https://twitter.com").then(res => {
         connection = (res.status == 200) ? true : false
@@ -67,7 +67,7 @@ function checkConnection() {
 function firstConnect() {
     checkConnection().then(() => {
         if (!connection) {
-            logger2.info("Twitter无法连接，功能暂停");
+            logger2.info("twitter无法连接，功能暂停");
         } else {
             getGuestToken();
             setTimeout(() => getCookie(), 1000);
@@ -146,11 +146,11 @@ function getCookie() {
             else if (temp = /(_twitter_sess=.+?);/.exec(res.headers["set-cookie"][i])) twitter_sess = temp[1];
         }
         cookie = `dnt=1; fm=0; csrf_same_site_set=1; csrf_same_site=1; gt=${guest_token}; ${ct0}${guest_id}${personalization_id}${twitter_sess}`;
-    }).catch(err => logger2.error('Twitter cookie设置出错，错误：', err.response.status, err.response.statusText));
+    }).catch(err => logger2.error('twitter cookie设置出错，错误：', err.response.status, err.response.statusText));
 }
 
 /** 
- * 获取单条Twitter参考  
+ * 获取单条twitter参考  
  * developer.twitter.com/en/docs/tweets/post-and-engage/api-reference/get-statuses-lookup
  * @param {string} tweet_id_str 单条Tweet id
  * @returns {Promise} Tweet Object，如果错误，结果为false
@@ -265,7 +265,7 @@ function fetch(name) {
 
 /**
  * 增加订阅
- * @param {number} uid Twitter用户id_str
+ * @param {number} uid twitter用户id_str
  * @param {string} option 偏好设置
  * @param {object} context
  */
@@ -283,7 +283,7 @@ function subscribe(uid, option, context) {
         if (res.length == 0) {
             let tweet = (await getUserTimeline(uid, 15, true))[0];
             if (tweet == undefined) {
-                replyFunc(context, `无法订阅这个人的Twitter`, true);
+                replyFunc(context, `无法订阅这个人的twitter`, true);
                 return false;
             }
             let tweet_id = tweet.id_str;
@@ -296,8 +296,8 @@ function subscribe(uid, option, context) {
                     [group_id]: option
                 },
                 (err) => {
-                    if (err) logger2.error(err + " Twitter subscribes insert error");
-                    else replyFunc(context, `已订阅${name}(推特用户id：${uid})的Twitter，模式为${option_nl}`, true);
+                    if (err) logger2.error(err + " twitter subscribes insert error");
+                    else replyFunc(context, `已订阅${name}(推特用户id：${uid})的twitter，模式为${option_nl}`, true);
                 });
         } else {
             coll.findOneAndUpdate({
@@ -311,24 +311,24 @@ function subscribe(uid, option, context) {
                     }
                 },
                 (err, result) => {
-                    if (err) logger2.error(err + " Twitter subscribes update error");
+                    if (err) logger2.error(err + " twitter subscribes update error");
                     else {
                         if (result.value.groups.includes(group_id)) text = "多次订阅有害我的身心健康";
-                        else text = `已订阅${result.value.name}(推特用户id：${uid})的Twitter，模式为${option_nl}`;
+                        else text = `已订阅${result.value.name}(推特用户id：${uid})的twitter，模式为${option_nl}`;
                         replyFunc(context, text, true);
                     }
                 });
         }
         mongo.close();
-    }).catch(err => logger2.error(err + " Twitter subscribe error, uid= " + uid));
+    }).catch(err => logger2.error(err + " twitter subscribe error, uid= " + uid));
 }
 
 /**
  * 取消订阅
- * @param {string} uid Twitter用户id
+ * @param {string} uid twitter用户id
  * @param {object} context
  */
-// * @param {string} name Twitter用户名
+// * @param {string} name twitter用户名
 
 function unSubscribe(uid, context) {
     let group_id = context.group_id;
@@ -356,7 +356,7 @@ function unSubscribe(uid, context) {
                     let text = "";
                     if (result.value == null || !result.value.groups.includes(group_id)) text = "小火汁你压根就没订阅嗷";
                     else {
-                        text = "已取消订阅" + result.value.name + "(推特用户id：" + uid + ")" + "的Twitter";
+                        text = "已取消订阅" + result.value.name + "(推特用户id：" + uid + ")" + "的twitter";
                         if (result.value.groups.length <= 1) await coll.deleteOne({
                             _id: result.value._id
                         });
@@ -365,11 +365,11 @@ function unSubscribe(uid, context) {
                 }
                 mongo.close();
             });
-    }).catch(err => logger2.error(err + "Twitter unsubscribe error, uid= " + uid));
+    }).catch(err => logger2.error(err + "twitter unsubscribe error, uid= " + uid));
 }
 
 /**
- * 每过x分钟检查一次订阅列表，如果订阅一个Twitter账号的群的数量是0就删除
+ * 每过x分钟检查一次订阅列表，如果订阅一个twitter账号的群的数量是0就删除
  */
 function checkTwiTimeline() {
     if (!connection) return;
@@ -427,7 +427,7 @@ function checkTwiTimeline() {
                                             }
                                         },
                                         (err, result) => {
-                                            if (err) logger2.error("推特：" + err + " database update error during checkTwitter");
+                                            if (err) logger2.error("推特：" + err + " database update error during checktwitter");
                                         });
                                 });
                             }
@@ -504,7 +504,7 @@ function checkSubs(context) {
                 } else replyFunc(context, "你一无所有", true);
             })
         mongo.close();
-    }).catch(err => logger2.error(err + " Twitter checkWeiboSubs error, group_id= " + group_id));
+    }).catch(err => logger2.error(err + " twitter checkWeiboSubs error, group_id= " + group_id));
 }
 
 /**
@@ -523,7 +523,7 @@ function clearSubs(context, group_id) {
                 }
             }).toArray();
             if (matchs.length < 1) {
-                replyFunc(context, `未见任何Twitter订阅`);
+                replyFunc(context, `未见任何twitter订阅`);
                 return;
             }
             for (let item of matchs) {
@@ -545,20 +545,20 @@ function clearSubs(context, group_id) {
                     _id: res.value._id
                 });
             }
-            replyFunc(context, `清理了${matchs.length}个Twitter订阅`);
+            replyFunc(context, `清理了${matchs.length}个twitter订阅`);
         } catch (err) {
             logger2.error("推特清理订阅：" + err);
             replyFunc(context, '中途错误，清理未完成');
         } finally {
             mongo.close();
         }
-    }).catch(err => logger2.error(err + " Twitter clearSubs error, group_id= " + group_id));
+    }).catch(err => logger2.error(err + " twitter clearSubs error, group_id= " + group_id));
 }
 
 /**
  * 整理tweet_obj
  * @param {object} tweet Tweet object
- * @param {string} from_user Twitter用户名
+ * @param {string} from_user twitter用户名
  * @returns Promise  排列完成的Tweet String
  */
 async function format(tweet, useruid = -1, end_point = false) {
@@ -568,7 +568,7 @@ async function format(tweet, useruid = -1, end_point = false) {
     else text = tweet.text;
     if ("retweeted_status" in tweet) {
         let rt_status = await format(tweet.retweeted_status)
-        payload.push(`来自${tweet.user.name}${useruid!=-1?"(推特用户id："+useruid+")的Twitter\n转推了":""}`, rt_status);
+        payload.push(`来自${tweet.user.name}${useruid!=-1?"(推特用户id："+useruid+")的twitter\n转推了":""}`, rt_status);
         return payload.join("\n");
     }
     let pics = "";
@@ -665,13 +665,13 @@ async function format(tweet, useruid = -1, end_point = false) {
             text = text.replace(tweet.entities.urls[i].url, tweet.entities.urls[i].expanded_url);
         }
     }
-    payload.unshift(`${tweet.user.name}${useruid!=-1?"(推特用户id："+useruid+")的Twitter\n转推了":""}`, text);
+    payload.unshift(`${tweet.user.name}${useruid!=-1?"(推特用户id："+useruid+")的twitter\n转推了":""}`, text);
     return payload.join("\n");
 }
 
 /**
- * 将Twitter的t.co短网址扩展为原网址
- * @param {string} twitter_short_url Twitter短网址
+ * 将twitter的t.co短网址扩展为原网址
+ * @param {string} twitter_short_url twitter短网址
  * @returns Promise  原网址
  */
 function urlExpand(twitter_short_url) {
@@ -690,7 +690,7 @@ function urlExpand(twitter_short_url) {
 function rtTimeline(context, name, num) {
     searchUser(name).then(user => {
         if (!user) replyFunc(context, "未找到该推特");
-        else if (user.protected == true) replyFunc(context, "该Twitter受到保护，无法浏览");
+        else if (user.protected == true) replyFunc(context, "该twitter受到保护，无法浏览");
         else {
             getUserTimeline(user.id_str, 20).then(async timeline => {
                 if (timeline.length - 1 < num) timeline = await getUserTimeline(user.id_str, 50);
@@ -712,7 +712,7 @@ function rtSingleTweet(tweet_id_str, context) {
 
 /**
  * 通过用户名添加订阅
- * @param {string} name Twitter用户名
+ * @param {string} name twitter用户名
  * @param {string} option_nl 偏好设置，可以是"仅原创"，"包含转发"，"仅带图"
  * @param {object} context
  * @returns {boolean} 成功返回true
@@ -731,7 +731,7 @@ async function addSubByName(name, option_nl, context) {
 }
 
 function twitterAggr(context) {
-    if (connection && /^看看(.+?)的?((第[0-9]?[一二三四五六七八九]?条)|(上*条)|(最新))?\s?(推特|Twitter)$/i.test(context.message)) {
+    if (connection && /^看看(.+?)的?((第[0-9]?[一二三四五六七八九]?条)|(上*条)|(最新))?\s?(推特|twitter)$/i.test(context.message)) {
         let num = 1;
         let name = "";
         if (/最新/.test(context.message))(num = 0);
@@ -756,37 +756,37 @@ function twitterAggr(context) {
             else if (temp == 8 || temp == "八")(num = 7);
             else if (temp == 9 || temp == "九")(num = 8);
         } else num = 0;
-        name = /看看(.+?)的?((第[0-9]?[一二三四五六七八九]?条)|(上{1,3}一?条)|(置顶)|(最新))?\s?(推特|Twitter)/i.exec(context.message)[1];
+        name = /看看(.+?)的?((第[0-9]?[一二三四五六七八九]?条)|(上{1,3}一?条)|(置顶)|(最新))?\s?(推特|twitter)/i.exec(context.message)[1];
         rtTimeline(context, name, num);
         return true;
     } else if (connection && /^看看https:\/\/(mobile\.)?twitter.com\/.+?\/status\/(\d+)/i.test(context.message)) {
         let tweet_id = /status\/(\d+)/i.exec(context.message)[1];
         rtSingleTweet(tweet_id, context);
         return true;
-    } else if (connection && /^订阅(推特|Twitter)https:\/\/twitter.com\/.+(\/status\/\d+)?([>＞](仅转发|只看图|全部))?/i.test(context.message)) {
+    } else if (connection && /^订阅(推特|twitter)https:\/\/twitter.com\/.+(\/status\/\d+)?([>＞](仅转发|只看图|全部))?/i.test(context.message)) {
         let name = (/status\/\d+/.test(context.message) && /\.com\/(.+)\/status/.exec(context.message)[1] ||
             /\.com\/(.+)[>＞]/.exec(context.message)[1]);
         let option_nl = /[>＞](仅转发|只看图|全部)/.exec(context.message)[1];
         if (option_nl == undefined) option_nl = "仅原创"
         addSubByName(name, option_nl, context);
         return true;
-    } else if (connection && /^订阅.+的?(推特|Twitter)([>＞](仅转发|只看图|全部))?/i.test(context.message)) {
+    } else if (connection && /^订阅.+的?(推特|twitter)([>＞](仅转发|只看图|全部))?/i.test(context.message)) {
         let {
             groups: {
                 name,
                 option_nl
             }
-        } = /订阅(?<name>.+)的?(推特|Twitter)([>＞](?<option_nl>.{2,4}))?/i.exec(context.message);
+        } = /订阅(?<name>.+)的?(推特|twitter)([>＞](?<option_nl>.{2,4}))?/i.exec(context.message);
         addSubByName(name, option_nl, context);
         return true;
-    } else if (/^取消订阅.+的?(推特|Twitter)$/i.test(context.message)) {
-        let uid = /取消订阅(.+)的?(推特|Twitter)/i.exec(context.message)[1];
+    } else if (/^取消订阅.+的?(推特|twitter)$/i.test(context.message)) {
+        let uid = /取消订阅(.+)的?(推特|twitter)/i.exec(context.message)[1];
         unSubscribe(uid, context);
         return true;
-    } else if (/^查看(推特|Twitter)订阅$/i.test(context.message)) {
-        checkSubs(context);
+    } else if (/^查看(推特|twitter)订阅$/i.test(context.message)) {
+        checkSubs(context); //Twitter==twitter什么情况？
         return true;
-    } else if (/^清空(推特|Twitter)订阅$/i.test(context.message)) {
+    } else if (/^清空(推特|twitter)订阅$/i.test(context.message)) {
         if (/owner|admin/.test(context.sender.role)) clearSubs(context, context.group_id);
         else replyFunc(context, '无权限');
         return true;

@@ -33,8 +33,8 @@ Fix: 转义正则错误
 * Add: 转发b23短链时，如果重定向目标为视频则会发送视频链接
 
 ### 7/24  v1.1.6
-* Add: 现在Twitter会转发投票内容以及更丰富的card内容
-* Update: Twitter模块其他小改进
+* Add: 现在twitter会转发投票内容以及更丰富的card内容
+* Update: twitter模块其他小改进
 
 ### 7/22  v1.1.5
 * Update: 转发时会给出gif动图而不是mp4链接（过大时仍然会给出链接）
@@ -49,14 +49,14 @@ Fix: 转义正则错误
 * Delete: 删除extra文件夹（没用）
 
 ### 7/14  v1.1.2
-* Fixed: 看看xxTwitter有时会无效的bug
+* Fixed: 看看xxtwitter有时会无效的bug
 
 ### 7/10  V1.1.1
 * Fixed: 不加选项时添加订阅出错，订阅转发时url出错
 
 ### 7/07  V1.1.0
-* Added: Twitter订阅时的可选项更多，添加（包含转发，不要转发，仅回复，包含回复，不要回复）  
-* Change: 修改Twitter订阅查询机制  
+* Added: twitter订阅时的可选项更多，添加（包含转发，不要转发，仅回复，包含回复，不要回复）  
+* Change: 修改twitter订阅查询机制  
 * 注：更新后与旧版本**不兼容**  
 [commit](https://github.com/Ninzore/Wecab/commit/1091153a7c6b02c3f820b59d9c8c79da54a870ef)
 
@@ -65,14 +65,14 @@ Fix: 转义正则错误
 [commit](https://github.com/Ninzore/Wecab/commit/1091153a7c6b02c3f820b59d9c8c79da54a870ef)
 
 ### 7/05  
-* Fixed: 如果在检查区间发送多条Twitter，只会发送最新一条的bug，现在会正确发送所有新内容  
+* Fixed: 如果在检查区间发送多条twitter，只会发送最新一条的bug，现在会正确发送所有新内容  
 [commit](https://github.com/Ninzore/Wecab/commit/9c3e7b515c4f76b1123f2d86fa0890f7ceef7bef)
 
 ### 7/01  v1.0.0
 * New: 完全脱离CQ-picfinder,不依赖原项目
 
 ### 6/29
-* Added: 添加一键清空该群所有Twitter订阅  [commit](https://github.com/Ninzore/Wecab/commit/d17cee9c7f701500c0ae03040dc8766cd7bb54ba)
+* Added: 添加一键清空该群所有twitter订阅  [commit](https://github.com/Ninzore/Wecab/commit/d17cee9c7f701500c0ae03040dc8766cd7bb54ba)
 * Fixed: 不准复读图片时的错误  [commit](https://github.com/Ninzore/Wecab/commit/867d96d7f0d02a8dba8247d1f385175d69b181e0)
 
 ### 6/28
@@ -121,11 +121,11 @@ Fix: 转义正则错误
 * Added: 烤推支持覆盖原文  
 
 ### 6/03
-* Added:  添加对Twitter移动版mobile.twitter网址的识别   
+* Added:  添加对twitter移动版mobile.twitter网址的识别   
 * Changed: 简化twitter指令  
-   1. 取消看看xxTwitter>链接，现在默认发送链接  
-   2. 取消看看xxTwitter>截图，转为使用twitter截图url  
-   3. 看看Twitter url改为 看看url，方便使用  
+   1. 取消看看xxtwitter>链接，现在默认发送链接  
+   2. 取消看看xxtwitter>截图，转为使用twitter截图url  
+   3. 看看twitter url改为 看看url，方便使用  
   
 ### 6/02
 * Fixed: 解决检查连接性出错的bug  
@@ -179,21 +179,21 @@ Fix: 转义正则错误
   * 加入了能不能好好说话模块   
 
 ### 5/02
-  * 支持烤推时直接在原Twitter页面上插入html    
+  * 支持烤推时直接在原twitter页面上插入html    
 
 ### 4/29
-  * 支持烤推时使用简单语句或者CSS装饰原Twitter  
+  * 支持烤推时使用简单语句或者CSS装饰原twitter  
 
 ### 4/28
   * 加入烤推功能  
 
 ### 4/27
-  * 现在Twitter会发送原图了  
-  * 处理当Twitter订阅选项为仅原创时仍然会发送转推内容的bug  
-  * 修改了截图时的选择器避免在有的Twitter产生bug  
+  * 现在twitter会发送原图了  
+  * 处理当twitter订阅选项为仅原创时仍然会发送转推内容的bug  
+  * 修改了截图时的选择器避免在有的twitter产生bug  
 
 ### 4/26
-  * 新增Twitter截图功能  
+  * 新增twitter截图功能  
 
 ### 4/25
   * 新增翻译功能 
@@ -205,16 +205,16 @@ Fix: 转义正则错误
   * weibo.js 修正一个正则错误，以及增加没有获取到微博时间线时的处理  
 
 ### 4/22
-  * Twitter可选订阅模式  
+  * twitter可选订阅模式  
 
 ### 4/21
-  * Twitter连接机制优化
-  * Twitter模块多个bug修正
+  * twitter连接机制优化
+  * twitter模块多个bug修正
     1. 无法正确显示订阅  
     2. 订阅后无法自动转发  
 
 ### 4/20
-  * 完全重写Twitter模块，抛弃之前使用的RSSHub（更新太慢了    
+  * 完全重写twitter模块，抛弃之前使用的RSSHub（更新太慢了    
 
 ### 4/08
   * 新增使用url订阅微博账号功能
@@ -223,7 +223,7 @@ Fix: 转义正则错误
   * 完全重构微博模块，支持订阅时选项    
 
 ### 3/26
-  * 新增Twitter订阅功能  
+  * 新增twitter订阅功能  
   * 微博catch err bug处理
 
 ### 3/25
