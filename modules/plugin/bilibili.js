@@ -81,7 +81,7 @@ function searchName(keyword = "") {
 }
 
 //choose 选择需要查找的人
-//num 选择需要获取的微博，0为置顶或者最新，1是次新，以此类推，只允许0到9
+//num 选择需要获取的b站动态，0为置顶或者最新，1是次新，以此类推，只允许0到9
 function getDynamicList(uid, num = 0) {
     let header = httpHeader(uid);
     return axios(header).then(response => {
