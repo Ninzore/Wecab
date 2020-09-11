@@ -14,7 +14,9 @@
 2. 群组分离，互不干扰  
 
 **注意！！！**  
-需要安装MongoDB，没装的参考官方教程https://docs.mongodb.com/manual/installation/ ，端口是默认端口不要改，然后使用mongorestore将dump文件夹中的东西恢复到mongodb中，这样才能使用小游戏功能，当然如果不用的话也可以，删除main中所有pokemon相关的语句就行  
+**近期会支持SQLite**如果不想用MongoDB的人可以等一阵子  
+  
+目前需要安装MongoDB，没装的参考官方教程https://docs.mongodb.com/manual/installation/ ，端口是默认端口不要改，然后使用mongorestore将dump文件夹中的东西恢复到mongodb中，这样才能使用小游戏功能，当然如果不用的话也可以，删除main中所有pokemon相关的语句就行  
 
 ## 部件列表  
 正在缓慢更新中  
