@@ -21,6 +21,9 @@
             "times": 3,
             "probability": 40,
             "commonProb": 0.2
+        },
+        "learn": {
+            "probability": 80
         }
     }
 }
