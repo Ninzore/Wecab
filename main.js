@@ -212,6 +212,9 @@ function privateAndAtMsg(e, context) {
     if (commonHandle(e, context)) {
         e.stopPropagation();
         return;
+    } else if (weibo.antiweibo(context, replyMsg)) {
+        e.stopPropagation();
+        return;
     }
     //其他指令
     return setting.replys.default;
@@ -244,7 +247,7 @@ function groupMsg(e, context) {
 
     const { group_id, user_id } = context;
 
-    if (weibo.weiboAggr(context, replyMsg) ||
+    if (weibo.weiboAggr(context, replyMsg) || weibo.antiweibo(context, replyMsg) ||
         bilibili.bilibiliCheck(context) ||
         twitter.twitterAggr(context) ||
         /*pixivImage.pixivCheck(context, replyMsg, bot) ||*/
