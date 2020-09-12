@@ -155,13 +155,15 @@ bot.on('socket.connecting', (wsType, attempts) => console.log(`${getTime()} 连�
     })
     .on('socket.connect', (wsType, sock, attempts) => {
         console.log(`${getTime()} 连接成功[${wsType}]#${attempts}`);
-        if (setting.admin > 0) {
+        if (wsType === '/api') {
             setTimeout(() => {
-                bot('send_private_msg', {
-                    user_id: setting.admin,
-                    message: `已上线[${wsType}]#${attempts}`,
-                });
-            }, 5000);
+                if (bot.isReady() && setting.admin > 0) {
+                    bot('send_private_msg', {
+                      user_id : setting.admin,
+                      message : `已上线#${attempts}`,
+                    });
+                  }
+            }, 1000);
         }
     });
 
@@ -209,6 +211,10 @@ function commonHandle(e, context) {
 //私聊以及群组@的处理
 function privateAndAtMsg(e, context) {
     if (commonHandle(e, context)) {
+        e.stopPropagation();
+        return;
+    }
+    else if (pretendLearn.learn(context)) {
         e.stopPropagation();
         return;
     }
@@ -274,8 +280,7 @@ function groupMsg(e, context) {
                 replyMsg(context, context.message);
             }, 1000);
         } else {
-            // if (getRand() <= 80) pretendLearn.talk(context);
-            pretendLearn.talk(context);
+            if (getRand() <= setting.learn.probability) pretendLearn.talk(context);
         }
     }
 }
