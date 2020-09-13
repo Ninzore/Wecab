@@ -283,7 +283,7 @@ function subscribe(uid, option, context) {
         if (res.length == 0) {
             let tweet = (await getUserTimeline(uid, 15, true))[0];
             if (tweet == undefined) {
-                replyFunc(context, `无法订阅这个人的twitter`, true);
+                replyFunc(context, `无法订阅该twitter`, true);
                 return false;
             }
             let tweet_id = tweet.id_str;
@@ -354,7 +354,7 @@ function unSubscribe(uid, context) {
                 if (err) logger2.error("推特：" + err + "database subscribes delete error");
                 else {
                     let text = "";
-                    if (result.value == null || !result.value.groups.includes(group_id)) text = "小火汁你压根就没订阅嗷";
+                    if (result.value == null || !result.value.groups.includes(group_id)) text = "未发现任何推特订阅";
                     else {
                         text = "已取消订阅" + result.value.name + "(推特用户id：" + uid + ")" + "的twitter";
                         if (result.value.groups.length <= 1) await coll.deleteOne({
@@ -501,7 +501,7 @@ function checkSubs(context) {
                     });
                     let subs = "本群已订阅:\n" + name_list.join("\n");
                     replyFunc(context, subs, true);
-                } else replyFunc(context, "你一无所有", true);
+                } else replyFunc(context, "未发现任何推特订阅", true);
             })
         mongo.close();
     }).catch(err => logger2.error(err + " twitter checkWeiboSubs error, group_id= " + group_id));
@@ -720,7 +720,7 @@ function rtSingleTweet(tweet_id_str, context) {
 async function addSubByName(name, option_nl, context) {
     let user = await searchUser(name);
     if (!user) {
-        replyFunc(context, "没这人", true);
+        replyFunc(context, "未发现该用户或者输入0-9之外的数字", true);
         return true;
     } else {
         let option = OPTION_MAP[option_nl] || [1, 0, 0, 1];
