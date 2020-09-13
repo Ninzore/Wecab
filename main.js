@@ -160,6 +160,7 @@ bot.on('socket.connecting', (wsType, attempts) => logger2.info(`${getTime()} 连
     .on('socket.error', (wsType, err) => {
         logger2.error(`${getTime()} 连接错误[${wsType}]`);
         logger2.error(err);
+        process.exit();
     })
     .on('socket.connect', (wsType, sock, attempts) => {
         logger2.info(`${getTime()} 连接成功[${wsType}]#${attempts}`);
