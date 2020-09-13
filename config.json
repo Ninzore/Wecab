@@ -24,7 +24,9 @@
         "replys": {
             "default": "",
             "debug": ""
+        },
+        "twitter": {
+            "whitegroup": []
         }
-
     }
 }
