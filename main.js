@@ -1,5 +1,9 @@
-import { version } from './package.json';
-import { CQWebSocket } from 'cq-websocket';
+import {
+    version
+} from './package.json';
+import {
+    CQWebSocket
+} from 'cq-websocket';
 import config from './modules/config';
 import CQ from './modules/CQcode';
 import Logger from './modules/Logger';
@@ -109,7 +113,10 @@ bot.on('message.private', (e, context) => {
     if (args.broadcast) broadcast(bot, parseArgs(context.message, false, 'broadcast'));
 
     //Ban
-    const { 'ban-u': bu, 'ban-g': bg } = args;
+    const {
+        'ban-u': bu,
+        'ban-g': bg
+    } = args;
     if (bu && typeof bu == 'number') {
         Logger.ban('u', bu);
         replyMsg(context, `已封禁用户${bu}`);
@@ -245,11 +252,25 @@ function groupMsg(e, context) {
         return;
     }
 
-    const { group_id, user_id } = context;
+    const {
+        group_id,
+        user_id
+    } = context;
 
+    let whitegroup = false;
+    let whitegroup2 = setting.twitter.whitegroup;
+    let i = 0;
+    for (i = 0; i < whitegroup2.length; i++) {
+        if (context.group_id == whitegroup2[i]) {
+            whitegroup = true;
+            break;
+        }
+    }
+    if (whitegroup == true) {
+        twitter.twitterAggr(context);
+    }
     if (weibo.weiboAggr(context, replyMsg) || weibo.antiweibo(context, replyMsg) ||
         bilibili.bilibiliCheck(context) ||
-        twitter.twitterAggr(context) ||
         /*pixivImage.pixivCheck(context, replyMsg, bot) ||*/
         /*helpZen(context, replyMsg, bot, rand) ||*/
         translate.transEntry(context)
