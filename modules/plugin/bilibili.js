@@ -77,7 +77,10 @@ function searchName(keyword = "") {
     let header = httpHeader(0, 0, keyword);
     return axios(header).then(response => {
         return response.data.data.items[0];
-    }).catch(err => logger2.error("bili:" + err));
+    }).catch(err => {
+        logger2.error("bili:" + err);
+        return false;
+    });
 }
 
 //choose 选择需要查找的人
@@ -85,7 +88,6 @@ function searchName(keyword = "") {
 function getDynamicList(uid, num = 0) {
     let header = httpHeader(uid);
     return axios(header).then(response => {
-        // logger2.info(card)
         return (response.data.data.cards[num])
     }).catch(err => logger2.error("bili1:" + err));
 }
@@ -120,7 +122,9 @@ function dynamicProcess(dynamic) {
     //转发
     if ("origin" in card) {
         let origin = card.origin;
-        rt_dynamic = dynamicProcess({ card: origin });
+        rt_dynamic = dynamicProcess({
+            card: origin
+        });
     }
     if ("pic" in card) pics += "[CQ:image,cache=0,file=" + card.pic + "]";
     if ("item" in card) {
@@ -157,21 +161,25 @@ function addBiliSubscribe(context, name = "", option_nl) {
     let group_id = context.group_id;
     let option = option_map[option_nl];
     searchName(name).then(name_card => {
-        if (name_card == undefined) sender(context, {}, "你名字写对了吗", true);
+        if (name_card == undefined) sender(context, {}, "名字未写正确", true);
         else getDynamicList(name_card.mid, 0).then(dynamic => {
             addData(dynamic.desc);
         });
     });
 
     function addData(desc = {}) {
-        mongodb(db_path, { useUnifiedTopology: true }).connect(async(err, mongo) => {
+        mongodb(db_path, {
+            useUnifiedTopology: true
+        }).connect(async(err, mongo) => {
             if (err) logger2.error("bili database openning error", err);
             let coll = mongo.db('bot').collection('bilibili');
             let name = desc.user_profile.info.uname;
             let uid = desc.uid;
             let dynamic_id = desc.dynamic_id_str;
             let timestamp = desc.timestamp;
-            let people = await coll.find({ uid: uid }).toArray();
+            let people = await coll.find({
+                uid: uid
+            }).toArray();
 
             if (people.length == 0) {
                 coll.insertOne({
@@ -188,8 +196,12 @@ function addBiliSubscribe(context, name = "", option_nl) {
                         sender(context, {}, text, true);
                     });
             } else {
-                coll.findOneAndUpdate({ uid: uid }, {
-                        $addToSet: { groups: group_id },
+                coll.findOneAndUpdate({
+                        uid: uid
+                    }, {
+                        $addToSet: {
+                            groups: group_id
+                        },
                         $set: {
                             [group_id]: option
                         }
@@ -198,7 +210,7 @@ function addBiliSubscribe(context, name = "", option_nl) {
                         if (err) logger2.error("bili database subscribes update error", err);
                         else {
                             // logger2.info(result)
-                            if (result.value.groups.includes(group_id)) text = "多次订阅有害我的身心健康";
+                            if (result.value.groups.includes(group_id)) text = "重复订阅";
                             else text = `已订阅${result.value.name}的B站动态，模式为${option_nl}`;
                         }
                         sender(context, {}, text, true);
@@ -213,7 +225,7 @@ function rmBiliSubscribe(context, name = "") {
     let group_id = context.group_id;
     var text = "";
     searchName(name).then(name_card => {
-        if (name_card == undefined) sender(context, {}, "你名字写对了吗", true);
+        if (name_card == undefined) sender(context, {}, "名字未写正确", true);
         else getDynamicList(name_card.mid, 0).then(dynamic => {
             rmData(dynamic.desc)
         });
@@ -222,13 +234,19 @@ function rmBiliSubscribe(context, name = "") {
     function rmData(desc) {
         let uid = desc.uid;
         let name = desc.user_profile.info.uname;
-        mongodb(db_path, { useUnifiedTopology: true }).connect((err, mongo) => {
+        mongodb(db_path, {
+            useUnifiedTopology: true
+        }).connect((err, mongo) => {
             if (err) logger2.error("bili database openning error", err);
             else {
                 let coll = mongo.db('bot').collection('bilibili');
-                coll.findOneAndUpdate({ uid: uid }, {
+                coll.findOneAndUpdate({
+                        uid: uid
+                    }, {
                         $pull: {
-                            groups: { $in: [group_id] },
+                            groups: {
+                                $in: [group_id]
+                            },
                             $unset: {
                                 [group_id]: []
                             }
@@ -237,9 +255,11 @@ function rmBiliSubscribe(context, name = "") {
                     async(err, result) => {
                         if (err) logger2.error("database bilibili unsubscribes error", err);
                         else {
-                            if (!result.value.groups.includes(group_id)) text = "小火汁你压根就没订阅嗷";
+                            if (!result.value.groups.includes(group_id)) text = "未订阅";
                             else text = "已取消订阅" + name + "的B站动态";
-                            if (result.value.groups.length <= 1) await coll.deleteOne({ _id: result.value._id });
+                            if (result.value.groups.length <= 1) await coll.deleteOne({
+                                _id: result.value._id
+                            });
                         }
                         sender(context, {}, text, true);
                         mongo.close();
@@ -252,7 +272,9 @@ function rmBiliSubscribe(context, name = "") {
 function checkBiliDynamic() {
     return;
     setInterval(() => {
-        mongodb(db_path, { useUnifiedTopology: true }).connect(async function(err, mongo) {
+        mongodb(db_path, {
+            useUnifiedTopology: true
+        }).connect(async function(err, mongo) {
             if (err) logger2.error("bilibili update error", err);
             else {
                 let coll = mongo.db('bot').collection('bilibili');
@@ -274,7 +296,9 @@ function checkBiliDynamic() {
     }, 5 * 60000);
 
     function update(subscribe, dynamic) {
-        mongodb(db_path, { useUnifiedTopology: true }).connect(async function(err, mongo) {
+        mongodb(db_path, {
+            useUnifiedTopology: true
+        }).connect(async function(err, mongo) {
             if (err) logger2.error("bilibili error update");
             else {
                 let coll = mongo.db('bot').collection('bilibili');
@@ -284,10 +308,20 @@ function checkBiliDynamic() {
                 let groups = subscribe.groups;
                 groups.forEach(group_id => {
                     if (checkOption(JSON.parse(dynamic.card)), subscribe[group_id]) {
-                        sender({ group_id: group_id, message_type: "group" }, clean_dynamic, "");
+                        sender({
+                            group_id: group_id,
+                            message_type: "group"
+                        }, clean_dynamic, "");
                     } else;
                 });
-                await coll.updateOne({ uid: subscribe.uid }, { $set: { timestamp: curr_timestamp, dynamic_id: dynamic_id } },
+                await coll.updateOne({
+                        uid: subscribe.uid
+                    }, {
+                        $set: {
+                            timestamp: curr_timestamp,
+                            dynamic_id: dynamic_id
+                        }
+                    },
                     (err, result) => {
                         if (err) logger2.error("database update error when checking bilibili dynamic updates", err);
                         mongo.close();
@@ -316,11 +350,23 @@ function checkBiliDynamic() {
 function checkBiliSubs(context) {
     let group_id = context.group_id;
     var text = "";
-    mongodb(db_path, { useUnifiedTopology: true }).connect((err, mongo) => {
+    mongodb(db_path, {
+        useUnifiedTopology: true
+    }).connect((err, mongo) => {
         if (err) logger2.error("bili database openning error during checkBiliSubs");
         else {
             let coll = mongo.db('bot').collection('bilibili');
-            coll.find({ groups: { $elemMatch: { $eq: group_id } } }, { projection: { _id: 0 } })
+            coll.find({
+                    groups: {
+                        $elemMatch: {
+                            $eq: group_id
+                        }
+                    }
+                }, {
+                    projection: {
+                        _id: 0
+                    }
+                })
                 .toArray().then(result => {
                     // logger2.info(result);
                     if (result.length > 0) {
@@ -331,7 +377,7 @@ function checkBiliSubs(context) {
                             name_list.push(`${sub_obj.name}，模式为${option_nl}`);
                         });
                         text = "本群已订阅: " + name_list.join("\n");
-                    } else text = "你一无所有";
+                    } else text = "未见任何B站订阅";
                     sender(context, {}, text, true);
                     mongo.close();
                 });
@@ -344,25 +390,46 @@ function checkBiliSubs(context) {
  * @returns {} no return
  */
 function clearSubs(context, group_id) {
-    mongodb(db_path, { useUnifiedTopology: true }).connect().then(async mongo => {
+    mongodb(db_path, {
+        useUnifiedTopology: true
+    }).connect().then(async mongo => {
         let coll = mongo.db('bot').collection('bilibili');
         try {
-            let matchs = await coll.find({ groups: { $in: [group_id] } }).toArray();
-            if (matchs.length < 1) { replyFunc(context, `未见任何B站订阅`); return; }
+            let matchs = await coll.find({
+                groups: {
+                    $in: [group_id]
+                }
+            }).toArray();
+            if (matchs.length < 1) {
+                replyFunc(context, `未见任何B站订阅`);
+                return;
+            }
             for (let item of matchs) {
-                let res = await coll.findOneAndUpdate({ _id: item._id }, {
-                    $pull: { groups: { $in: [group_id] } },
+                let res = await coll.findOneAndUpdate({
+                    _id: item._id
+                }, {
+                    $pull: {
+                        groups: {
+                            $in: [group_id]
+                        }
+                    },
                     $unset: {
                         [group_id]: []
                     }
-                }, { returnOriginal: false });
-                if (res.value.groups.length < 1) await coll.deleteOne({ _id: res.value._id });
+                }, {
+                    returnOriginal: false
+                });
+                if (res.value.groups.length < 1) await coll.deleteOne({
+                    _id: res.value._id
+                });
             }
             replyFunc(context, `清理了${matchs.length}个B站订阅`);
         } catch (err) {
             logger2.error("bili清理:" + err);
             replyFunc(context, '中途错误，清理未完成');
-        } finally { mongo.close(); }
+        } finally {
+            mongo.close();
+        }
     }).catch(err => logger2.error(err + " bili checkWeiboSubs error, group_id= " + group_id));
 }
 
@@ -391,11 +458,17 @@ function rtBilibili(context, name = "", num = 0, dynamic_id = "") {
         });
     } else if (name != "") {
         searchName(name).then(name_card => {
-            if (name_card == undefined) sender(context, 0, "没这人", true);
-            else getDynamicList(name_card.mid, num).then(dynamic => {
-                let clean_dynamic = dynamicProcess(dynamic);
-                sender(context, clean_dynamic);
-            });
+            //console.log(name_card);
+            if (name_card == undefined || name_card == false) {
+                sender(context, 0, "未发现该用户或者输入0-9之外的数字", true);
+            } else {
+                //console.log(name_card.mid);
+                getDynamicList(name_card.mid, num).then(dynamic => {
+                    //console.log(dynamic);
+                    let clean_dynamic = dynamicProcess(dynamic);
+                    sender(context, clean_dynamic);
+                });
+            }
         });
     } else {
         logger2.error("error rtBilibili");
@@ -444,7 +517,12 @@ function bilibiliCheck(context) {
         else if (/上上条/.test(context.message))(num = 2);
         else if (/上条/.test(context.message))(num = 1);
         else if (/第.+?条/.test(context.message)) {
-            let temp = /第([0-9]?[一二三四五六七八九]?)条/.exec(context.message)[1];
+            let temp = /第([0-9]?[一二三四五六七八九]?)条/.exec(context.message);
+            if (temp != null) {
+                temp = temp[1];
+            } else {
+                temp = 0;
+            }
             if (temp == 0 || temp == "零")(num = -1);
             else if (temp == 1 || temp == "一")(num = 0);
             else if (temp == 2 || temp == "二")(num = 1);
@@ -456,7 +534,10 @@ function bilibiliCheck(context) {
             else if (temp == 8 || temp == "八")(num = 7);
             else if (temp == 9 || temp == "九")(num = 8);
         } else(num = 0);
+        //正则表达式无法处理看看星街彗星第11条B站，会分离出星街彗星第11作为名字
         name = /看看(.+?)的?((第[0-9]?[一二三四五六七八九]?条)|(上*条)|(置顶)|(最新))?B站/i.exec(context.message)[1];
+        //logger2.info(/看看(.+?)的?((第[0-9]?[一二三四五六七八九]?条)|(上*条)|(置顶)|(最新))?B站/i.exec(context.message));
+        //logger2.info(num);
         rtBilibili(context, name, num);
         return true;
     } else if (/^看看https:\/\/t.bilibili.com\/(\d+).+?/i.test(context.message)) {
@@ -466,7 +547,12 @@ function bilibiliCheck(context) {
         rtBiliByB23(context);
         return true;
     } else if (/^订阅.+?B站([>＞](仅转发|只看图|全部|视频更新))?/i.test(context.message)) {
-        let { groups: { name, option_nl } } = /订阅(?<name>.+?)B站([>＞](?<option_nl>仅转发|只看图|视频更新|全部))?/i.exec(context.message);
+        let {
+            groups: {
+                name,
+                option_nl
+            }
+        } = /订阅(?<name>.+?)B站([>＞](?<option_nl>仅转发|只看图|视频更新|全部))?/i.exec(context.message);
         logger2.info(`${context.group_id} ${name} 添加B站订阅`);
         if (option_nl == undefined) option_nl = "仅原创"
         addBiliSubscribe(context, name, option_nl);
@@ -486,4 +572,9 @@ function bilibiliCheck(context) {
     } else return false;
 }
 
-module.exports = { bilibiliCheck, checkBiliDynamic, bilibiliReply, clearSubs };
+module.exports = {
+    bilibiliCheck,
+    checkBiliDynamic,
+    bilibiliReply,
+    clearSubs
+};
