@@ -574,7 +574,7 @@ function rtWeibo(name, num, context) {
                 replyFunc(context, payload);
             }).catch(err => {
                 logger2.error("微博8：" + err);
-                replyFunc(context, "中途错误", true);
+                replyFunc(context, "中途错误1", true);
             });
         }).catch(err => {
             logger2.error("微博9：" + err);
@@ -583,7 +583,7 @@ function rtWeibo(name, num, context) {
         else replyFunc(context, "查无此人", true);
     }).catch(err => {
         logger2.error("微博10：" + err);
-        replyFunc(context, "中途错误", true);
+        replyFunc(context, "中途错误2", true);
     });
 }
 
@@ -624,7 +624,12 @@ function weiboAggr(context) {
         else if (/上上条/.test(context.message))(num = 2);
         else if (/上条/.test(context.message))(num = 1);
         else if (/第.+?条/.test(context.message)) {
-            let temp = /第([0-9]|[一二三四五六七八九])条/.exec(context.message)[1];
+            let temp = /第([0-9]|[一二三四五六七八九])条/.exec(context.message);
+            if (temp != null) {
+                temp = temp[1];
+            } else {
+                temp = 0;
+            }
             if (temp == 0 || temp == "零")(num = -1);
             else if (temp == 1 || temp == "一")(num = 0);
             else if (temp == 2 || temp == "二")(num = 1);
