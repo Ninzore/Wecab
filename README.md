@@ -1,5 +1,7 @@
 # Wecab 
 
+# 使用node-sdk为 https://github.com/shitianshiwa/node-cq-websocket
+
 ### Web Content Aggregation Bot 网络内容聚合机器人  
 #### 最好的综合型订阅制机器人  
 前身是给[CQ-picfinder-robot](https://github.com/Tsuk1ko/CQ-picfinder-robot)做的小挂件（已完全脱离）  
