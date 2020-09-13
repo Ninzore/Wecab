@@ -1,4 +1,3 @@
-
 {
     "cqws": {
         "host": "127.0.0.1",
@@ -25,6 +24,9 @@
         "replys": {
             "default": "",
             "debug": ""
+        },
+        "twitter": {
+            "whitegroup": []
         }
     }
 }
