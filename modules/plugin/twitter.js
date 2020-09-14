@@ -177,7 +177,7 @@ function getSingleTweet(tweet_id_str) {
     }).then(res => {
         return res.data;
     }).catch(err => {
-        logger2.error("推特2：" + err.response.data);
+        logger2.error("推特2：" + JSON.stringify(err.response.data));
         return false;
     });
 }
