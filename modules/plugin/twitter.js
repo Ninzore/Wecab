@@ -386,7 +386,7 @@ function checkTwiTimeline() {
                 checkEach();
             } else {
                 subscribes = await coll.find({}).toArray();
-                subscribes != undefined ? logger2.info("推特订阅数：" + subscribes.length) : logger2.error("twitter database error")
+                subscribes != undefined ? "" /*logger2.info("推特订阅数：" + subscribes.length)*/ : logger2.error("twitter database error")
             }
             mongo.close();
 
