@@ -17,6 +17,7 @@ import translate from "./modules/plugin/translate";
 import pixivImage from "./modules/plugin/pixivImage";
 import helpZen from "./modules/plugin/zen";
 import nbnhhsh from "./modules/plugin/nbnhhsh";
+import iHaveAfriend from './modules/plugin/iHaveAfriend';
 
 // 初始化开始
 const setting = config.bot;
@@ -255,6 +256,7 @@ function groupMsg(e, context) {
              pixivImage.pixivCheck(context, replyMsg, bot) ||
              helpZen(context, replyMsg, bot, rand) ||
              translate.transEntry(context) ||
+             iHaveAfriend.draw(context, replyMsg, bot) ||
              pokemon.pokemonCheck(context, replyMsg)) {
         e.stopPropagation();
         return;
