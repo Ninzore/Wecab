@@ -1,7 +1,7 @@
 const canvas = require('canvas');
 
 async function draw(context, replyFunc, bot) {
-    if (!/我有一?个朋友\[CQ:at,qq=(\d+)\]\s?说过?/.test(context.message)) return false;
+    if (!/^我有一?个朋友\[CQ:at,qq=(\d+)\]\s{1,3}?说过?/.test(context.message)) return false;
     let user_id = /\[CQ:at,qq=(\d+)\]/.exec(context.message);
     if (!user_id) return false;
     else user_id = user_id[1];
@@ -13,15 +13,18 @@ async function draw(context, replyFunc, bot) {
     let name = member_info.data.card ? member_info.data.card : member_info.data.nickname;
     if (!name) return false;
     if (name.length > 16) name = name.substring(0, 16) + "...";
-    let message = /["‘“](.*?)["’”]$/.exec(context.message);
+    let message = /(?:(?<!CQ)[:：](.+)|['"‘“](.+?)['"’”])$/.exec(context.message)
+        .filter((noEmpty) => {return noEmpty != undefined});
     if (!message) return false;
-    else message = message[1];
+    else message = message[1].substring(0, 18);
     message.replace(/\[CQ.+?\]/g, "");
 
-    const raw = await canvas.loadImage(`${__dirname}/qq_chat.jpg`);
-    const base = canvas.createCanvas(raw.width, raw.height);
+    const width = 764;
+    const height = 300;
+    const base = canvas.createCanvas(width, height);
     let ctx = base.getContext("2d");
-    ctx.drawImage(raw, 0, 0);
+    ctx.fillStyle = "#ECECF6";
+    ctx.fillRect(0, 0, width, height);
     
     // 填充名字
     ctx.fillStyle = "#959595";
