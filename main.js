@@ -22,6 +22,7 @@ import translate from "./modules/plugin/translate";
 //import helpZen from "./modules/plugin/zen";
 import nbnhhsh from "./modules/plugin/nbnhhsh";
 import logger2 from './modules/logger2'; //日志功能
+import iHaveAfriend from './modules/plugin/iHaveAfriend';
 
 // 初始化开始
 const setting = config.bot;
@@ -52,7 +53,7 @@ bot.on('request.friend', context => {
                 if (ans != a) approve = false;
             });
         } catch (e) {
-            logger2.error(e);
+            logger2.error(getTime() + ":" + e);
             approve = false;
         }
     }
@@ -164,13 +165,15 @@ bot.on('socket.connecting', (wsType, attempts) => logger2.info(`${getTime()} 连
     })
     .on('socket.connect', (wsType, sock, attempts) => {
         logger2.info(`${getTime()} 连接成功[${wsType}]#${attempts}`);
-        if (setting.admin > 0) {
+        if (wsType === '/api') {
             setTimeout(() => {
-                bot('send_private_msg', {
-                    user_id: setting.admin,
-                    message: `wecab已上线[${wsType}]#${attempts}`,
-                });
-            }, 5000);
+                if (bot.isReady() && setting.admin > 0) {
+                    bot('send_private_msg', {
+                        user_id: setting.admin,
+                        message: `已上线#${attempts}`,
+                    });
+                }
+            }, 1000);
         }
     });
 
@@ -224,6 +227,10 @@ function privateAndAtMsg(e, context) {
         e.stopPropagation();
         return;
     }
+    /*else if (pretendLearn.learn(context)) {
+        e.stopPropagation();
+        return;
+    }*/
     //其他指令
     return setting.replys.default;
 }
@@ -272,6 +279,7 @@ function groupMsg(e, context) {
     }
     if (weibo.weiboAggr(context, replyMsg) || weibo.antiweibo(context, replyMsg) ||
         bilibili.bilibiliCheck(context) ||
+        iHaveAfriend.draw(context, replyMsg, bot) ||
         /*pixivImage.pixivCheck(context, replyMsg, bot) ||*/
         /*helpZen(context, replyMsg, bot, rand) ||*/
         translate.transEntry(context)
@@ -300,8 +308,7 @@ function groupMsg(e, context) {
                 replyMsg(context, context.message);
             }, 1000);
         } else {
-            // if (getRand() <= 80) pretendLearn.talk(context);
-            //pretendLearn.talk(context);
+            //if (getRand() <= setting.learn.probability) pretendLearn.talk(context);
         }
     }
 }
