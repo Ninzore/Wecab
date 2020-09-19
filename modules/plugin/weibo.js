@@ -2,14 +2,20 @@ import axios from 'axios';
 import config from '../config';
 const mongodb = require('mongodb').MongoClient;
 
-const admin = parseInt(config.bot.admin);
-
-var db_port = 27017;
-var db_path = "mongodb://127.0.0.1:" + db_port;
-var replyFunc = (context, msg, at = false) => {};
+const admin = parseInt(config.picfinder.admin);
+const db_port = 27017;
+const db_path = "mongodb://127.0.0.1:" + db_port;
+let replyFunc = (context, msg, at = false) => {console.log(msg)};
 
 function weiboReply(replyMsg) {
     replyFunc = replyMsg;
+}
+
+function unEscape(str) {
+    const label = {"#44": ",", "#91": "[", "#93": "]", "amp": "&"}
+    return str.replace(/&(#44|#91|#93|amp);/g, (_, s) => {
+        return label[s];
+    })
 }
 
 /**
@@ -298,7 +304,6 @@ function clearSubs(context, group_id) {
  * @returns {string} 处理完成
  */
 function textFilter(text) {
-    // console.log(text)
     return text.replace(/[\r\n]/g, "")
                 .replace(/<a href="\/status\/.*\d">/g, "")
                 .replace(/<a href='\/n\/.+?'>(.+?)<\/a>/g, "$1")  //@
@@ -500,13 +505,14 @@ function weiboAggr(context) {
         rtWeibo(name, num, context);
         return true;
 	}
-    else if (/^看看\s?https:\/\/m.weibo.cn\/\d+\/\d+$/.test(context.message)) {
-        let id = /https:\/\/m.weibo.cn\/\d+\/(\d+)/.exec(context.message)[1];
+    else if (/^看看\s?https:\/\/(m.weibo.cn\/(detail|\d+)\/\d+$|weibo\.com\/\d+\/[A-Za-z0-9]{9}$)/.test(context.message)) {
+        let id = /com\/\d+\/([A-Za-z0-9]{9})|cn\/\d+\/(\d+)|detail\/(\d+)/.exec(context.message)
+            .filter((noEmpty) => {return noEmpty != undefined})[1];
         rtSingleWeibo(id, context);
         return true;
     }
-    else if (/^\[CQ:rich.+"appid":"1109224783".+"qqdocurl":".+?(\d+)\?/.test(context.message)) {
-        let id = /^\[CQ:rich.+"appid":"1109224783".+"qqdocurl":".+?(\d+)\?/.exec(context.message)[1];
+    else if (/^\[CQ:json.+"appID":"100736903"/.test(context.message)) {
+        let id = /https:\/\/m\.weibo\.cn\/status\/(\d+)/.exec(context.message)[1];
         rtSingleWeibo(id, context);
         return true;
     }
