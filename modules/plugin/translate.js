@@ -67,7 +67,7 @@ function translate(sourceLang, targetLang, sourceText, context, reply = true) {
         }
         trans_text = reply ? `[CQ:reply,id=${context.message_id}]${targetText}` : `${targetText}`;
         replyFunc(context, trans_text);
-    }).catch(err => logger2.error("翻译：" + err))
+    }).catch(err => logger2.error(new Date().toString() + ":" + "翻译：" + err))
 }
 
 function toTargetLang(lang_opt) {

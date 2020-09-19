@@ -33,7 +33,9 @@ function initialise() {
                 await db.collection(coll.name).find({}, { projection: { _id: false } }).toArray();
         }
         mongo.close();
-    }).catch((e) => { logger2.error(e) });
+    }).catch((e) => {
+        logger2.error(new Date().toString() + ":" + e)
+    });
 }
 
 /**
@@ -63,7 +65,9 @@ function teach(context) {
                 let qa_set = mongo.db('qa_set').collection("qa" + String(context.group_id));
                 await qa_set.updateOne({ question: qes, mode: mode }, { $set: { count: 0 }, $addToSet: { answers: ans } }, { upsert: true });
                 mongo.close();
-            }).catch((e) => { logger2.error(e) });
+            }).catch((e) => {
+                logger2.error(new Date().toString() + ":" + e)
+            });
             text = "好我会了";
         } else text = error_text;
 
@@ -95,7 +99,7 @@ function makeEqual(context) {
                 mongo.close();
             }).catch((err) => {
                 replyFunc(context, "不灵光，没学会，过会儿再来");
-                logger2.error(err);
+                logger2.error(new Date().toString() + ":" + err);
             });
             replyFunc(context, `我寻思这 ${lhs} 好像和 ${rhs} 一样是吧`);
         }
@@ -128,7 +132,9 @@ function record(context) {
                 let rp_set = mongo.db('qa_set').collection("repeat" + String(context.group_id));
                 await rp_set.updateOne({ repeat_word: repeat_word }, { $set: { mode: mode, count: 0 } }, { upsert: true });
                 mongo.close();
-            }).catch((err) => { logger2.error(err) });
+            }).catch((err) => {
+                logger2.error(new Date().toString() + ":" + err)
+            });
             text = "复读机已就位：" + repeat_word;
         } else text = error_text;
         replyFunc(context, text);
@@ -253,7 +259,9 @@ function remember(context) {
             }
             if (/\[CQ:image/.test(text)) text = replaceImg(text);
             replyFunc(context, text)
-        }).catch((err) => { logger2.error(err) });
+        }).catch((err) => {
+            logger2.error(new Date().toString() + ":" + err)
+        });
         return true;
     } else return false;
 }
@@ -284,7 +292,9 @@ function rememberAll(context) {
 
             replyFunc(context, "我想想，我有学过\n" + text.join('\n'));
             return true;
-        }).catch((err) => { logger2.error(err) });
+        }).catch((err) => {
+            logger2.error(new Date().toString() + ":" + err)
+        });
     } else return false;
 
     function fmtColl(collection, set) {
@@ -364,7 +374,9 @@ function rank(context) {
             if (/\[CQ:image/.test(text)) text = replaceImg(text);
             replyFunc(context, text);
             return true;
-        }).catch((err) => { logger2.error(err) });
+        }).catch((err) => {
+            logger2.error(new Date().toString() + ":" + err)
+        });
     } else return false;
 }
 
@@ -466,7 +478,7 @@ function makeUnequal(context) {
                 mongo.close();
                 return true;
             }).catch((err) => {
-                logger2.error(err);
+                logger2.error(new Date().toString() + ":" + err);
                 replyFunc(context, "中途错误");
                 return true;
             });
@@ -493,7 +505,7 @@ function erase(context) {
             mongo.close();
         }).catch((err) => {
             replyFunc(context, "中途错误");
-            logger2.error(err);
+            logger2.error(new Date().toString() + ":" + err);
         });
         return true;
     } else return false;
@@ -555,7 +567,9 @@ async function reply(context) {
             mongo.close();
             return false;
         }
-    }).catch((err) => { logger2.error(err) });
+    }).catch((err) => {
+        logger2.error(new Date().toString() + ":" + err)
+    });
 }
 
 
@@ -620,7 +634,9 @@ function repeat(context) {
         }
         mongo.close();
         return;
-    }).catch((err) => { logger2.error(err) });
+    }).catch((err) => {
+        logger2.error(new Date().toString() + ":" + err)
+    });
 }
 
 function talk(context) {

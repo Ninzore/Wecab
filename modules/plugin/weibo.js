@@ -67,7 +67,7 @@ function getUserId(user_name = "") {
             } else if (response.data.data.cards.length > 0) return response.data.data.cards[1].card_group[0].user.id;
         })
         .catch(err => {
-            logger2.error("微博：" + err);
+            logger2.error(new Date().toString() + ":" + "微博：" + err);
         });
 }
 
@@ -105,7 +105,7 @@ function getTimeline(uid, num = -1) {
             // logger2.info(card_num_seq)
             return response.data.data.statuses[card_num_seq[0]];
         } else return response.data.data.statuses[num];
-    }).catch(err => logger2.error(err + " weibo getTimeline error, uid= " + uid));
+    }).catch(err => logger2.error(new Date().toString() + ":" + err + " weibo getTimeline error, uid= " + uid));
 }
 
 /**
@@ -138,7 +138,7 @@ function subscribe(uid, option, context) {
                     [group_id]: option
                 },
                 (err) => {
-                    if (err) logger2.error(err + "微博 database subscribes insert error");
+                    if (err) logger2.error(new Date().toString() + ":" + err + "微博 database subscribes insert error");
                     else replyFunc(context, `已订阅${screen_name}的微博，模式为${option_nl}`, true);
                 });
         } else {
@@ -153,7 +153,7 @@ function subscribe(uid, option, context) {
                     }
                 },
                 (err, result) => {
-                    if (err) logger2.error(err + "微博 database subscribes update error");
+                    if (err) logger2.error(new Date().toString() + ":" + err + "微博 database subscribes update error");
                     else {
                         let text = "";
                         if (result.value.groups.includes(group_id)) text = "请勿多次订阅";
@@ -164,7 +164,7 @@ function subscribe(uid, option, context) {
                 });
         }
         mongo.close();
-    }).catch(err => logger2.error(err + "weibo subscribe error, uid= " + uid));
+    }).catch(err => logger2.error(new Date().toString() + ":" + err + "weibo subscribe error, uid= " + uid));
 }
 
 /**
@@ -207,7 +207,7 @@ function unSubscribe(name, context) {
                 }
                 mongo.close();
             });
-    }).catch(err => logger2.error(err + "weibo unsubscribe error, uid= " + uid));
+    }).catch(err => logger2.error(new Date().toString() + ":" + err + "weibo unsubscribe error, uid= " + uid));
 }
 
 /**
@@ -244,7 +244,7 @@ function checkWeiboDynamic() {
                                     format(mblog, true).then(payload => replyFunc({
                                         group_id: group_id,
                                         message_type: "group"
-                                    }, payload)).catch(err => logger2.error("微博1：" + err));
+                                    }, payload)).catch(err => logger2.error(new Date().toString() + ":" + "微博1：" + err));
                                 } else;
                             });
                             mongodb(db_path, {
@@ -259,21 +259,21 @@ function checkWeiboDynamic() {
                                         }
                                     },
                                     (err, result) => {
-                                        if (err) logger2.error("微博2：" + err + " database update error during checkWeibo");
+                                        if (err) logger2.error(new Date().toString() + ":" + "微博2：" + err + " database update error during checkWeibo");
                                         mongo.close();
                                     });
-                            }).catch(err => logger2.error("微博3：" + err));
+                            }).catch(err => logger2.error(new Date().toString() + ":" + "微博3：" + err));
                         }
                         i++;
                         if (i < subscribes.length) checkEach();
                     } catch (err) {
-                        logger2.error("微博4：" + err, '\n', subscribes[i]);
+                        logger2.error(new Date().toString() + ":" + "微博4：" + err, '\n', subscribes[i]);
                         i++;
                         if (i < subscribes.length) checkEach();
                     }
                 }, (check_interval - subscribes.length * 1000) / subscribes.length);
             }
-        }).catch(err => logger2.error("微博5：" + err));
+        }).catch(err => logger2.error(new Date().toString() + ":" + "微博5：" + err));
     }, check_interval);
 
     function checkOption(mblog, option) {
@@ -325,7 +325,7 @@ function checkWeiboSubs(context) {
                 } else replyFunc(context, "你一无所有", true);
             })
         mongo.close();
-    }).catch(err => logger2.error(err + " weibo checkWeiboSubs error, group_id= " + group_id));
+    }).catch(err => logger2.error(new Date().toString() + ":" + err + " weibo checkWeiboSubs error, group_id= " + group_id));
 }
 
 /**
@@ -368,12 +368,12 @@ function clearSubs(context, group_id) {
             }
             replyFunc(context, `清理了${matchs.length}个微博订阅`);
         } catch (err) {
-            logger2.error("微博清理：" + err);
+            logger2.error(new Date().toString() + ":" + "微博清理：" + err);
             replyFunc(context, '中途错误，清理未完成');
         } finally {
             mongo.close();
         }
-    }).catch(err => logger2.error(err + " weibo checkWeiboSubs error, group_id= " + group_id));
+    }).catch(err => logger2.error(new Date().toString() + ":" + err + " weibo checkWeiboSubs error, group_id= " + group_id));
 }
 
 /**
@@ -519,7 +519,7 @@ function rtSingleWeibo(id, context) {
     }).then(async res => {
         let payload = await format(res.data.data, true);
         replyFunc(context, payload);
-    }).catch(err => logger2.error("微博6：" + err));
+    }).catch(err => logger2.error(new Date().toString() + ":" + "微博6：" + err));
 }
 //返回json
 
@@ -558,7 +558,7 @@ function addSubByUid(url, option_nl, context) {
         subscribe(uid, option, context);
     }).catch(err => {
         replyFunc(context, "无法订阅这个人", true);
-        logger2.error("微博7：" + err);
+        logger2.error(new Date().toString() + ":" + "微博7：" + err);
     });
 }
 
@@ -573,16 +573,16 @@ function rtWeibo(name, num, context) {
             format(res).then(payload => {
                 replyFunc(context, payload);
             }).catch(err => {
-                logger2.error("微博8：" + err);
+                logger2.error(new Date().toString() + ":" + "微博8：" + err);
                 replyFunc(context, "中途错误1", true);
             });
         }).catch(err => {
-            logger2.error("微博9：" + err);
+            logger2.error(new Date().toString() + ":" + "微博9：" + err);
             replyFunc(context, "等下再试", true);
         });
         else replyFunc(context, "查无此人", true);
     }).catch(err => {
-        logger2.error("微博10：" + err);
+        logger2.error(new Date().toString() + ":" + "微博10：" + err);
         replyFunc(context, "中途错误2", true);
     });
 }
