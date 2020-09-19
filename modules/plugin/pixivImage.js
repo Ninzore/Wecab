@@ -19,7 +19,7 @@ function checkImage(url) {
 }
 
 function imageCQcode(pic_id) {
-    return `[CQ:image,,cache=0,file=https://pixiv.cat/${pic_id}.jpg]`;
+    return `[CQ:image,cache=0,file=https://pixiv.cat/${pic_id}.jpg]`;
 }
 
 async function singleImage(pic_id, replyFunc, context, bot) {
