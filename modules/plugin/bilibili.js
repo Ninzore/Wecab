@@ -78,7 +78,7 @@ function searchName(keyword = "") {
     return axios(header).then(response => {
         return response.data.data.items[0];
     }).catch(err => {
-        logger2.error("bili:" + err);
+        logger2.error(new Date().toString() + ":" + "bili:" + err);
         return false;
     });
 }
@@ -89,7 +89,7 @@ function getDynamicList(uid, num = 0) {
     let header = httpHeader(uid);
     return axios(header).then(response => {
         return (response.data.data.cards[num])
-    }).catch(err => logger2.error("bili1:" + err));
+    }).catch(err => logger2.error(new Date().toString() + ":" + "bili1:" + err));
 }
 
 function getDynamicDetail(dynamic_id = "") {
@@ -97,7 +97,7 @@ function getDynamicDetail(dynamic_id = "") {
     return axios(header).then(response => {
         // logger2.info(JSON.parse(response.data.data.card.card))
         return response.data.data.card;
-    }).catch(err => logger2.error("bili2:" + err));
+    }).catch(err => logger2.error(new Date().toString() + ":" + "bili2:" + err));
 }
 
 function dynamicProcess(dynamic) {
@@ -171,7 +171,7 @@ function addBiliSubscribe(context, name = "", option_nl) {
         mongodb(db_path, {
             useUnifiedTopology: true
         }).connect(async(err, mongo) => {
-            if (err) logger2.error("bili database openning error", err);
+            if (err) logger2.error(new Date().toString() + ":" + "bili database openning error", err);
             let coll = mongo.db('bot').collection('bilibili');
             let name = desc.user_profile.info.uname;
             let uid = desc.uid;
@@ -207,7 +207,7 @@ function addBiliSubscribe(context, name = "", option_nl) {
                         }
                     },
                     (err, result) => {
-                        if (err) logger2.error("bili database subscribes update error", err);
+                        if (err) logger2.error(new Date().toString() + ":" + "bili database subscribes update error", err);
                         else {
                             // logger2.info(result)
                             if (result.value.groups.includes(group_id)) text = "重复订阅";
@@ -237,7 +237,7 @@ function rmBiliSubscribe(context, name = "") {
         mongodb(db_path, {
             useUnifiedTopology: true
         }).connect((err, mongo) => {
-            if (err) logger2.error("bili database openning error", err);
+            if (err) logger2.error(new Date().toString() + ":" + "bili database openning error", err);
             else {
                 let coll = mongo.db('bot').collection('bilibili');
                 coll.findOneAndUpdate({
@@ -253,7 +253,7 @@ function rmBiliSubscribe(context, name = "") {
                         }
                     },
                     async(err, result) => {
-                        if (err) logger2.error("database bilibili unsubscribes error", err);
+                        if (err) logger2.error(new Date().toString() + ":" + "database bilibili unsubscribes error", err);
                         else {
                             if (!result.value.groups.includes(group_id)) text = "未订阅";
                             else text = "已取消订阅" + name + "的B站动态";
@@ -275,7 +275,7 @@ function checkBiliDynamic() {
         mongodb(db_path, {
             useUnifiedTopology: true
         }).connect(async function(err, mongo) {
-            if (err) logger2.error("bilibili update error", err);
+            if (err) logger2.error(new Date().toString() + ":" + "bilibili update error", err);
             else {
                 let coll = mongo.db('bot').collection('bilibili');
                 let subscribes = await coll.find({}).toArray();
@@ -299,7 +299,7 @@ function checkBiliDynamic() {
         mongodb(db_path, {
             useUnifiedTopology: true
         }).connect(async function(err, mongo) {
-            if (err) logger2.error("bilibili error update");
+            if (err) logger2.error(new Date().toString() + ":" + "bilibili error update");
             else {
                 let coll = mongo.db('bot').collection('bilibili');
                 let clean_dynamic = dynamicProcess(dynamic);
@@ -323,7 +323,7 @@ function checkBiliDynamic() {
                         }
                     },
                     (err, result) => {
-                        if (err) logger2.error("database update error when checking bilibili dynamic updates", err);
+                        if (err) logger2.error(new Date().toString() + ":" + "database update error when checking bilibili dynamic updates", err);
                         mongo.close();
                     });
             }
@@ -353,7 +353,7 @@ function checkBiliSubs(context) {
     mongodb(db_path, {
         useUnifiedTopology: true
     }).connect((err, mongo) => {
-        if (err) logger2.error("bili database openning error during checkBiliSubs");
+        if (err) logger2.error(new Date().toString() + ":" + "bili database openning error during checkBiliSubs");
         else {
             let coll = mongo.db('bot').collection('bilibili');
             coll.find({
@@ -425,12 +425,12 @@ function clearSubs(context, group_id) {
             }
             replyFunc(context, `清理了${matchs.length}个B站订阅`);
         } catch (err) {
-            logger2.error("bili清理:" + err);
+            logger2.error(new Date().toString() + ":" + "bili清理:" + err);
             replyFunc(context, '中途错误，清理未完成');
         } finally {
             mongo.close();
         }
-    }).catch(err => logger2.error(err + " bili checkWeiboSubs error, group_id= " + group_id));
+    }).catch(err => logger2.error(new Date().toString() + ":" + err + " bili checkWeiboSubs error, group_id= " + group_id));
 }
 
 function sender(context, dynamicObj = {}, others = "", at = false) {
@@ -471,13 +471,18 @@ function rtBilibili(context, name = "", num = 0, dynamic_id = "") {
             }
         });
     } else {
-        logger2.error("error rtBilibili");
+        logger2.error(new Date().toString() + ":" + "error rtBilibili");
     }
 }
 
 function rtBiliByUrl(context) {
-    let dynamic_id = /https:\/\/t.bilibili.com\/(\d+)/.exec(context.message)[1];
-    rtBilibili(context, "", 0, dynamic_id);
+    //看看https://t.bilibili.com/h5/dynamic/detail/436188125440999377
+    let dynamic_id = /https:\/\/t.bilibili.com\/(\d+)/.exec(context.message) || /https:\/\/t.bilibili.com\/h5\/dynamic\/detail\/(\d+)/.exec(context.message);
+    if (dynamic_id != null) {
+        rtBilibili(context, "", 0, dynamic_id[1]);
+    } else {
+        logger2.error(new Date().toString() + "," + "error rtBiliByUrl:" + context.message);
+    }
 }
 
 function rtBiliByB23(context) {
@@ -501,7 +506,7 @@ function rtBiliByB23(context) {
                 rtBilibili(context, "", 0, dynamic_id);
             }
         } else {
-            logger2.error("bili3:" + res.errno, res.code);
+            logger2.error(new Date().toString() + ":" + "bili3:" + res.errno, res.code);
             replyFunc(context, "出错啦");
         }
     });
@@ -541,6 +546,9 @@ function bilibiliCheck(context) {
         rtBilibili(context, name, num);
         return true;
     } else if (/^看看https:\/\/t.bilibili.com\/(\d+).+?/i.test(context.message)) {
+        rtBiliByUrl(context);
+        return true;
+    } else if (/^看看https:\/\/t.bilibili.com\/h5\/dynamic\/detail\/(\d+).+?/i.test(context.message)) {
         rtBiliByUrl(context);
         return true;
     } else if (/^看看https:\/\/b23\.tv\/[0-9a-zA-Z]{6}$/i.test(context.message)) {
