@@ -183,24 +183,25 @@ function addBiliSubscribe(context, name = "", option_nl) {
                                 [group_id] : option,
                                 groups : [group_id]},
                     (err) => {
-                        if (err) text = "database subscribes update error";
+                        if (err) text = "bilibili addBiliSubscribe database subscribes insert error", err;
                         else text = `已订阅${name}的B站动态，模式为${option_nl}`;
                         replyFunc(context, text, true);
+                        mongo.close();
                     });
             }
             else {
                 coll.findOneAndUpdate({uid : uid},
                                       {$addToSet : {groups : group_id}, $set : {[group_id] : option}},
                     (err, result) => {
-                        if (err) console.error("database subscribes update error", err);
+                        if (err) console.error("bilibili addBiliSubscribe database subscribes update error", err);
                         else {
                             if (result.value.groups.includes(group_id)) text = "多次订阅有害我的身心健康";
                             else text = `已订阅${result.value.name}的B站动态，模式为${option_nl}`;
                          }
                          replyFunc(context, text, true);
+                         mongo.close();
                      });
             }
-            mongo.close();
         });
     }
 }

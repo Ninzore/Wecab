@@ -270,6 +270,7 @@ function subscribe(uid, option, context) {
                 (err) => {
                     if (err) console.error(err + " Twitter subscribes insert error");
                     else replyFunc(context, `已订阅${name}的Twitter，模式为${option_nl}`, true);
+                    mongo.close();
                 });
         }
         else {
@@ -281,11 +282,11 @@ function subscribe(uid, option, context) {
                         if (result.value.groups.includes(group_id)) text = "多次订阅有害我的身心健康";
                         else text = `已订阅${result.value.name}的Twitter，模式为${option_nl}`;
                         replyFunc(context, text, true);
+                        mongo.close();
                     }
                 });
         }
-        mongo.close();
-    }).catch(err => console.error(err + " Twitter subscribe error, uid= " + uid));
+    }).catch(err => console.error(err + "\nTwitter subscribe error, uid= " + uid));
 }
 
 /**
@@ -313,7 +314,7 @@ function unSubscribe(name, context) {
                 }
             mongo.close();
         });
-    }).catch(err => console.error(err + "Twitter unsubscribe error, uid= " + uid));
+    }).catch(err => console.error(err + "\nTwitter unsubscribe error, uid= " + uid));
 }
 
 /**
@@ -362,7 +363,10 @@ function checkTwiTimeline() {
                                     let coll = mongo.db('bot').collection('twitter');
                                     await coll.updateOne({uid : subscribes[i].uid},
                                                     {$set : {tweet_id : current_id, name : tweet_list[0].user.name}}, 
-                                        (err, result) => {if (err) console.error(err + " database update error during checkTwitter");});
+                                        (err, result) => {
+                                            if (err) console.error(err + " database update error during checkTwitter");
+                                            mongo.close();
+                                        });
                                 });
                             }
                         }
@@ -415,8 +419,8 @@ function checkSubs(context) {
                     replyFunc(context, subs, true);
                 }
                 else replyFunc(context, "你一无所有", true);
-            })
-        mongo.close();
+                mongo.close();
+            });
     }).catch(err => console.error(err + " Twitter checkWeiboSubs error, group_id= " + group_id));
 }
 

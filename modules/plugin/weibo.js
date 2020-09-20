@@ -70,7 +70,10 @@ function getUserId(user_name = "") {
         }
         else if (response.data.data.cards.length > 0) return response.data.data.cards[1].card_group[0].user.id;
     })
-    .catch(err => {console.error(err);});
+    .catch(err => {
+        console.error("weibo getUserId error code = ", err.code);
+        return false;
+    });
 }
 
 /**
@@ -103,11 +106,13 @@ function getTimeline(uid, num = -1) {
                         card_num_seq[i+1] = temp;
                     }
                 }
-                // console.log(card_num_seq)
                 return response.data.data.statuses[card_num_seq[0]];
             }
             else return response.data.data.statuses[num];
-        }).catch(err => console.error(err + " weibo getTimeline error, uid= " + uid));
+        }).catch(err => {
+            console.error(err.code + "\nweibo getTimeline error, uid= " + uid);
+            return false;
+        });
 }
 
 /**
@@ -130,25 +135,25 @@ function subscribe(uid, option, context) {
             let screen_name = mblog.user.screen_name;
             coll.insertOne({weibo_uid : uid, name : screen_name, mid : mid, groups : [group_id], [group_id] : option},
                 (err) => {
-                    if (err) console.error(err + " database subscribes insert error");
+                    if (err) console.error(err + "\nweibo database subscribes insert error");
                     else replyFunc(context, `已订阅${screen_name}的微博，模式为${option_nl}`, true);
-                });
+                    mongo.close();
+            });
         }
         else {
             coll.findOneAndUpdate({weibo_uid : uid},
                                   {$addToSet : {groups : group_id}, $set : {[group_id] : option}},
                 (err, result) => {
-                    if (err) console.error(err + " database subscribes update error");
+                    if (err) console.error(err + "\nweibo database subscribes update error");
                     else {
                         let text = "";
                         if (result.value.groups.includes(group_id)) text = "多次订阅有害我的身心健康";
                         else text = `已订阅${result.value.name}的微博，模式为${option_nl}`;
                         replyFunc(context, text, true);
-                        // console.log(text)
+                        mongo.close();
                     }
-                });
+            });
         }
-        mongo.close();
     }).catch(err => console.error(err + "weibo subscribe error, uid= " + uid));
 }
 
