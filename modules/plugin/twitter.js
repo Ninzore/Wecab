@@ -81,7 +81,7 @@ function sizeCheck(url) {
     return axios.get(url).then(res => {
         return parseInt(res.headers["content-length"]) < MAX_SIZE ? true : false;
     }).catch(err => {
-        logger2.error(new Date().toString() + ":" + "推特0：" + url, err.response.status);
+        logger2.error(new Date().toString() + ":" + "推特0：" + url + "," + err.response.status);
         return false;
     });
 }
@@ -146,7 +146,7 @@ function getCookie() {
             else if (temp = /(_twitter_sess=.+?);/.exec(res.headers["set-cookie"][i])) twitter_sess = temp[1];
         }
         cookie = `dnt=1; fm=0; csrf_same_site_set=1; csrf_same_site=1; gt=${guest_token}; ${ct0}${guest_id}${personalization_id}${twitter_sess}`;
-    }).catch(err => logger2.error(new Date().toString() + ":" + 'twitter cookie设置出错，错误：', err.response.status, err.response.statusText));
+    }).catch(err => logger2.error(new Date().toString() + ":" + 'twitter cookie设置出错，错误：' + err.response.status + "," + err.response.statusText));
 }
 
 /** 
@@ -433,7 +433,7 @@ function checkTwiTimeline() {
                             }
                         }
                     } catch (err) {
-                        logger2.error(new Date().toString() + ":" + "推特：" + err, '\n', subscribes[i]);
+                        logger2.error(new Date().toString() + ":" + "推特：" + err + ',' + subscribes[i]);
                     } finally {
                         i++;
                         if (i < subscribes.length) checkEach();
