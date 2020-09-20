@@ -334,17 +334,17 @@ function replyMsg(context, msg, at = false) {
     if (typeof msg !== 'string' || msg.length === 0) return;
     switch (context.message_type) {
         case 'private':
-            return bot('send_private_msg_rate_limited', {
+            return bot('send_private_msg', {
                 user_id: context.user_id,
                 message: msg,
             });
         case 'group':
-            return bot('send_group_msg_rate_limited', {
+            return bot('send_group_msg', {
                 group_id: context.group_id,
                 message: at ? CQ.at(context.user_id) + msg : msg,
             });
         case 'discuss':
-            return bot('send_discuss_msg_rate_limited', {
+            return bot('send_discuss_msg', {
                 discuss_id: context.discuss_id,
                 message: at ? CQ.at(context.user_id) + msg : msg,
             });
