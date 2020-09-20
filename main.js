@@ -278,11 +278,10 @@ function groupMsg(e, context) {
         twitter.twitterAggr(context);
     }
     if (weibo.weiboAggr(context, replyMsg) || weibo.antiweibo(context, replyMsg) ||
-        bilibili.bilibiliCheck(context) ||
-        iHaveAfriend.draw(context, replyMsg, bot) ||
+        bilibili.bilibiliCheck(context) || translate.transEntry(context) ||
+        iHaveAfriend.draw(context, replyMsg, bot) /*iHaveAfriend可以直接让后面的条件失效*/
         /*pixivImage.pixivCheck(context, replyMsg, bot) ||*/
         /*helpZen(context, replyMsg, bot, rand) ||*/
-        translate.transEntry(context)
         /*||
                pokemon.pokemonCheck(context, replyMsg)*/
     ) {
@@ -335,17 +334,17 @@ function replyMsg(context, msg, at = false) {
     if (typeof msg !== 'string' || msg.length === 0) return;
     switch (context.message_type) {
         case 'private':
-            return bot('send_private_msg', {
+            return bot('send_private_msg_rate_limited', {
                 user_id: context.user_id,
                 message: msg,
             });
         case 'group':
-            return bot('send_group_msg', {
+            return bot('send_group_msg_rate_limited', {
                 group_id: context.group_id,
                 message: at ? CQ.at(context.user_id) + msg : msg,
             });
         case 'discuss':
-            return bot('send_discuss_msg', {
+            return bot('send_discuss_msg_rate_limited', {
                 discuss_id: context.discuss_id,
                 message: at ? CQ.at(context.user_id) + msg : msg,
             });
