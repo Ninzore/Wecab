@@ -2,7 +2,7 @@ import axios from 'axios';
 import config from '../config';
 const mongodb = require('mongodb').MongoClient;
 
-const admin = parseInt(config.picfinder.admin);
+const admin = parseInt(config.bot.admin);
 const db_port = 27017;
 const db_path = "mongodb://127.0.0.1:" + db_port;
 let replyFunc = (context, msg, at = false) => {console.log(msg)};
