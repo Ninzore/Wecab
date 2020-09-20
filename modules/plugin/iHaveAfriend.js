@@ -20,10 +20,16 @@ async function draw(context, replyFunc, bot) {
     if (!message) return false;
     //else message = message[1];
     message = message.replace(/\[CQ.+?\]/g, "");
-    const raw = await canvas.loadImage(`${__dirname}/qq_chat.jpg`);
+    /*const raw = await canvas.loadImage(`${__dirname}/qq_chat.jpg`);
     const base = canvas.createCanvas(raw.width, raw.height);
     let ctx = base.getContext("2d");
-    ctx.drawImage(raw, 0, 0);
+    ctx.drawImage(raw, 0, 0);*/
+    const width = 764;
+    const height = 300;
+    const base = canvas.createCanvas(width, height);
+    let ctx = base.getContext("2d");
+    ctx.fillStyle = "#ECECF6";
+    ctx.fillRect(0, 0, width, height);
 
     // 填充名字
     ctx.fillStyle = "#959595";
