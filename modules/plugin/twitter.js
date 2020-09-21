@@ -5,6 +5,9 @@ const mongodb = require('mongodb').MongoClient;
 const promisify = require('util').promisify;
 const exec = promisify(require('child_process').exec);
 const fs = require('fs-extra');
+const node_localStorage = require('node-localstorage');
+const node_localStorage2 = node_localStorage.LocalStorage;
+const wecab = new node_localStorage2('./wecab'); //插件是否连上机器人
 
 const DB_PORT = 27017;
 const DB_PATH = "mongodb://127.0.0.1:" + DB_PORT;
@@ -376,6 +379,10 @@ function checkTwiTimeline() {
     let check_interval = 6 * 60 * 1000; //6分钟一次
 
     setInterval(async() => {
+        if (wecab.getItem("huozhe") == "false") {
+            logger2.info("连不上机器人，跳过订阅twitter");
+            return;
+        }
         await mongodb(DB_PATH, {
             useUnifiedTopology: true
         }).connect().then(async mongo => {
