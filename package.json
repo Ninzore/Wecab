@@ -16,7 +16,8 @@
         "seedrandom": "^3.0.5",
         "sqlite": "^4.0.14",
         "sqlite3": "^5.0.0",
-        "winston": "^3.2.1"
+        "winston": "^3.2.1",
+        "node-localstorage": "^2.1.5"
     },
     "devDependencies": {},
     "scripts": {

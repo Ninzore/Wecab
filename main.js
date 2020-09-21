@@ -23,6 +23,9 @@ import translate from "./modules/plugin/translate";
 import nbnhhsh from "./modules/plugin/nbnhhsh";
 import logger2 from './modules/logger2'; //日志功能
 import iHaveAfriend from './modules/plugin/iHaveAfriend';
+import node_localStorage from 'node-localstorage';
+const node_localStorage2 = node_localStorage.LocalStorage;
+const wecab = new node_localStorage2('./wecab'); //插件是否连上机器人
 
 // 初始化开始
 const setting = config.bot;
@@ -30,6 +33,7 @@ const bot = new CQWebSocket(config.cqws);
 const rand = RandomSeed.create();
 const logger = new Logger();
 
+wecab.setItem("huozhe", false)
 weibo.weiboReply(replyMsg);
 bilibili.bilibiliReply(replyMsg);
 twitter.twitterReply(replyMsg);
@@ -38,8 +42,8 @@ translate.transReply(replyMsg);
 nbnhhsh.reply(replyMsg);
 
 weibo.checkWeiboDynamic();
-setTimeout(() => bilibili.checkBiliDynamic(replyMsg), 20000);
-setTimeout(() => twitter.checkTwiTimeline(), 40000);
+setTimeout(() => bilibili.checkBiliDynamic(), 20 * 1000);
+setTimeout(() => twitter.checkTwiTimeline(), 40 * 1000);
 
 //好友请求
 bot.on('request.friend', context => {
@@ -161,13 +165,15 @@ bot.on('socket.connecting', (wsType, attempts) => logger2.info(`${getTime()} 连
     .on('socket.error', (wsType, err) => {
         logger2.error(`${getTime()} 连接错误[${wsType}]`);
         logger2.error(err);
-        process.exit();
+        wecab.setItem("huozhe", false)
+            //process.exit();
     })
     .on('socket.connect', (wsType, sock, attempts) => {
         logger2.info(`${getTime()} 连接成功[${wsType}]#${attempts}`);
         if (wsType === '/api') {
             setTimeout(() => {
                 if (bot.isReady() && setting.admin > 0) {
+                    wecab.setItem("huozhe", true)
                     bot('send_private_msg', {
                         user_id: setting.admin,
                         message: `已上线#${attempts}`,
