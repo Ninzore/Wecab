@@ -1,6 +1,10 @@
 import axios from 'axios';
 import config from '../config';
 import CQ from '../CQcode';
+import node_localStorage from 'node-localstorage';
+const node_localStorage2 = node_localStorage.LocalStorage;
+const wecab = new node_localStorage2('./wecab'); //插件是否连上机器人
+
 const mongodb = require('mongodb').MongoClient;
 const logger2 = require('../logger2'); //日志功能
 const admin = parseInt(config.bot.admin);
@@ -16,7 +20,12 @@ function weiboReply(replyMsg) {
 }
 
 function unEscape(str) {
-    const label = { "#44": ",", "#91": "[", "#93": "]", "amp": "&" }
+    const label = {
+        "#44": ",",
+        "#91": "[",
+        "#93": "]",
+        "amp": "&"
+    }
     return str.replace(/&(#44|#91|#93|amp);/g, (_, s) => {
         return label[s];
     })
@@ -223,7 +232,12 @@ function unSubscribe(name, context) {
 function checkWeiboDynamic() {
     let check_interval = 6 * 60 * 1000;
     let i = 0;
+    //logger2.info(wecab.getItem("huozhe"))
     setInterval(() => {
+        if (wecab.getItem("huozhe") == "false") {
+            logger2.info("连不上机器人，跳过订阅weibo");
+            return;
+        }
         mongodb(db_path, {
             useUnifiedTopology: true
         }).connect().then(async mongo => {
@@ -415,6 +429,7 @@ function textFilter(text) {
  */
 async function format(mblog, textForm = false) {
     mblog = await mblog;
+    //console.log(mblog.mid);
     let payload = [`${mblog.user.screen_name}的微博`];
     let text = mblog.text;
     if (/<a.+>全文<\/\a>/.test(text)) text = await weiboText(mblog.id);
@@ -447,6 +462,7 @@ async function format(mblog, textForm = false) {
         payload = payload.concat("转发自: " + rt_weibo)
     }
     // logger2.info(payload)
+    payload.push("https://m.weibo.cn/status/" + mblog.mid);
     if (textForm = true) payload = payload.join("\n");
     return payload;
 }
@@ -652,11 +668,8 @@ function weiboAggr(context) {
         rtWeibo(name, num, context);
         return true;
         //    } else if (/^看看\s?https:\/\/m.weibo.cn\/\d+\/\d+$/.test(context.message) || /^看看\s?https:\/\/m.weibo.cn\/status\/\d+$/.test(context.message) || /^看看\s?https:\/\/www.weibo.com\/\d+\/[A-Za-z0-9]+$/.test(context.message)) { //查看链接内容
-    } else if (/^看看\s?https:\/\/(m.weibo.cn\/(detail|\d+)\/\d+$|weibo\.com\/\d+\/[A-Za-z0-9]{9}$)/.test(context.message)) {
-        let id = /com\/\d+\/([A-Za-z0-9]{9})|cn\/\d+\/(\d+)|detail\/(\d+)/.exec(context.message)
-            .filter((noEmpty) => { return noEmpty != undefined })[1];
-        //else if (/^看看\s?https:\/\/m.weibo.cn\/\d+\/\d+/.test(context.message) || /^看看\s?https:\/\/m.weibo.cn\/status\/\d+/.test(context.message) || /^看看\s?https:\/\/www.weibo.com\/\d+\/[A-Za-z0-9]+/.test(context.message)) { //查看链接内容
-        //  let id = /https:\/\/m\.weibo\.cn\/\d+\/(\d+)/.exec(context.message) || /https:\/\/m\.weibo\.cn\/status\/(\d+)$/.exec(context.message) || /https:\/\/www\.weibo\.com\/\d+\/([A-Za-z0-9]+)/.exec(context.message);
+    } else if (/^看看\s?https:\/\/m.weibo.cn\/\d+\/\d+/.test(context.message) || /^看看\s?https:\/\/m.weibo.cn\/status\/\d+/.test(context.message) || /^看看\s?https:\/\/www.weibo.com\/\d+\/[A-Za-z0-9]+/.test(context.message)) { //查看链接内容
+        let id = /https:\/\/m\.weibo\.cn\/\d+\/(\d+)/.exec(context.message) || /https:\/\/m\.weibo\.cn\/status\/(\d+)$/.exec(context.message) || /https:\/\/www\.weibo\.com\/\d+\/([A-Za-z0-9]+)/.exec(context.message);
         //https://m.weibo.cn/数字/数字 移动端
         //https://m.weibo.cn/status/数字 移动端
         //https://www.weibo.com/数字/大小写字母+数字 PC端 兼容移动端api返回json
@@ -664,14 +677,13 @@ function weiboAggr(context) {
         //console.log(/https:\/\/www\.weibo\.com\/\d+\/([A-Za-z0-9]+)/.exec("")[1])
         //console.log(/https:\/\/www.weibo.com\/\d+\/[A-Za-z0-9]+/.test(""))
         //console.log(/^看看\s?https:\/\/www.weibo.com\/\d+\/[A-Za-z0-9]+/.test(""))
-        logger2.info("微博小程序1：" + id);
-        rtSingleWeibo(id, context);
-        //if (id.length >= 2) {
-        //    console.log(id[1]);
-        //    rtSingleWeibo(id[1], context);
-        //} else {
-        //    console.log("解析微博链接失败");
-        //}
+        //rtSingleWeibo(id, context);
+        if (id.length >= 2) {
+            logger2.info("微博小程序1：" + id[1]);
+            rtSingleWeibo(id[1], context);
+        } else {
+            console.log("解析微博链接失败");
+        }
         return true;
     } else if (/^\[CQ:json.+"appID":"100736903"/.test(context.message)) {
         let id = /https:\/\/m\.weibo\.cn\/status\/(\d+)/.exec(context.message)[1];
