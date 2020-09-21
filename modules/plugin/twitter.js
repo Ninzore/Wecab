@@ -12,7 +12,7 @@ const wecab = new node_localStorage2('./wecab'); //插件是否连上机器人
 const DB_PORT = 27017;
 const DB_PATH = "mongodb://127.0.0.1:" + DB_PORT;
 const BEARER_TOKEN = "Bearer AAAAAAAAAAAAAAAAAAAAANRILgAAAAAAnNwIzUejRCOuH5E6I8xnZz4puTs%3D1Zv7ttfk8LF81IUq16cHjhLTvJu4FA33AGWWjCpTnA";
-const MAX_SIZE = 4194304;
+const MAX_SIZE = 30 * 1024 * 1024; //图片最大体积
 const OPTION_MAP = {
     "仅原创": [1, 0, 0, 1],
     "仅转发": [0, 1, 0, 0],
