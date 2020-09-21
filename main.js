@@ -256,7 +256,7 @@ function groupMsg(e, context) {
              pixivImage.pixivCheck(context, replyMsg, bot) ||
              helpZen(context, replyMsg, bot, rand) ||
              translate.transEntry(context) ||
-             iHaveAfriend.draw(context, replyMsg, bot) ||
+             iHaveAfriend.deal(context, replyMsg, bot) ||
              pokemon.pokemonCheck(context, replyMsg)) {
         e.stopPropagation();
         return;
