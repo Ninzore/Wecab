@@ -88,6 +88,8 @@ function searchName(keyword = "") {
 function getDynamicList(uid, num = 0) {
     let header = httpHeader(uid);
     return axios(header).then(response => {
+        //logger2.info(JSON.stringify(response.data.data.cards));
+        //logger2.info(JSON.stringify(response.data.data.cards[-1]));
         return (response.data.data.cards[num])
     }).catch(err => logger2.error(new Date().toString() + ":" + "bili1:" + err));
 }
@@ -100,14 +102,18 @@ function getDynamicDetail(dynamic_id = "") {
     }).catch(err => logger2.error(new Date().toString() + ":" + "bili2:" + err));
 }
 
-function dynamicProcess(dynamic) {
+function dynamicProcess(dynamic, origin = false) {
     let card = JSON.parse(dynamic.card);
     let text = "";
     let name = "";
     let pics = "";
     let video = "";
     let rt_dynamic = 0;
-
+    let url = "";
+    if (origin == false) {
+        //logger2.info(dynamic.desc.dynamic_id_str);
+        url = "https://t.bilibili.com/" + dynamic.desc.dynamic_id_str.replace(/"/g, "");
+    }
     if ("user" in card) {
         if ("uname" in card.user) name = card.user.uname;
         else if ("name" in card.user) name = card.user.name;
@@ -118,14 +124,14 @@ function dynamicProcess(dynamic) {
     if ("videos" in card) {
         name = card.owner.name;
         text = card.dynamic;
-        video = "发布视频:\n" + card.title;
+        video = "发布视频:\n" + card.title + "\n" + card.desc + "\nhttps://www.bilibili.com/video/" + dynamic.desc.bvid;
     }
     //转发
     if ("origin" in card) {
         let origin = card.origin;
         rt_dynamic = dynamicProcess({
             card: origin
-        });
+        }, true);
     }
     if ("pic" in card) pics += "[CQ:image,cache=0,file=" + card.pic + "]";
     if ("item" in card) {
@@ -143,10 +149,11 @@ function dynamicProcess(dynamic) {
                 for (let pic of pictures) pics += "[CQ:image,cache=0,file=" + pic.img_src + "]";
             }
         }
-    } else if ("summary" in card && card.summary == "点击进入查看全文>") {
-        text = "发布文章" + card.title;
+    } else if ("summary" in card) {
+        text = "发布文章" + card.title + "\n" + card.summary + "\nhttps://www.bilibili.com/read/cv" + dynamic.desc.rid_str;
         pics += "[CQ:image,cache=0,file=" + card.origin_image_urls[0] + "]";
     }
+    //解析CV号专栏
     // logger2.info(name)
     // logger2.info(text)
     let dynamicObj = {
@@ -154,7 +161,8 @@ function dynamicProcess(dynamic) {
         text: text,
         pics: pics,
         video: video,
-        rt_dynamic: rt_dynamic
+        rt_dynamic: rt_dynamic,
+        url: url
     };
     return dynamicObj;
 }
@@ -306,8 +314,8 @@ function checkBiliDynamic() {
             if (err) logger2.error(new Date().toString() + ":" + "bilibili error update");
             else {
                 let coll = mongo.db('bot').collection('bilibili');
-                let clean_dynamic = dynamicProcess(dynamic);
                 let dynamic_id = dynamic.desc.dynamic_id_str;
+                let clean_dynamic = dynamicProcess(dynamic);
                 let curr_timestamp = dynamic.desc.timestamp;
                 let groups = subscribe.groups;
                 groups.forEach(group_id => {
@@ -490,7 +498,8 @@ function rtBiliByUrl(context) {
     })[1];
     //let dynamic_id = /https:\/\/t.bilibili.com\/(\d+)/.exec(context.message) || /https:\/\/t.bilibili.com\/h5\/dynamic\/detail\/(\d+)/.exec(context.message);
     if (dynamic_id != null) {
-        rtBilibili(context, "", 0, dynamic_id[1]);
+        rtBilibili(context, "", 0, dynamic_id);
+        //rtBilibili(context, "", 0, dynamic_id[1]);
     } else {
         logger2.error(new Date().toString() + "," + "error rtBiliByUrl:" + context.message);
     }
@@ -532,7 +541,7 @@ function bilibiliCheck(context) {
     if (/^看看.+?B站$/i.test(context.message)) {
         var num = 1;
         var name = "";
-        if (/置顶/.test(context.message))(num = -1);
+        if (/置顶/.test(context.message))(num = 0); //-1
         else if (/最新/.test(context.message))(num = 0);
         else if (/上上上条/.test(context.message))(num = 3);
         else if (/上上条/.test(context.message))(num = 2);
@@ -544,7 +553,7 @@ function bilibiliCheck(context) {
             } else {
                 temp = 0;
             }
-            if (temp == 0 || temp == "零")(num = -1);
+            if (temp == 0 || temp == "零")(num = 0);
             else if (temp == 1 || temp == "一")(num = 0);
             else if (temp == 2 || temp == "二")(num = 1);
             else if (temp == 3 || temp == "三")(num = 2);
