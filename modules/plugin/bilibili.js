@@ -1,5 +1,7 @@
 const logger2 = require('../logger2'); //日志功能
-
+const node_localStorage = require('node-localstorage');
+const node_localStorage2 = node_localStorage.LocalStorage;
+const wecab = new node_localStorage2('./wecab'); //插件是否连上机器人
 var axios = require('axios');
 var mongodb = require('mongodb').MongoClient;
 const db_port = 27017;
@@ -283,7 +285,13 @@ function rmBiliSubscribe(context, name = "") {
 
 function checkBiliDynamic() {
     return;
+    let check_interval = 6 * 60 * 1000;
+    let i = 0;
     setInterval(() => {
+        if (wecab.getItem("huozhe") == "false") {
+            logger2.info("连不上机器人，跳过订阅blibili");
+            return;
+        }
         mongodb(db_path, {
             useUnifiedTopology: true
         }).connect(async function(err, mongo) {
@@ -292,20 +300,31 @@ function checkBiliDynamic() {
                 let coll = mongo.db('bot').collection('bilibili');
                 let subscribes = await coll.find({}).toArray();
                 mongo.close();
-                for (let i = 0; i < subscribes.length; i++) {
-                    if (subscribes[i].groups.length > 0) {
-                        getDynamicList(subscribes[i].uid, 0).then(dynamic => {
-                            let last_timestamp = subscribes[i].timestamp;
-                            let curr_timestamp = dynamic.desc.timestamp;
-                            if (curr_timestamp > last_timestamp) {
-                                update(subscribes[i], dynamic);
-                            }
-                        });
+                i = 0;
+                checkEach();
+
+                function checkEach() {
+                    if (subscribes[i] == undefined) {
+                        return;
                     }
+                    setTimeout(async function() {
+                        if (subscribes[i].groups.length > 0) {
+                            await getDynamicList(subscribes[i].uid, 0).then(dynamic => {
+                                let last_timestamp = subscribes[i].timestamp;
+                                let curr_timestamp = dynamic.desc.timestamp;
+                                if (curr_timestamp > last_timestamp) {
+                                    update(subscribes[i], dynamic);
+                                }
+                            });
+                        }
+                        i++;
+                        if (i < subscribes.length) checkEach();
+                    }, (check_interval - subscribes.length * 30000) / subscribes.length);
+
                 }
             }
         });
-    }, 5 * 60000);
+    }, check_interval);
 
     function update(subscribe, dynamic) {
         mongodb(db_path, {
