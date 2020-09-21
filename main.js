@@ -285,7 +285,7 @@ function groupMsg(e, context) {
     }
     if (weibo.weiboAggr(context, replyMsg) || weibo.antiweibo(context, replyMsg) ||
         bilibili.bilibiliCheck(context) || translate.transEntry(context) ||
-        iHaveAfriend.draw(context, replyMsg, bot) /*iHaveAfriend可以直接让后面的条件失效*/
+        iHaveAfriend.deal(context, replyMsg, bot) /*iHaveAfriend可以直接让后面的条件失效*/
         /*pixivImage.pixivCheck(context, replyMsg, bot) ||*/
         /*helpZen(context, replyMsg, bot, rand) ||*/
         /*||
