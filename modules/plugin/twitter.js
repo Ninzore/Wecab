@@ -597,10 +597,12 @@ async function format(tweet, useruid = -1, end_point = false) {
                                     stderr
                                 }) => {
                                     if (stdout.length == 0) {
-                                        if (fs.statSync(`${__dirname}/temp.gif`).size < MAX_SIZE) {
+                                        if (fs.statSync(`${__dirname}/temp.gif`).size < MAX_SIZE) { //帧数过高可能发不出来gif
                                             let gif = fs.readFileSync(`${__dirname}/temp.gif`);
                                             let base64gif = Buffer.from(gif, 'binary').toString('base64');
                                             pics += `[CQ:image,file=base64://${base64gif}]`;
+                                            //console.log(__dirname + "/temp.gif");
+                                            //pics += `[CQ:image,file=file:///${__dirname}/temp.gif]`;
                                         } else pics += `这是一张动图 [CQ:image,cache=0,file=${media[i].media_url_https}]` + `动起来看这里${media[i].video_info.variants[0].url}`;
                                     }
                                 })
