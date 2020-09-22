@@ -82,9 +82,13 @@ function searchName(keyword = "") {
 }
 
 //choose 选择需要查找的人
-//num 选择需要获取的微博，0为置顶或者最新，1是次新，以此类推，只允许0到9
+//num 需要获取的微博，-1为置顶，0为最新，1是次新，以此类推，只允许0到9
 function getDynamicList(uid, num = 0) {
     let header = httpHeader(uid);
+    if (num == -1) {
+        header.params.need_top = 1;
+        num = 0;
+    }
     return axios(header).then(response => {
             return (response.data.data.cards[num]);
         }).catch(err => console.error(err));
@@ -140,9 +144,17 @@ function dynamicProcess(dynamic) {
         }
     }
     else if ("summary" in card && card.summary == "点击进入查看全文>") {
-        text = "发布文章" + card.title;
+        text = "发布文章：" + card.title;
         pics += "[CQ:image,cache=0,file=" + card.origin_image_urls[0] + "]";
     }
+    
+    switch (dynamic.desc.type) {
+        case 64: {
+            text = `发布专栏：${card.title}\n${card.summary}`;
+            pics = `[CQ:image,cache=0,file=${card.banner_url}`;
+        }
+    }
+
     let dynamicObj = {
         name : name,
         text : text,
@@ -152,7 +164,6 @@ function dynamicProcess(dynamic) {
     };
     return dynamicObj;
 }
-
 
 function addBiliSubscribe(context, name = "", option_nl) {
     var text = "";
