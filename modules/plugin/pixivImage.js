@@ -30,7 +30,7 @@ async function singleImage(pic_id, replyFunc, context, bot) {
             for (let i=1; i<num_img+1; i++) {
                 url = `https://pixiv.cat/${pic_id}-${i}.jpg`
                 res = await checkImage(url);
-                if (res > 4194304) payload += "图太大发不出来，原图看这里" + url;
+                if (res > 26214400) payload += "图太大发不出来，原图看这里" + url;
                 else payload += imageCQcode(`${pic_id}-${i}`);
             }
         }
