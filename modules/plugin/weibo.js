@@ -138,7 +138,7 @@ function subscribe(uid, option, context) {
                     if (err) console.error(err + "\nweibo database subscribes insert error");
                     else replyFunc(context, `已订阅${screen_name}的微博，模式为${option_nl}`, true);
                     mongo.close();
-            });
+                });
         }
         else {
             coll.findOneAndUpdate({weibo_uid : uid},
@@ -419,10 +419,14 @@ function weiboText(id) {
  * @returns {} no return
  */
 function rtSingleWeibo(id, context) {
-    axios.get("https://m.weibo.cn/statuses/show?id=" + id, {headers : httpHeader().headers}).then(async res => {
+    axios.get("https://m.weibo.cn/statuses/show?id=" + id, {headers : httpHeader().headers})
+    .then(async res => {
         let payload = await format(res.data.data, true);
         replyFunc(context, payload);
-    }).catch(err => console.error(err));
+    }).catch(err => {
+        console.error(err.response);
+        replyFunc(context, "出错啦！");
+    });
 }
 
 /**
@@ -510,7 +514,7 @@ function weiboAggr(context) {
         rtWeibo(name, num, context);
         return true;
 	}
-    else if (/^看看\s?https:\/\/(m.weibo.cn\/(detail|\d+)\/\d+$|weibo\.com\/\d+\/[A-Za-z0-9]{9}$)/.test(context.message)) {
+    else if (/^看看\s?https:\/\/(m\.weibo\.cn\/(detail|\d+)\/\d+$|(www\.)?weibo\.com\/\d+\/[A-Za-z0-9]{9}$)/.test(context.message)) {
         let id = /com\/\d+\/([A-Za-z0-9]{9})|cn\/\d+\/(\d+)|detail\/(\d+)/.exec(context.message)
             .filter((noEmpty) => {return noEmpty != undefined})[1];
         rtSingleWeibo(id, context);
