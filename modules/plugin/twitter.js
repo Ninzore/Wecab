@@ -29,7 +29,7 @@ let guest_token = "";
 let cookie = "";
 let connection = true;
 let replyFunc = (context, msg, at = false) => {
-    logger2.info("推特：" + msg)
+    //logger2.info("推特：" + msg)
 };
 
 /** 用value找key*/
@@ -70,7 +70,7 @@ function checkConnection() {
 function firstConnect() {
     checkConnection().then(() => {
         if (!connection) {
-            logger2.info("twitter无法连接，功能暂停");
+            logger2.info(new Date().toString() + ",twitter无法连接，功能暂停");
         } else {
             getGuestToken();
             setTimeout(() => getCookie(), 1000);
@@ -84,7 +84,7 @@ function sizeCheck(url) {
     return axios.get(url).then(res => {
         return parseInt(res.headers["content-length"]) < MAX_SIZE ? true : false;
     }).catch(err => {
-        logger2.error(new Date().toString() + ":" + "推特0：" + url + "," + err.response.status);
+        logger2.error(new Date().toString() + ",推特0：" + url + "," + err.response.status);
         return false;
     });
 }
@@ -123,7 +123,7 @@ function getGuestToken() {
         headers: headers
     }).then(res => {
         guest_token = res.data.guest_token;
-    }).catch(err => logger2.info("推特1：" + err.response.data))
+    }).catch(err => logger2.info(new Date().toString() + ",推特1：" + err.response.data))
 }
 
 /** 获取一个cookie，后面要用*/
@@ -149,7 +149,7 @@ function getCookie() {
             else if (temp = /(_twitter_sess=.+?);/.exec(res.headers["set-cookie"][i])) twitter_sess = temp[1];
         }
         cookie = `dnt=1; fm=0; csrf_same_site_set=1; csrf_same_site=1; gt=${guest_token}; ${ct0}${guest_id}${personalization_id}${twitter_sess}`;
-    }).catch(err => logger2.error(new Date().toString() + ":" + 'twitter cookie设置出错，错误：' + err.response.status + "," + err.response.statusText));
+    }).catch(err => logger2.error(new Date().toString() + ",twitter cookie设置出错，错误：" + err.response.status + "," + err.response.statusText));
 }
 
 /** 
@@ -180,7 +180,7 @@ function getSingleTweet(tweet_id_str) {
     }).then(res => {
         return res.data;
     }).catch(err => {
-        logger2.error(new Date().toString() + ":" + "推特2：" + JSON.stringify(err.response.data));
+        logger2.error(new Date().toString() + ",推特2：" + JSON.stringify(err.response.data));
         return false;
     });
 }
@@ -210,7 +210,7 @@ function getUserTimeline(user_id, count = 2, include_rt = false, exclude_rp = tr
     }).then(res => {
         return res.data;
     }).catch(err => {
-        logger2.error(new Date().toString() + ":" + "推特3：" + err.response.data);
+        logger2.error(new Date().toString() + ",推特3：" + err.response.data);
         return false;
     });
 }
@@ -237,7 +237,7 @@ function searchUser(name) {
     }).then(res => {
         return res.data[0]
     }).catch(err => {
-        logger2.info("推特4：" + err.response.data);
+        logger2.info(new Date().toString() + ",推特4：" + err.response.data);
         return false;
     })
 }
@@ -261,7 +261,7 @@ function fetch(name) {
     }).then(res => {
         return res.data[0]
     }).catch(err => {
-        logger2.error(new Date().toString() + ":" + "推特5：" + err.response.data);
+        logger2.error(new Date().toString() + ",推特5：" + err.response.data);
         return false;
     })
 }
@@ -299,8 +299,9 @@ function subscribe(uid, option, context) {
                     [group_id]: option
                 },
                 (err) => {
-                    if (err) logger2.error(new Date().toString() + ":" + err + " twitter subscribes insert error");
+                    if (err) logger2.error(new Date().toString() + ",twitter subscribes insert error:" + err);
                     else replyFunc(context, `已订阅${name}(推特用户id：${uid})的twitter，模式为${option_nl}`, true);
+                    mongo.close();
                 });
         } else {
             coll.findOneAndUpdate({
@@ -314,16 +315,16 @@ function subscribe(uid, option, context) {
                     }
                 },
                 (err, result) => {
-                    if (err) logger2.error(new Date().toString() + ":" + err + " twitter subscribes update error");
+                    if (err) logger2.error(new Date().toString() + ",twitter subscribes update error:" + err);
                     else {
                         if (result.value.groups.includes(group_id)) text = "多次订阅有害我的身心健康";
                         else text = `已订阅${result.value.name}(推特用户id：${uid})的twitter，模式为${option_nl}`;
                         replyFunc(context, text, true);
+                        mongo.close();
                     }
                 });
         }
-        mongo.close();
-    }).catch(err => logger2.error(new Date().toString() + ":" + err + " twitter subscribe error, uid= " + uid));
+    }).catch(err => logger2.error(new Date().toString() + ":" + err + ",twitter subscribe error, uid= " + uid));
 }
 
 /**
@@ -354,7 +355,7 @@ function unSubscribe(uid, context) {
                 }
             },
             async(err, result) => {
-                if (err) logger2.error(new Date().toString() + ":" + "推特：" + err + "database subscribes delete error");
+                if (err) logger2.error(new Date().toString() + ",推特：" + err + ",database subscribes delete error");
                 else {
                     let text = "";
                     if (result.value == null || !result.value.groups.includes(group_id)) text = "未发现任何推特订阅";
@@ -368,7 +369,7 @@ function unSubscribe(uid, context) {
                 }
                 mongo.close();
             });
-    }).catch(err => logger2.error(new Date().toString() + ":" + err + "twitter unsubscribe error, uid= " + uid));
+    }).catch(err => logger2.error(new Date().toString() + ":" + err + ",twitter unsubscribe error, uid= " + uid));
 }
 
 /**
@@ -380,7 +381,7 @@ function checkTwiTimeline() {
 
     setInterval(async() => {
         if (wecab.getItem("huozhe") == "false") {
-            logger2.info("连不上机器人，跳过订阅twitter");
+            logger2.info(new Date().toString() + ",连不上机器人，跳过订阅twitter");
             return;
         }
         await mongodb(DB_PATH, {
@@ -393,7 +394,7 @@ function checkTwiTimeline() {
                 checkEach();
             } else {
                 subscribes = await coll.find({}).toArray();
-                subscribes != undefined ? "" /*logger2.info("推特订阅数：" + subscribes.length)*/ : logger2.error(new Date().toString() + ":" + "twitter database error")
+                subscribes != undefined ? "" /*logger2.info("推特订阅数：" + subscribes.length)*/ : logger2.error(new Date().toString() + ",twitter database error")
             }
             mongo.close();
 
@@ -416,7 +417,7 @@ function checkTwiTimeline() {
                                                         group_id: group_id,
                                                         message_type: "group"
                                                     }, payload);
-                                                }).catch(err => logger2.error(new Date().toString() + ":" + "推特6：" + err));
+                                                }).catch(err => logger2.error(new Date().toString() + ",推特6：" + err));
                                             }
                                         });
                                     }
@@ -434,13 +435,14 @@ function checkTwiTimeline() {
                                             }
                                         },
                                         (err, result) => {
-                                            if (err) logger2.error(new Date().toString() + ":" + "推特：" + err + " database update error during checktwitter");
+                                            if (err) logger2.error(new Date().toString() + ",推特：" + err + ",database update error during checktwitter");
+                                            mongo.close();
                                         });
                                 });
                             }
                         }
                     } catch (err) {
-                        logger2.error(new Date().toString() + ":" + "推特：" + err + ',' + subscribes[i]);
+                        logger2.error(new Date().toString() + ",推特：" + err + ',' + subscribes[i]);
                     } finally {
                         i++;
                         if (i < subscribes.length) checkEach();
@@ -509,9 +511,9 @@ function checkSubs(context) {
                     let subs = "本群已订阅:\n" + name_list.join("\n");
                     replyFunc(context, subs, true);
                 } else replyFunc(context, "未发现任何推特订阅", true);
+                mongo.close();
             })
-        mongo.close();
-    }).catch(err => logger2.error(new Date().toString() + ":" + err + " twitter checkWeiboSubs error, group_id= " + group_id));
+    }).catch(err => logger2.error(new Date().toString() + ":" + err + ",twitter checkWeiboSubs error, group_id= " + group_id));
 }
 
 /**
@@ -554,12 +556,12 @@ function clearSubs(context, group_id) {
             }
             replyFunc(context, `清理了${matchs.length}个twitter订阅`);
         } catch (err) {
-            logger2.error(new Date().toString() + ":" + "推特清理订阅：" + err);
+            logger2.error(new Date().toString() + ",推特清理订阅：" + err);
             replyFunc(context, '中途错误，清理未完成');
         } finally {
             mongo.close();
         }
-    }).catch(err => logger2.error(new Date().toString() + ":" + err + " twitter clearSubs error, group_id= " + group_id));
+    }).catch(err => logger2.error(new Date().toString() + ":" + err + ",twitter clearSubs error, group_id= " + group_id));
 }
 
 /**
@@ -587,7 +589,8 @@ async function format(tweet, useruid = -1, end_point = false) {
                 for (let i = 0; i < media.length; i++) {
                     text = text.replace(media[i].url, "");
                     if (media[i].type == "photo") {
-                        src = [media[i].media_url_https.substring(0, media[i].media_url_https.length - 4), '?format=jpg&name=4096x4096'].join("");
+                        //src = [media[i].media_url_https.substring(0, media[i].media_url_https.length - 4), '?format=jpg&name=4096x4096'].join("");
+                        src = [media[i].media_url_https.substring(0, media[i].media_url_https.length - 4), '?format=jpg&name=orig'].join("");
                         pics += await sizeCheck(src) ? `[CQ:image,cache=0,file=${src}]` : `[CQ:image,cache=0,file=${media[i].media_url_https}] 注：这不是原图`;
                     } else if (media[i].type == "animated_gif") {
                         try {
@@ -608,7 +611,7 @@ async function format(tweet, useruid = -1, end_point = false) {
                                     }
                                 })
                         } catch (err) {
-                            logger2.error(new Date().toString() + ":" + "推特动图：" + err);
+                            logger2.error(new Date().toString() + ",推特动图：" + err);
                             pics += `这是一张动图 [CQ:image,cache=0,file=${media[i].media_url_https}]` + `动起来看这里${media[i].video_info.variants[0].url}`;
                         }
                     } else if (media[i].type == "video") {
@@ -692,7 +695,7 @@ function urlExpand(twitter_short_url) {
     }).then(res => {
         return /URL=(http.+?)">/.exec(res.data)[1];
     }).catch(err => {
-        logger2.error(new Date().toString() + ":" + "推特7：" + err.response.data);
+        logger2.error(new Date().toString() + ",推特7：" + err.response.data);
         return false;
     });
 }
@@ -708,7 +711,7 @@ function rtTimeline(context, name, num) {
                 format(timeline[num]).then(tweet_string => {
                     let payload = [tweet_string, `https://twitter.com/${user.screen_name}/status/${timeline[num].id_str}`].join('\n\n');
                     replyFunc(context, payload);
-                }).catch(err => logger2.error(new Date().toString() + ":" + "推特rtTimeline：" + err));
+                }).catch(err => logger2.error(new Date().toString() + ",推特rtTimeline：" + err));
             });
         }
     });
