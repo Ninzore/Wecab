@@ -240,7 +240,7 @@ function checkWeiboDynamic() {
     //logger2.info(wecab.getItem("huozhe"))
     setInterval(() => {
         if (wecab.getItem("huozhe") == "false") {
-            logger2.info("连不上机器人，跳过订阅weibo");
+            logger2.info(new Date().toString() + ",连不上机器人，跳过订阅weibo");
             return;
         }
         mongodb(db_path, {
