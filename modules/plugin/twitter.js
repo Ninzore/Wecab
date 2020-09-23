@@ -378,7 +378,7 @@ function unSubscribe(uid, context) {
 function checkTwiTimeline() {
     if (!connection) return;
     let check_interval = 6 * 60 * 1000; //6分钟一次
-
+    let i = 0;
     setInterval(async() => {
         if (wecab.getItem("huozhe") == "false") {
             logger2.info(new Date().toString() + ",连不上机器人，跳过订阅twitter");
@@ -399,6 +399,9 @@ function checkTwiTimeline() {
             mongo.close();
 
             function checkEach() {
+                if (subscribes[i] == undefined) {
+                    return;
+                }
                 setTimeout(async() => {
                     try {
                         let tweet_list = await getUserTimeline(subscribes[i].uid, 10, true, false);
