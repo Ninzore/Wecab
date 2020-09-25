@@ -382,7 +382,7 @@ function checkTwiTimeline() {
     let i = 0;
     setInterval(async() => {
         if (wecab.getItem("huozhe") == "false") {
-            logger2.info(new Date().toString() + ",连不上机器人，跳过订阅twitter");
+            logger2.info(new Date().toString() + ",连不上机器人，跳过订阅twitter"); //长时间连不上还是可能丢失信息的，因为消息源会更新覆盖旧的
             return;
         }
         await mongodb(DB_PATH, {
