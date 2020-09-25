@@ -285,7 +285,7 @@ function rmBiliSubscribe(context, name = "") {
 }
 
 function checkBiliDynamic() {
-    return;
+    return; //未做测试警告
     let check_interval = 6 * 60 * 1000;
     let i = 0;
     setInterval(() => {

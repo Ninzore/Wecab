@@ -8,6 +8,7 @@ const fs = require('fs-extra');
 const node_localStorage = require('node-localstorage');
 const node_localStorage2 = node_localStorage.LocalStorage;
 const wecab = new node_localStorage2('./wecab'); //插件是否连上机器人
+const dayjs = require('dayjs');
 
 const DB_PORT = 27017;
 const DB_PATH = "mongodb://127.0.0.1:" + DB_PORT;
@@ -649,16 +650,21 @@ async function format(tweet, useruid = -1, end_point = false) {
                 payload.push(`[CQ:image,cache=0,file=${tweet.card.binding_values.image_large.url}]`);
             }
 
-            let end_time = new Intl.DateTimeFormat('zh-Hans-CN', {
+            /*let end_time = new Intl.DateTimeFormat('zh-Hans-CN', {
                     month: 'short',
                     day: '2-digit',
                     hour: '2-digit',
                     minute: '2-digit',
                     timeZone: 'Asia/Shanghai'
                 })
-                .format(new Date(tweet.card.binding_values.end_datetime_utc.string_value))
+                .format(new Date(tweet.card.binding_values.end_datetime_utc.string_value))*/
+            let end_time = dayjs(new Date(tweet.card.binding_values.end_datetime_utc.string_value).toString()).format('YYYY-MM-DD HH:mm:ss 星期d').replace("星期0", "星期天");
+            //console.log(end_time);
+            //console.log(new Date(tweet.card.binding_values.end_datetime_utc.string_value).toString());
+            //console.log(tweet.card.binding_values.end_datetime_utc.string_value);
+
             payload.push("", tweet.card.binding_values.counts_are_final.boolean_value === true ? "投票已结束" :
-                `正在投票,结束时间${end_time}`);
+                `正在投票,结束时间：${end_time}`);
             let nchoice = parseInt(/\d/.exec(tweet.card.name)[0]);
             let count = "";
             let lable = "";
