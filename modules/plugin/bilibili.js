@@ -1,5 +1,5 @@
-var axios = require('axios');
-var mongodb = require('mongodb').MongoClient;
+const axios = require('axios');
+const mongodb = require('mongodb').MongoClient;
 
 const db_port = 27017;
 const db_path = "mongodb://127.0.0.1:" + db_port;
@@ -11,6 +11,8 @@ const option_map = {
     "视频更新" : "video_only",
     "全部" : "all"
 } 
+
+let liveList = [];
 
 /** 用value找key*/
 function findKey(obj, value) {
@@ -99,6 +101,25 @@ function getDynamicDetail(dynamic_id = "") {
     return axios(header).then(response => {
             return response.data.data.card;
         }).catch(err => console.error(err));
+}
+
+function checkliveStatus(mid) {
+    return axios({
+        method : "GET",
+        url : "https://api.live.bilibili.com/room/v1/Room/getRoomInfoOld",
+        headers : {
+            "authority": "api.live.bilibili.com",
+            "user-agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/85.0.4183.102 Safari/537.36",
+            "accept": "text/html,application/xhtml+xml,application/xml;q=0.9,image/avif,image/webp,image/apng,*/*;q=0.8,application/signed-exchange;v=b3;q=0.9",
+            "cookie": "CURRENT_FNVAL=80; blackside_state=1; sid=b1ghamj1"
+        },
+        params : {mid : mid}
+    }).then(response => {
+        return response.data.data;
+    }).catch(err => {
+        console.error(err.response.data, "\nBilibili checkliveStatus error");
+        return false;
+    });
 }
 
 function dynamicProcess(dynamic) {
@@ -260,6 +281,24 @@ function checkBiliDynamic() {
                 mongo.close();
                 for (let i = 0; i < subscribes.length; i++) {
                     if (subscribes[i].groups.length > 0) {
+                        checkliveStatus(subscribes[i].uid).then(status => {
+                            if (status) {
+                                if (status.liveStatus === 1 && liveList.indexOf(subscribes[i].uid) == -1) {
+                                    liveList.push(subscribes[i].uid);
+                                    subscribes[i].groups.forEach(group_id => {
+                                        replyFunc({group_id:group_id, message_type : "group"}, 
+                                        `你订阅的${subscribes[i].name}开播啦！\n标题: ${status.title}\n${status.url}`);
+                                    });
+                                } else if (status.liveStatus === 0 && liveList.indexOf(subscribes[i].uid) != -1) {
+                                    liveList = liveList.filter(value => {return value != subscribes[i].uid});
+                                    subscribes[i].groups.forEach(group_id => {
+                                        replyFunc({group_id:group_id, message_type : "group"}, 
+                                        `你订阅的${subscribes[i].name}下播啦！`);
+                                    });
+                                }
+                            }
+                        });
+
                         getDynamicList(subscribes[i].uid, 0).then(dynamic => {
                             let last_timestamp = subscribes[i].timestamp;
                             let curr_timestamp = dynamic.desc.timestamp;
