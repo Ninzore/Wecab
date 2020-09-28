@@ -91,7 +91,7 @@ async function counterfeit(context, replyFunc, bot) {
 
         // 填充名字
         ctx.fillStyle = "#959595";
-        ctx.font = "800 20px Source_Han_Sans";
+        ctx.font = "800 20px Source Han Sans SC";
         ctx.fillText(name, 136, 60);
 
         // 填充文字
