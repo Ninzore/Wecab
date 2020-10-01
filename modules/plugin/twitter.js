@@ -416,7 +416,7 @@ function checkTwiTimeline() {
                                         groups.forEach(group_id => {
                                             if (checkOption(tweet, subscribes[i][group_id])) {
                                                 format(tweet, subscribes[i].uid).then(payload => {
-                                                    payload += `\n\nhttps://twitter.com/${tweet.user.screen_name}/status/${tweet.id_str}`
+                                                    payload += `\nhttps://twitter.com/${tweet.user.screen_name}/status/${tweet.id_str}`
                                                     replyFunc({
                                                         group_id: group_id,
                                                         message_type: "group"
@@ -687,7 +687,7 @@ async function format(tweet, useruid = -1, end_point = false) {
             text = text.replace(tweet.entities.urls[i].url, tweet.entities.urls[i].expanded_url);
         }
     }
-    payload.unshift(`${tweet.user.name}${useruid!=-1?"(推特用户id："+useruid+")的twitter\n":""}`, text);
+    payload.unshift(`${tweet.user.name}${useruid!=-1?"(推特用户id："+useruid+")的twitter\n更新了":""}`, text);
     return payload.join("\n");
 }
 
