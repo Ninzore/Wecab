@@ -687,7 +687,7 @@ async function format(tweet, useruid = -1, end_point = false) {
             text = text.replace(tweet.entities.urls[i].url, tweet.entities.urls[i].expanded_url);
         }
     }
-    payload.unshift(`${tweet.user.name}${useruid!=-1?"(推特用户id："+useruid+")的twitter\n转推了":""}`, text);
+    payload.unshift(`${tweet.user.name}${useruid!=-1?"(推特用户id："+useruid+")的twitter\n":""}`, text);
     return payload.join("\n");
 }
 
