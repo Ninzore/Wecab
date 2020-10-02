@@ -2,6 +2,10 @@
   
 ## 2020
 
+### 10/02  
+* Twitter:
+  * Fix: Twitter图片格式问题 [#18](https://github.com/Ninzore/Wecab/issues/18)
+
 ### 9/27  v1.3.1
 * bilibili:
   * Add: 新增订阅账号的开播和下播提醒
