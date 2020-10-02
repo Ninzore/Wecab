@@ -355,7 +355,7 @@ function unSubscribe(uid, context) {
                     [group_id]: []
                 }
             },
-            async(err, result) => {
+            async (err, result) => {
                 if (err) logger2.error(new Date().toString() + ",推特：" + err + ",database subscribes delete error");
                 else {
                     let text = "";
@@ -380,9 +380,13 @@ function checkTwiTimeline() {
     if (!connection) return;
     let check_interval = 6 * 60 * 1000; //6分钟一次
     let i = 0;
-    setInterval(async() => {
+    let firish = false;
+    setInterval(async () => {
         if (wecab.getItem("huozhe") == "false") {
             logger2.info(new Date().toString() + ",连不上机器人，跳过订阅twitter"); //长时间连不上还是可能丢失信息的，因为消息源会更新覆盖旧的
+            return;
+        }
+        if (firish == true) {
             return;
         }
         await mongodb(DB_PATH, {
@@ -390,6 +394,7 @@ function checkTwiTimeline() {
         }).connect().then(async mongo => {
             let coll = mongo.db('bot').collection('twitter');
             let subscribes = await coll.find({}).toArray();
+            //logger2.info("twittersubscribes:" + JSON.stringify(subscribes));
             if (subscribes != undefined && subscribes.length > 0) {
                 i = 0;
                 checkEach();
@@ -403,7 +408,7 @@ function checkTwiTimeline() {
                 if (subscribes[i] == undefined) {
                     return;
                 }
-                setTimeout(async() => {
+                setTimeout(async () => {
                     try {
                         let tweet_list = await getUserTimeline(subscribes[i].uid, 10, true, false);
                         if (tweet_list != undefined) {
@@ -450,6 +455,7 @@ function checkTwiTimeline() {
                     } finally {
                         i++;
                         if (i < subscribes.length) checkEach();
+                        else firish = false;
                     }
                 }, (check_interval - subscribes.length * 1000) / subscribes.length);
             }
@@ -574,14 +580,14 @@ function clearSubs(context, group_id) {
  * @param {string} from_user twitter用户名
  * @returns Promise  排列完成的Tweet String
  */
-async function format(tweet, useruid = -1, end_point = false) {
+async function format(tweet, useruid = -1, end_point = false, retweeted = false) {
     let payload = [];
     let text = "";
     if ('full_text' in tweet) text = tweet.full_text;
     else text = tweet.text;
     if ("retweeted_status" in tweet) {
-        let rt_status = await format(tweet.retweeted_status)
-        payload.push(`来自${tweet.user.name}${useruid!=-1?"(推特用户id："+useruid+")的twitter\n转推了":""}`, rt_status);
+        let rt_status = await format(tweet.retweeted_status, -1, false, true)
+        payload.push(`来自${tweet.user.name}${useruid!=-1&retweeted==false?"(推特用户id："+useruid+")的twitter\n转推了":""}`, rt_status);
         return payload.join("\n");
     }
     let pics = "";
@@ -594,12 +600,12 @@ async function format(tweet, useruid = -1, end_point = false) {
                     text = text.replace(media[i].url, "");
                     if (media[i].type == "photo") {
                         //src = [media[i].media_url_https.substring(0, media[i].media_url_https.length - 4), '?format=jpg&name=4096x4096'].join("");
-                        src = [media[i].media_url_https.substring(0, media[i].media_url_https.length - 4), '?format=jpg&name=orig'].join("");
+                        src = [media[i].media_url_https.substring(0, media[i].media_url_https.length - 4), (media[i].media_url_https.search("jpg") != -1 ? '?format=jpg&name=orig' : '?format=png&name=orig')].join(""); //?format=png&name=orig 可能出现这种情况
                         pics += await sizeCheck(src) ? `[CQ:image,cache=0,file=${src}]` : `[CQ:image,cache=0,file=${media[i].media_url_https}] 注：这不是原图`;
                     } else if (media[i].type == "animated_gif") {
                         try {
                             await exec(`ffmpeg -i ${media[i].video_info.variants[0].url} -loop 0 -y ${__dirname}/temp.gif`)
-                                .then(async({
+                                .then(async ({
                                     stdout,
                                     stderr
                                 }) => {
@@ -636,12 +642,12 @@ async function format(tweet, useruid = -1, end_point = false) {
     }
     if ("is_quote_status" in tweet && tweet.is_quote_status == true) {
         let quote_tweet = await getSingleTweet(tweet.quoted_status_id_str);
-        payload.push("提到了", await format(quote_tweet));
+        payload.push("提到了", await format(quote_tweet, -1, false, true));
         text = text.replace(tweet.quoted_status_permalink.url, "");
     }
     if ("in_reply_to_status_id" in tweet && tweet.in_reply_to_status_id != null && !end_point) {
         let reply_tweet = await getSingleTweet(tweet.in_reply_to_status_id_str);
-        payload.push("回复了", await format(reply_tweet, true));
+        payload.push("回复了", await format(reply_tweet, -1, false, true));
     }
     if ("card" in tweet) {
         // payload.push(tweet.binding_values.title.string_value, urlExpand(card.url));
@@ -687,7 +693,7 @@ async function format(tweet, useruid = -1, end_point = false) {
             text = text.replace(tweet.entities.urls[i].url, tweet.entities.urls[i].expanded_url);
         }
     }
-    payload.unshift(`${tweet.user.name}${useruid!=-1?"(推特用户id："+useruid+")的twitter\n更新了":""}`, text);
+    payload.unshift(`${tweet.user.name}${useruid!=-1&retweeted==false?"(推特用户id："+useruid+")的twitter\n更新了":""}`, text);
     return payload.join("\n");
 }
 

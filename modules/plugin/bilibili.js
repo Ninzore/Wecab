@@ -184,7 +184,7 @@ function addBiliSubscribe(context, name = "", option_nl) {
     function addData(desc = {}) {
         mongodb(db_path, {
             useUnifiedTopology: true
-        }).connect(async(err, mongo) => {
+        }).connect(async (err, mongo) => {
             if (err) logger2.error(new Date().toString() + ",bili database openning error:" + err);
             let coll = mongo.db('bot').collection('bilibili');
             let name = desc.user_profile.info.uname;
@@ -267,7 +267,7 @@ function rmBiliSubscribe(context, name = "") {
                             }
                         }
                     },
-                    async(err, result) => {
+                    async (err, result) => {
                         if (err) logger2.error(new Date().toString() + ",database bilibili unsubscribes error:" + err);
                         else {
                             if (!result.value.groups.includes(group_id)) text = "未订阅";
@@ -285,21 +285,28 @@ function rmBiliSubscribe(context, name = "") {
 }
 
 function checkBiliDynamic() {
-    return; //未做测试警告
-    let check_interval = 6 * 60 * 1000;
+    //return; //未做测试警告
+    let check_interval = 3 * 60 * 1000;//3分钟
+    let check_interval2 = 30000; //api调用延时 30秒
+    let firish = false;
     let i = 0;
     setInterval(() => {
         if (wecab.getItem("huozhe") == "false") {
             logger2.info(new Date().toString() + ",连不上机器人，跳过订阅blibili");
             return;
         }
+        if (firish == true) {
+            return;
+        }
+        firish = true;
         mongodb(db_path, {
             useUnifiedTopology: true
-        }).connect(async function(err, mongo) {
+        }).connect(async function (err, mongo) {
             if (err) logger2.error(new Date().toString() + ",bilibili update error:" + err);
             else {
                 let coll = mongo.db('bot').collection('bilibili');
                 let subscribes = await coll.find({}).toArray();
+                //logger2.info("bilisubscribes:" + JSON.stringify(subscribes));
                 mongo.close();
                 i = 0;
                 checkEach();
@@ -308,7 +315,7 @@ function checkBiliDynamic() {
                     if (subscribes[i] == undefined) {
                         return;
                     }
-                    setTimeout(async function() {
+                    setTimeout(async function () {
                         if (subscribes[i].groups.length > 0) {
                             await getDynamicList(subscribes[i].uid, 0).then(dynamic => {
                                 let last_timestamp = subscribes[i].timestamp;
@@ -320,8 +327,8 @@ function checkBiliDynamic() {
                         }
                         i++;
                         if (i < subscribes.length) checkEach();
-                    }, (check_interval - subscribes.length * 30000) / subscribes.length);
-
+                        else firish = false;
+                    }, check_interval2);
                 }
             }
         });
@@ -330,7 +337,7 @@ function checkBiliDynamic() {
     function update(subscribe, dynamic) {
         mongodb(db_path, {
             useUnifiedTopology: true
-        }).connect(async function(err, mongo) {
+        }).connect(async function (err, mongo) {
             if (err) logger2.error(new Date().toString() + ",bilibili error update");
             else {
                 let coll = mongo.db('bot').collection('bilibili');
@@ -587,12 +594,15 @@ function bilibiliCheck(context) {
         //正则表达式无法处理看看星街彗星第11条B站，会分离出星街彗星第11作为名字
         name = /看看(.+?)的?((第[0-9]?[一二三四五六七八九]?条)|(上{1,3}一?条)|(置顶)|(最新))?B站/i.exec(context.message)[1]; //logger2.info(/看看(.+?)的?((第[0-9]?[一二三四五六七八九]?条)|(上*条)|(置顶)|(最新))?B站/i.exec(context.message));
         //logger2.info(num);
+        logger2.info("看看b站1");
         rtBilibili(context, name, num);
         return true;
     } else if (/^看看https:\/\/t.bilibili.com\/(\d+).+?/i.test(context.message) || /^看看https:\/\/t.bilibili.com\/h5\/dynamic\/detail\/(\d+).+?/i.test(context.message)) {
+        logger2.info("看看b站2");
         rtBiliByUrl(context);
         return true;
     } else if (/^看看https:\/\/b23\.tv\/[0-9a-zA-Z]{6}$/i.test(context.message)) {
+        logger2.info("看看b站3");
         rtBiliByB23(context);
         return true;
     } else if (/^订阅.+?B站([>＞](仅转发|只看图|全部|视频更新))?/i.test(context.message)) {

@@ -213,7 +213,7 @@ function unSubscribe(name, context) {
                     [group_id]: []
                 }
             },
-            async(err, result) => {
+            async (err, result) => {
                 if (err) logger2.info("微博：" + err + ",database subscribes delete error");
                 else {
                     let text = "";
@@ -237,17 +237,23 @@ function unSubscribe(name, context) {
 function checkWeiboDynamic() {
     let check_interval = 6 * 60 * 1000;
     let i = 0;
+    let firish = false;
     //logger2.info(wecab.getItem("huozhe"))
     setInterval(() => {
         if (wecab.getItem("huozhe") == "false") {
             logger2.info(new Date().toString() + ",连不上机器人，跳过订阅weibo");
             return;
         }
+        if (firish == true) {
+            return;
+        }
+        firish = true;
         mongodb(db_path, {
             useUnifiedTopology: true
         }).connect().then(async mongo => {
             let coll = mongo.db('bot').collection('weibo');
             let subscribes = await coll.find({}).toArray();
+            //logger2.info("weibosubscribes:"+JSON.stringify(subscribes));
             mongo.close();
             i = 0;
             checkEach();
@@ -256,7 +262,7 @@ function checkWeiboDynamic() {
                 if (subscribes[i] == undefined) {
                     return;
                 }
-                setTimeout(async function() {
+                setTimeout(async function () {
                     try {
                         let stored_info = subscribes[i];
                         let mblog = await getTimeline(stored_info.weibo_uid);
@@ -290,12 +296,12 @@ function checkWeiboDynamic() {
                                     });
                             }).catch(err => logger2.error(new Date().toString() + ",微博3：" + err));
                         }
-                        i++;
-                        if (i < subscribes.length) checkEach();
                     } catch (err) {
-                        logger2.error(new Date().toString() + ",微博4：" + err + ',' + subscribes[i]);
+                        logger2.error(new Date().toString() + ",微博4：" + err + ',' + subscribes[i] + "," + i+","+subscribes.length);
+                    } finally {
                         i++;
                         if (i < subscribes.length) checkEach();
+                        else firish = false;
                     }
                 }, (check_interval - subscribes.length * 1000) / subscribes.length);
             }
