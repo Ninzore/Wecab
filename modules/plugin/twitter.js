@@ -473,7 +473,8 @@ async function format(tweet, end_point=false) {
                 for (let i = 0; i < media.length; i++) {
                     text = text.replace(media[i].url, "");
                     if (media[i].type == "photo") {
-                        src = [media[i].media_url_https.substring(0, media[i].media_url_https.length-4), '?format=jpg&name=4096x4096'].join("");
+                        src = [media[i].media_url_https.substring(0, media[i].media_url_https.length-4),
+                            `?format=${media[i].media_url_https.substring(media[i].media_url_https.length-3, media[i].media_url_https.length)}&name=4096x4096`].join("");
                         pics += await sizeCheck(src) ? `[CQ:image,cache=0,file=${src}]` : `[CQ:image,cache=0,file=${media[i].media_url_https}] 注：这不是原图`;
                     }
                     else if (media[i].type == "animated_gif") {
