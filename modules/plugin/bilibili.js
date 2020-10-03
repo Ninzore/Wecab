@@ -286,7 +286,7 @@ function rmBiliSubscribe(context, name = "") {
 
 function checkBiliDynamic() {
     //return; //未做测试警告
-    let check_interval = 3 * 60 * 1000;//3分钟
+    let check_interval = 3 * 60 * 1000; //3分钟
     let check_interval2 = 30000; //api调用延时 30秒
     let firish = false;
     let i = 0;
@@ -606,6 +606,10 @@ function bilibiliCheck(context) {
         rtBiliByB23(context);
         return true;
     } else if (/^订阅.+?B站([>＞](仅转发|只看图|全部|视频更新))?/i.test(context.message)) {
+        if (/owner|admin/.test(context.sender.role) == false) {
+            replyFunc(context, '无权限');
+            return true;
+        }
         let {
             groups: {
                 name,
@@ -617,6 +621,10 @@ function bilibiliCheck(context) {
         addBiliSubscribe(context, name, option_nl);
         return true;
     } else if (/^取消订阅.+?B站$/i.test(context.message)) {
+        if (/owner|admin/.test(context.sender.role) == false) {
+            replyFunc(context, '无权限');
+            return true;
+        }
         let name = /取消订阅(.+?)B站$/i.exec(context.message)[1];
         logger2.info(`${context.group_id} ${name} B站订阅取消`);
         rmBiliSubscribe(context, name);
