@@ -235,7 +235,8 @@ function unSubscribe(name, context) {
  * 每过x分钟检查一次订阅列表，如果订阅一个微博账号的群的数量是0就删除
  */
 function checkWeiboDynamic() {
-    let check_interval = 6 * 60 * 1000;
+    let check_interval = 6 * 60 * 1000;//10分钟
+    let check_interval2 = 30 * 1000;//30秒
     let i = 0;
     let firish = false;
     //logger2.info(wecab.getItem("huozhe"))
@@ -303,7 +304,7 @@ function checkWeiboDynamic() {
                         if (i < subscribes.length) checkEach();
                         else firish = false;
                     }
-                }, (check_interval - subscribes.length * 1000) / subscribes.length);
+                },check_interval2);
             }
         }).catch(err => logger2.error(new Date().toString() + ",微博5：" + err));
     }, check_interval);
