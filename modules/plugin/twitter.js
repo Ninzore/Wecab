@@ -318,7 +318,7 @@ function subscribe(uid, option, context) {
                 (err, result) => {
                     if (err) logger2.error(new Date().toString() + ",twitter subscribes update error:" + err);
                     else {
-                        if (result.value.groups.includes(group_id)) text = "多次订阅有害我的身心健康";
+                        if (result.value.groups.includes(group_id)) text = "重复订阅！";
                         else text = `已订阅${result.value.name}(推特用户id：${uid})的twitter，模式为${option_nl}`;
                         replyFunc(context, text, true);
                         mongo.close();
