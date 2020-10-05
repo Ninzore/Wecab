@@ -59,9 +59,3 @@ TODO:
 ### 8.简单直接宝可梦  
 **注意！！！** 使用前必须先将下载dump然后用mongorestore存进mongoDB  
 一个极度简化版的群内对战游戏
-  
-## Extra   
-基于各种奇怪需求开发的部件，需要把extra文件夹中除了main的放到plugin里，并且替换之前的main  
-1. 匹配句子发送音频，参考recordMsg文件  
-2. 指挥机器人禁言，解除禁言，触发关键词禁言，参考zen文件  
-3. 能不能好好说话，来自[nbnhhsh项目](https://github.com/itorr/nbnhhsh) 现在因为太吵了就注释掉了
