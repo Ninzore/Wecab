@@ -2,6 +2,9 @@
   
 ## 2020
 
+### 10/05  
+* 支持在config中修改新人入群和退群提示
+
 ### 10/02  
 * Twitter:
   * Fix: Twitter图片格式问题 [#18](https://github.com/Ninzore/Wecab/issues/18)

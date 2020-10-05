@@ -24,6 +24,10 @@
         },
         "learn": {
             "probability": 80
+        },
+        "notification": {
+            "group_increase": "迎新",
+            "group_decrease": "送客"
         }
     }
 }

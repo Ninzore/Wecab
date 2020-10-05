@@ -178,8 +178,8 @@ setInterval(() => {
 
 function notice(context) {
     context.message_type = 'group';
-    if (context.notice_type == 'group_increase') replyMsg(context, '年纪轻轻就加了这个群，你的未来毁了');
-    else if (context.notice_type == 'group_decrease') replyMsg(context, '有人退了');
+    if (context.notice_type == 'group_increase') replyMsg(context, setting.notification.group_increase);
+    else if (context.notice_type == 'group_decrease') replyMsg(context, setting.notification.group_decrease);
 }
 
 //通用处理
