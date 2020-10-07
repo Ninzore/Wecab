@@ -1,2 +1,4 @@
 
 debug.log
+node_modules
+logs
