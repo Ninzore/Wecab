@@ -171,10 +171,10 @@ bot.on('socket.connecting', (wsType, attempts) => console.log(`${getTime()} 连�
 //connect
 bot.connect();
 
-//以及每日需要更新的一些东西
-setInterval(() => {
-    if (bot.isReady() && logger.canAdminSign()) {}
-}, 60 * 60 * 1000);
+//以及每日需要更新的一些东西，暂时没用
+// setInterval(() => {
+//     if (bot.isReady()) {}
+// }, 60 * 60 * 1000);
 
 function notice(context) {
     context.message_type = 'group';
