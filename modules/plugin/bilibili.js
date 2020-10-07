@@ -169,10 +169,12 @@ function dynamicProcess(dynamic) {
         pics += "[CQ:image,cache=0,file=" + card.origin_image_urls[0] + "]";
     }
     
-    switch (dynamic.desc.type) {
-        case 64: {
-            text = `发布专栏：${card.title}\n${card.summary}`;
-            pics = `[CQ:image,cache=0,file=${card.banner_url}`;
+    if ("desc" in dynamic) {
+        switch (dynamic.desc.type) {
+            case 64: {
+                text = `发布专栏：${card.title}\n${card.summary}`;
+                pics = `[CQ:image,cache=0,file=${card.banner_url}`;
+            }
         }
     }
 
