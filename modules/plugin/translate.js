@@ -46,7 +46,7 @@ function initialise() {
 }
 
 
-function translate(sourceLang, targetLang, sourceText, context, reply = true) {
+function translate(sourceLang, targetLang, sourceText, context, reply = false) {
     axios({
         url : TENCENT_TRANS_API,
         method : "POST",
@@ -57,13 +57,14 @@ function translate(sourceLang, targetLang, sourceText, context, reply = true) {
             "source" : sourceLang,
             "target" : targetLang,
             "sourceText" : sourceText.replace(/&amp;/g, "&").replace(/&#91;/g, "[").replace(/&#93;/g, "]")
+                                        .replace(/&lt;/g, "<").replace(/&gt;/g, ">")
         }
     }).then(res => {
         let targetText = "";
         for (let i in res.data.translate.records) {
             targetText += res.data.translate.records[i].targetText;
         }
-        trans_text = reply ? `[CQ:reply,id=${context.message_id}]${targetText}` : `${targetText}`;
+        trans_text = reply ? `[CQ:reply,id=${context.message_id}]${targetText}` : `[${targetText}]`;
         replyFunc(context, trans_text);
     }).catch(err => console.error(err))
 }
@@ -108,6 +109,17 @@ function unpoint(context, user_id) {
     else replyFunc(context, `${user_id}不在定向翻译列表中`);
 }
 
+function allClear(context) {
+    const group_id = context.group_id;
+    if (target[group_id] != undefined && target[group_id].length > 0) {
+        delete target[group_id];
+        replyFunc(context, "已清空本群所有目标");
+    } else {
+        replyFunc(context, "本群无目标");
+    }
+    return;
+}
+
 function viewTarget(context) {
     if (target.length > 0) replyFunc(context, `定向翻译已对下列目标部署\n${target.join(", ")}`);
     else replyFunc(context, `定向翻译无目标`);
@@ -115,13 +127,13 @@ function viewTarget(context) {
 
 function transEntry(context) {
     if (/翻译[>＞].+/.test(context.message)) {
-        let sourceText = context.message.substring(3, context.message.length, true);
-        translate("auto", "zh", sourceText, context, false);
+        let sourceText = context.message.substring(3, context.message.length);
+        translate("auto", "zh", sourceText, context);
         return true;
     }
     else if (/中译[日韩英法德俄][>＞].+/.test(context.message)) {
         let target_lang = toTargetLang(/中译(.)[>＞]/.exec(context.message)[1]);
-        translate("zh", target_lang, /中译.[>＞](.+)/.exec(context.message)[1], context, false);
+        translate("zh", target_lang, context.message.substring(4, context.message.length), context);
         return true;
     }
     else if (/^开始定向翻译(\s?(\d{9,10}?|\[CQ:at,qq=\d+\])\s?)?$/.test(context.message)) {
@@ -132,6 +144,11 @@ function transEntry(context) {
     else if (/^停止定向翻译(\s?(\d{9,10}?|\[CQ:at,qq=\d+\])\s?)?$/.test(context.message)) {
         let user_id = /\d+/.exec(context.message) || context.user_id;
         unpoint(context, user_id);
+        return true;
+    }
+    else if (/^停止全部翻译(\s?(\d{9,10}?|\[CQ:at,qq=\d+\])\s?)?$/.test(context.message)) {
+        if (/owner|admin/.test(context.sender.role)) allClear(context);
+        else replyFunc(context, "您配吗");
         return true;
     }
     else if (/^定向翻译列表$/.test(context.message)) {
