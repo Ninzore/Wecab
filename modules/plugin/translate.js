@@ -1,4 +1,4 @@
-var axios = require("axios");
+const axios = require("axios");
 
 const TENCENT_TRANS_INIT = "https://fanyi.qq.com/";
 const TENCENT_TRANS_API = "https://fanyi.qq.com/api/translate";
@@ -57,7 +57,7 @@ function translate(sourceLang, targetLang, sourceText, context, reply = false) {
             "source" : sourceLang,
             "target" : targetLang,
             "sourceText" : sourceText.replace(/&amp;/g, "&").replace(/&#91;/g, "[").replace(/&#93;/g, "]")
-                                        .replace(/&lt;/g, "<").replace(/&gt;/g, ">")
+                                    .replace(/&lt;/g, "<").replace(/&gt;/g, ">")
         }
     }).then(res => {
         let targetText = "";
@@ -83,7 +83,7 @@ function toTargetLang(lang_opt) {
 
 function orientedTrans(context) {
     if (target[context.group_id] != undefined && target[context.group_id].some(aim => {return aim == context.user_id})) {
-        if (/(开始|停止)定向翻译/.test(context.message)) return;
+        if (/(开始|停止)定向翻译|停止全部翻译|定向翻译列表/.test(context.message)) return;
         let text = context.message.replace(/\[CQ.+\]/, "");
         if (text.length < 3) return;
         if (/[\u4e00-\u9fa5]+/.test(text) && !/[\u3040-\u30FF]/.test(text)) translate("zh", "jp", text, context, true);
@@ -121,7 +121,14 @@ function allClear(context) {
 }
 
 function viewTarget(context) {
-    if (target.length > 0) replyFunc(context, `定向翻译已对下列目标部署\n${target.join(", ")}`);
+    const target_group = target[context.group_id];
+    if (target_group != undefined && target_group.length > 0) {
+        let people = [];
+        for (let user_id of target_group) {
+            people.push(`[CQ:at,qq=${user_id}]`);
+        }
+        replyFunc(context, `定向翻译已对下列目标部署\n${people.join(", ")}`);
+    }
     else replyFunc(context, `定向翻译无目标`);
 }
 
@@ -136,17 +143,17 @@ function transEntry(context) {
         translate("zh", target_lang, context.message.substring(4, context.message.length), context);
         return true;
     }
-    else if (/^开始定向翻译(\s?(\d{9,10}?|\[CQ:at,qq=\d+\])\s?)?$/.test(context.message)) {
+    else if (/^开始定向翻译(\s?(\d{7,10}?|\[CQ:at,qq=\d+\])\s?)?$/.test(context.message)) {
         let user_id = /\d+/.exec(context.message) || context.user_id;
         pointTo(context, user_id);
         return true;
     }
-    else if (/^停止定向翻译(\s?(\d{9,10}?|\[CQ:at,qq=\d+\])\s?)?$/.test(context.message)) {
+    else if (/^停止定向翻译(\s?(\d{7,10}?|\[CQ:at,qq=\d+\])\s?)?$/.test(context.message)) {
         let user_id = /\d+/.exec(context.message) || context.user_id;
         unpoint(context, user_id);
         return true;
     }
-    else if (/^停止全部翻译(\s?(\d{9,10}?|\[CQ:at,qq=\d+\])\s?)?$/.test(context.message)) {
+    else if (/^停止全部翻译$/.test(context.message)) {
         if (/owner|admin/.test(context.sender.role)) allClear(context);
         else replyFunc(context, "您配吗");
         return true;
