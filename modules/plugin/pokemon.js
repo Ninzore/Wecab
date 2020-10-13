@@ -1,9 +1,7 @@
-var seedrandom = require('seedrandom');
-var mongodb = require('mongodb').MongoClient;
+const mongodb = require('mongodb').MongoClient;
 
-var randomseed = seedrandom();
-var db_port = 27017;
-var db_path = "mongodb://127.0.0.1:" + db_port;
+const db_port = 27017;
+const db_path = "mongodb://127.0.0.1:" + db_port;
 
 const chart = {
     normal : {normal : 1, fire : 1, water : 1, electric : 1, grass : 1, ice : 1,
@@ -139,15 +137,15 @@ function locationName(num = 0) {
 }
 
 function normalDist(centre = 0, std_deviation = 1) {
-    let u = randomseed();
-    let v = randomseed();
+    let u = Math.random();
+    let v = Math.random();
     let radius = Math.sqrt(-2 * Math.log(u))
     let theta = 2 * Math.PI * v;
     return ((radius * Math.sin(theta)) * std_deviation + centre);
 }
 
 function random(min, max, round = false) {
-    let num = (max - min) * randomseed() + min;
+    let num = (max - min) * Math.random() + min;
     // if (round) return Math.round(num); 
     if (round) return parseInt(num); 
     else return num; 
@@ -157,10 +155,7 @@ function loadedDice(centre, min, max, std_devi_denominator=4) {
     let num = Math.round(normalDist(centre, (max - min) / std_devi_denominator));
     if(num > max) num = min + num - max - 1;
     if(num < min) num = max - Math.abs(min - num) + 1;
-    // while(num > max) num -= max;
-    // while(num < min) num += min;
-    // console.log(num)
-    //return Math.round(num);
+
     return num;
 }
 
@@ -193,7 +188,7 @@ function gacha(context, replyFunc) {
             // console.log(location_list);
             // console.log(pkm_name);
 
-            coll_pkm_stg.insertOne({player_id : context.user_id, player_name : context.nickname,
+            await coll_pkm_stg.insertOne({player_id : context.user_id, player_name : context.nickname,
                                     list : pokemon_list, storage : [], last_win : 0,
                                     last_capture : time, last_travel : time, last_fight : 0,
                                     money : 500, pokeball : 3, centre : 14});
@@ -215,13 +210,15 @@ function gacha(context, replyFunc) {
             text = `还需要${Math.round((3600000 - time + user_profile.last_capture)/60000)}分钟才能再次捕捉`;
         }
         else {
-            centre = user_profile.centre;
-            location = locationName(centre);
-            choice_list = (await coll_loc.findOne({location:location},
-                            {projection: {_id : 0, pokemons : 1}})).pokemons;
-            rand = random(0, choice_list.length, true);
+            let centre = user_profile.centre;
+            let location = locationName(centre);
+            let info = await coll_loc.findOne({location:location},
+                            {projection: {_id : 0, pokemons : 1}});
+            let choice_list = info.pokemons;
+
+            let rand = random(0, choice_list.length, true);
             let pkm_name = choice_list[rand].name;
-            if (user_profile.storage.indexOf(pkm_name) != -1  && user_profile.list.indexOf(pkm_name) != -1) {
+            if (user_profile.storage.indexOf(pkm_name) != -1  || user_profile.list.indexOf(pkm_name) != -1) {
                 text = `你在${location}找到了一只${pkm_name}，因为你已经有一只相同了所以放生了,等一小时再来吧`
                 coll_pkm_stg.updateOne({player_id : context.user_id}, 
                                         {$set : {last_capture : time}});
@@ -260,8 +257,19 @@ function fight(context, replyFunc) {
                     text = "不能重复打一个人哦";
                 }
                 else {
-                    let pokemon_list_a = player_data_a.list;
-                    let pokemon_list_b = player_data_b.list;
+                    let pokemon_list_a = player_data_a.list.filter(value => typeof value === "string");
+                    let pokemon_list_b = player_data_b.list.filter(value => typeof value === "string");
+
+                    if (pokemon_list_a.length < 6) {
+                        replyFunc(context, `[CQ:at,qq=${player_a}]存档坏了，修复一下吧`);
+                        mongo.close();
+                        return;
+                    }
+                    if (pokemon_list_b.length < 6) {
+                        replyFunc(context, `[CQ:at,qq=${player_b}]存档坏了，修复一下吧`);
+                        mongo.close();
+                        return;
+                    }
 
                     let pkm_a = "";
                     let pkm_b = "";
@@ -274,10 +282,22 @@ function fight(context, replyFunc) {
                     let results = [];
                     let count = 0;
 
+                    function shuffle() {
+                        let box = [0,1,2,3,4,5];
+                        for (let i in box) {
+                            let rand = Math.floor(Math.random() * i);
+                            [box[i], box[rand]] = [box[rand], box[i]];
+                        }
+                        return box.filter(value => typeof value == "number");;
+                    }
+
+                    let player_a_box = shuffle();
+                    let player_b_box = shuffle();
+
                     for (let i=0; i<6; i++) {
-                        pkm_a = await coll_pokedex.findOne({name : pokemon_list_a[i]}, {projection: {_id : 0}});
-                        pkm_b = await coll_pokedex.findOne({name : pokemon_list_b[i]}, {projection: {_id : 0}});
-                        // console.log(pkm_a)
+                        pkm_a = await coll_pokedex.findOne({name : pokemon_list_a[player_a_box[i]]});
+                        pkm_b = await coll_pokedex.findOne({name : pokemon_list_b[player_b_box[i]]});
+
                         // console.log(pokemon_list_a[i])
                         type_a = pkm_a.type_id;
                         type_b = pkm_b.type_id;
@@ -302,44 +322,44 @@ function fight(context, replyFunc) {
                     if (count > 0) {
                         if (player_data_b.money <= 0) {
                             match_result = "赢了，但是对方已经没钱了，所以你一分钱也没拿到";
-                            coll_pkm_stg.updateOne({player_id : player_a}, {$set : {last_win : player_b}});
-                            coll_pkm_stg.updateOne({player_id : player_b}, {$set : {money : 0}});
+                            await coll_pkm_stg.updateOne({player_id : player_a}, {$set : {last_win : player_b}});
+                            await coll_pkm_stg.updateOne({player_id : player_b}, {$set : {money : 0}});
                         }
                         else if (player_data_b.money - count*100 <= 0) {
                             match_result = `赢了，获得${count*100}, 对方余额全部白给了`;
-                            coll_pkm_stg.updateOne({player_id : player_a}, {$inc : {money : player_data_b.money},
+                            await coll_pkm_stg.updateOne({player_id : player_a}, {$inc : {money : player_data_b.money},
                                                                             $set : {last_win : player_b}});
-                            coll_pkm_stg.updateOne({player_id : player_b}, {$set : {money : 0}});
+                            await coll_pkm_stg.updateOne({player_id : player_b}, {$set : {money : 0}});
                         }
                         else {
                             match_result = `赢了，获得了${count*100}元，对方失去${count*100}元`;
-                            coll_pkm_stg.updateOne({player_id : player_a}, {$inc : {money : count*100},
+                            await coll_pkm_stg.updateOne({player_id : player_a}, {$inc : {money : count*100},
                                                                             $set : {last_win : player_b}});
-                            coll_pkm_stg.updateOne({player_id : player_b}, {$inc : {money : -count*100}});
+                            await coll_pkm_stg.updateOne({player_id : player_b}, {$inc : {money : -count*100}});
                         }
                     }
                     else if (count < 0) {
                         if (player_data_a.money <= 0) {
                             match_result = "输了，你已经没钱了，所以对方一分钱也没拿到";
-                            coll_pkm_stg.updateOne({player_id : player_a}, {$set : {money : 0}});
-                            coll_pkm_stg.updateOne({player_id : player_b}, {$set : {last_win : player_a}});
+                            await coll_pkm_stg.updateOne({player_id : player_a}, {$set : {money : 0}});
+                            await coll_pkm_stg.updateOne({player_id : player_b}, {$set : {last_win : player_a}});
                         }
                         else if (player_data_a.money + count*100 <= 0) {
-                            match_result = `输了，失去${count*100}，余额全部白给`;
-                            coll_pkm_stg.updateOne({player_id : player_b}, {$set : {last_win : player_a},
+                            match_result = `输了，失去-${count*100}，余额全部白给`;
+                            await coll_pkm_stg.updateOne({player_id : player_b}, {$set : {last_win : player_a},
                                                                             $inc : {money : player_data_a.money}});
-                            coll_pkm_stg.updateOne({player_id : player_a}, {$set : {money : 0}});
+                            await coll_pkm_stg.updateOne({player_id : player_a}, {$set : {money : 0}});
                         }
                         else {
-                            match_result = `输了，失去了${count*100}元，对方获得了${count*100}元`;
-                            coll_pkm_stg.updateOne({player_id : player_a}, {$inc : {money : count*100}});
-                            coll_pkm_stg.updateOne({player_id : player_b}, {$inc : {money : -count*100},
+                            match_result = `输了，失去了-${count*100}元，对方获得了-${count*100}元`;
+                            await coll_pkm_stg.updateOne({player_id : player_a}, {$inc : {money : count*100}});
+                            await coll_pkm_stg.updateOne({player_id : player_b}, {$inc : {money : -count*100},
                                                                             $set : {last_win : player_a}});
                         }
                     }
                     else  match_result = "平局";
-                    coll_pkm_stg.updateOne({player_id : player_a}, {$set : {last_fight : time}});
-                    coll_pkm_stg.updateOne({player_id : player_b}, {$set : {last_fight : time}});
+                    await coll_pkm_stg.updateOne({player_id : player_a}, {$set : {last_fight : time}});
+                    await coll_pkm_stg.updateOne({player_id : player_b}, {$set : {last_fight : time}});
 
                     for (let i=0; i<6; i++) {
                         if (i != 2 || i != 6){
@@ -375,16 +395,11 @@ function checkList(context, replyFunc) {
     mongodb(db_path, {useUnifiedTopology: true}).connect().then(async (mongo) => {
         // if (err) console.log("database connection error during checkList")
         let coll_pkm_stg = mongo.db('bot').collection('pokemon_storage');
-        let pokemon_list = (await coll_pkm_stg.findOne({player_id : player_a}, {projection: {_id : 0}})).list;
+        let profile = await coll_pkm_stg.findOne({player_id : player_a}, {projection: {_id : 0}});
+        let pokemon_list = profile.list;
         mongo.close();
    
-        for (let i=0; i<6; i++) {
-            if (i != 2 || i != 5){
-                pokemon_list[i] = pokemon_list[i].padEnd(6, " ");
-            }
-        }
-        pokemon_list.splice(3 ,0, "\n");
-        let text = "当前对战列表为\n" + pokemon_list.join("");
+        let text = "当前对战列表为\n" + pokemon_list.join("，");
         replyFunc(context, text, true);
     }).catch((err) => {console.log(err)});
 }
@@ -409,7 +424,6 @@ function changeList(context, replyFunc) {
     let pokemon_origin = /用.+换掉(.+)/.exec(context.message)[1];
     let text = "";
     mongodb(db_path, {useUnifiedTopology: true}).connect().then(async (mongo) => {
-        // if (err) console.log("database connection error during checkList")
         let coll_pkm_stg = mongo.db('bot').collection('pokemon_storage');
         let player_data = await coll_pkm_stg.findOne({player_id : player_id}, {projection: {_id : 0}});
         let list = player_data.list;
@@ -421,33 +435,31 @@ function changeList(context, replyFunc) {
         if (list_position == -1) text = "你的对战列表里面没有" + pokemon_origin;
         else if (storage.indexOf(pokemon_change) == -1) text = "你的储存箱里面没有" + pokemon_change;
         else {
-            coll_pkm_stg.updateOne({player_id : player_id},
-                                    {$pull : {list : {$in : [pokemon_origin]},
-                                    storage : {$in : [pokemon_change]}}});
-            coll_pkm_stg.updateOne({player_id : player_id},
-                                    {$push : {list : {$each : [pokemon_change], 
-                                            $position:list_position},
-                                    storage : pokemon_origin}});
-                
-            list[list_position] = pokemon_change;
-            // console.log(list)
-            for (let i=0; i<6; i++) {
-                if (i != 2 || i != 5){
-                    list[i] = list[i].padEnd(6, " ");
+            for (let i in list) {
+                if (list[i] == pokemon_origin) {
+                    list[i] = pokemon_change;
+                    break;
                 }
             }
-            list.splice(3 ,0, "\n");
-            text = `用${pokemon_change}换掉了${pokemon_origin}\n当前对战列表为\n` + list.join("");
+            for (let i in storage) {
+                if (storage[i] == pokemon_change) {
+                    storage[i] = pokemon_origin;
+                    break;
+                }
+            }
+            coll_pkm_stg.updateOne({player_id : player_id},
+                                    {$set : {list : list, storage : storage}});
+                
+            text = `用${pokemon_change}换掉了${pokemon_origin}\n当前对战列表为\n` + list.join("，");
         }
         mongo.close();
         replyFunc(context, text, true);
-    }).catch((err) => {console.log(err)});
+    }).catch((err) => {console.error(err)});
 }
 
 function shop(context, replyFunc) {
     let player_a = context.user_id;
     mongodb(db_path, {useUnifiedTopology: true}).connect().then(async (mongo) => {
-        // if (err) console.log("database connection error during checkList")
         let coll_pkm_stg = mongo.db('bot').collection('pokemon_storage');
         let player_data = await coll_pkm_stg.findOne({player_id : player_a}, {projection: {_id : 0}});
         mongo.close();
@@ -511,6 +523,23 @@ function checkLocation(context, replyFunc) {
     }).catch((err) => {console.log(err)});
 }
 
+function lowBalanceInsurance(context, replyFunc) {
+    mongodb(db_path, {useUnifiedTopology: true}).connect().then(async (mongo) => {
+        let coll_pkm_stg = mongo.db('bot').collection('pokemon_storage');
+        let user_profile = await coll_pkm_stg.findOne({player_id : context.user_id});
+        let money = user_profile.money;
+        let text = "";
+        if (money <= 0) {
+            money = random(1, 3, true) * 100;
+            await coll_pkm_stg.updateOne({player_id : context.user_id}, {$set : {money : money}});
+            text = "恰到了" + money +"元的低保";
+        }
+        else text = "你又不穷你恰个鬼的低保";
+        replyFunc(context, text, true);
+        mongo.close();
+    }).catch((err) => {console.error(err)});
+}
+
 function selfRepair(context, replyFunc) {
     mongodb(db_path, {useUnifiedTopology: true}).connect().then(async (mongo) => {
         // if (err) console.log("database connection error during checkList")
@@ -518,8 +547,22 @@ function selfRepair(context, replyFunc) {
         let user_profile = (await coll_pkm_stg.findOne({player_id : context.user_id}));
         let list = user_profile.list;
         let storage = user_profile.storage;
-        for (let i = list.length; i<6; i++) list.push(storage.shift());
-        coll_pkm_stg.updateOne({player_id : context.user_id}, {$set : {list : list, storage : storage}});
+        list = list.filter(value => typeof value === "string");
+
+        if (list.length < 6) {
+            if (6 - list.length > storage.length) {
+                replyFunc(context, `这个现在修不好，继续捕捉${6 - list.length}次后可以修复`, true);
+                return;
+            }
+            else {
+                for (let i = list.length; i < 6; i++) {
+                    list[i] = storage[i - list.length];
+                    storage.shift();
+                }
+            }
+        }
+        
+        await coll_pkm_stg.updateOne({player_id : context.user_id}, {$set : {list : list, storage : storage}});
         mongo.close();
         let text = "可能好了";
         replyFunc(context, text, true);
@@ -541,28 +584,6 @@ function help(context, replyFunc) {
     replyFunc(context, text)
 }
 
-// function setCurfew(context){
-//     let hour = /(\d{1,2})点/.exec(context.message)[1];
-//     mongodb(db_path, {useUnifiedTopology: true}).connect().then(async (mongo) => {
-//         // if (err) console.log("database connection error during checkList")
-//         let coll_pkm_stg = mongo.db('bot').collection('pokemon_storage');
-//         coll_pkm_stg.updateOne({player_id : context.user_id}, {$set : {curfew : hour}});
-//         mongo.close();
-//         let text = `你的宵禁时间是${hour}点`;
-//         console.log(text);
-//     }).catch((err) => {console.log(err)});
-// }
-
-// let context = {user_id:123, message:"对战[CQ:at,qq=1234]", nickname :　"test"};
-// let context = {user_id:123, message:"用信使鸟换掉恰雷姆", nickname :　"test"};
-// let context = {user_id:123, message:"设置宵禁时间为12点", nickname :　"test"};
-// let context = {user_id:123, message:"查看电脑", nickname :　"test"};
-// let context = {user_id:123, message:"进入友好商店", nickname :　"test"};
-// let context = {user_id:123, message:"我要买10个精灵球", nickname :　"test"};
-// let context = {user_id:1234, message:"捕捉", nickname :　"test"};
-// let context = {user_id:123, message:"我现在在哪", nickname :　"test"};
-// let context = {user_id:123, message:"旅行", nickname :　"test"};
-
 function pokemonCheck(context, replyMsg) {
     if (/^旅行$/.test(context.message)) {
         travel(context, replyMsg);
@@ -580,9 +601,9 @@ function pokemonCheck(context, replyMsg) {
         fight(context, replyMsg);
         return true;
     }
-    // else if (/^(设定|设置)宵禁时间为\d{1,2}点$/.exec(context.message)) {
-    //     pokemon.setCurfew(context, replyMsg);
-    // }
+    else if (/^恰低保$/.exec(context.message)) {
+        lowBalanceInsurance(context, replyMsg);
+    }
     else if (/^查看对战列表$/.test(context.message)) {
         checkList(context, replyMsg);
         return true;
