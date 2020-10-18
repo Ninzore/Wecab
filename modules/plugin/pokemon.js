@@ -88,7 +88,7 @@ function locationName(num = 0) {
         case 5: location = "热焰小径"; break;
         case 6: location = "凹凸山道"; break;
         case 7: location = "新紫堇"; break;
-        case 8: location = "流星瀑布 "; break;
+        case 8: location = "流星瀑布"; break;
         case 9: location = "送神山"; break;
         case 10: location = "浅滩洞穴"; break;
         case 11: location = "觉醒祠堂"; break;
@@ -345,13 +345,13 @@ function fight(context, replyFunc) {
                             await coll_pkm_stg.updateOne({player_id : player_b}, {$set : {last_win : player_a}});
                         }
                         else if (player_data_a.money + count*100 <= 0) {
-                            match_result = `输了，失去-${count*100}，余额全部白给`;
+                            match_result = `输了，失去了${-count*100}，余额全部白给`;
                             await coll_pkm_stg.updateOne({player_id : player_b}, {$set : {last_win : player_a},
-                                                                            $inc : {money : player_data_a.money}});
+                                                                            $inc : {money : -count*100}});
                             await coll_pkm_stg.updateOne({player_id : player_a}, {$set : {money : 0}});
                         }
                         else {
-                            match_result = `输了，失去了-${count*100}元，对方获得了-${count*100}元`;
+                            match_result = `输了，失去了${-count*100}元，对方获得了${-count*100}元`;
                             await coll_pkm_stg.updateOne({player_id : player_a}, {$inc : {money : count*100}});
                             await coll_pkm_stg.updateOne({player_id : player_b}, {$inc : {money : -count*100},
                                                                             $set : {last_win : player_a}});
@@ -523,19 +523,10 @@ function checkLocation(context, replyFunc) {
     }).catch((err) => {console.log(err)});
 }
 
-function lowBalanceInsurance(context, replyFunc) {
+function lowBalanceInsurance() {
     mongodb(db_path, {useUnifiedTopology: true}).connect().then(async (mongo) => {
         let coll_pkm_stg = mongo.db('bot').collection('pokemon_storage');
-        let user_profile = await coll_pkm_stg.findOne({player_id : context.user_id});
-        let money = user_profile.money;
-        let text = "";
-        if (money <= 0) {
-            money = random(1, 3, true) * 100;
-            await coll_pkm_stg.updateOne({player_id : context.user_id}, {$set : {money : money}});
-            text = "恰到了" + money +"元的低保";
-        }
-        else text = "你又不穷你恰个鬼的低保";
-        replyFunc(context, text, true);
+        await coll_pkm_stg.updateMany({money : {$lt : 200}}, {$inc : {money : 100}});
         mongo.close();
     }).catch((err) => {console.error(err)});
 }
@@ -584,6 +575,9 @@ function help(context, replyFunc) {
     replyFunc(context, text)
 }
 
+let insurance_interval = 1 * 60 * 60 * 1000;
+let insurance = setInterval(lowBalanceInsurance, insurance_interval);
+
 function pokemonCheck(context, replyMsg) {
     if (/^旅行$/.test(context.message)) {
         travel(context, replyMsg);
@@ -602,7 +596,8 @@ function pokemonCheck(context, replyMsg) {
         return true;
     }
     else if (/^恰低保$/.exec(context.message)) {
-        lowBalanceInsurance(context, replyMsg);
+        replyMsg(context, `每${insurance_interval/(1000*60*60)}小时会自动领取100补助金哦`);
+        return true;
     }
     else if (/^查看对战列表$/.test(context.message)) {
         checkList(context, replyMsg);
@@ -632,6 +627,7 @@ function pokemonCheck(context, replyMsg) {
         help(context, replyMsg);
         return true;
     }
+    else return false;
 }
 
 module.exports = {pokemonCheck};
