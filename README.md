@@ -14,7 +14,7 @@
 2. 群组分离，互不干扰  
 
 **注意！！！**  
-**近期会支持SQLite**如果不想用MongoDB的人可以等一阵子  
+**近期会支持嵌入式数据库**如果不想用MongoDB的人可以等一阵子(可能你们得等久点了...)  
   
 目前需要安装MongoDB，没装的参考官方教程https://docs.mongodb.com/manual/installation/ ，端口是默认端口不要改，然后使用mongorestore将dump文件夹中的东西恢复到mongodb中，这样才能使用小游戏功能，当然如果不用的话也可以，删除main中所有pokemon相关的语句就行  
 
@@ -23,8 +23,7 @@
 TODO:  
 1. Pixiv订阅  
 2. 接入RSSHub 
-3. 从MongoDB换到SQLite
-4. 小游戏更新(不存在的)  
+3. 从MongoDB换到SQLite或者LevelDB
 
 ### 1. 看微博，B站，Twitter动态  
 用 “看看**谁谁上条**微博/B站/Twitter/推特”，谁谁是要看的人的名字，上条可以改，可以要求看置顶，上条，上上条，上上上条.....，也可以直接写第x条，x范围是0~9  
