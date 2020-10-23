@@ -63,8 +63,7 @@ function translate(sourceLang, targetLang, sourceText, context, reply = false) {
             "qtv": qtv,
             "source": sourceLang,
             "target": targetLang,
-            "sourceText": sourceText.replace(/&amp;/g, "&").replace(/&#91;/g, "[").replace(/&#93;/g, "]")
-                .replace(/&lt;/g, "<").replace(/&gt;/g, ">").replace(/\[CQ:image.*?\]/g, "").replace(/(http|https):\/\/[\w\-_]+(\.[\w\-_]+)+([\w\-\.,@?^=%&:/~\+#]*[\w\-\@?^=%&/~\+#])?/g, '')
+            "sourceText": temp
         }
     }).then(res => {
         let targetText = "";
