@@ -96,6 +96,7 @@ function getUserId(user_name = "") {
  */
 function getTimeline(uid, num = -1) {
     let payload = httpHeader(uid);
+    let data2="";
     return axios({
         method: 'GET',
         url: "https://m.weibo.cn/profile/info",
@@ -104,6 +105,8 @@ function getTimeline(uid, num = -1) {
         },
         headers: payload.headers
     }).then(response => {
+        //logger2.info(JSON.stringify(response.data));
+        data2=JSON.stringify(response.data);
         if (num == -2) {
             if ("isTop" in response.data.data.statuses[0] && response.data.data.statuses[0].isTop == 1) {
                 return response.data.data.statuses[0];
@@ -123,8 +126,8 @@ function getTimeline(uid, num = -1) {
             return response.data.data.statuses[card_num_seq[0]];
         } else return response.data.data.statuses[num];
     }).catch(err => {
-        logger2.error(new Date().toString() + ":" + err + ",weibo getTimeline error, uid= " + uid);
-        return false;
+        logger2.error(new Date().toString() + ":" + err + ",weibo getTimeline error, uid= " + uid+"\n"+data2);
+        return false;//{"ok":0,"errno":"21301","msg":"认证失败"}
     });
 }
 

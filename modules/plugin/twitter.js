@@ -211,7 +211,8 @@ function getUserTimeline(user_id, count = 2, include_rt = false, exclude_rp = tr
     }).then(res => {
         return res.data;
     }).catch(err => {
-        logger2.error(new Date().toString() + ",推特3：" + err.response.data);
+        logger2.error(new Date().toString() + ",推特3：" + JSON.stringify(err.response.data));
+        //error: Fri Oct 16 2020 07:02:20 GMT+0800 (GMT+08:00),推特3：{"errors":[{"message":"Internal error","code":131}]}
         return false;
     });
 }
@@ -451,7 +452,7 @@ function checkTwiTimeline() {
                             }
                         }
                     } catch (err) {
-                        logger2.error(new Date().toString() + ",推特：" + err + ',' + subscribes[i]);
+                        logger2.error(new Date().toString() + ",推特：" + err + ',' + JSON.stringify(subscribes[i]));
                     } finally {
                         i++;
                         if (i < subscribes.length) checkEach();
@@ -727,6 +728,7 @@ function rtTimeline(context, name, num) {
                     let payload = [tweet_string, `https://twitter.com/${user.screen_name}/status/${timeline[num].id_str}`].join('\n\n');
                     replyFunc(context, payload);
                 }).catch(err => logger2.error(new Date().toString() + ",推特rtTimeline：" + err));
+                //error: Fri Oct 16 2020 07:02:20 GMT+0800 (GMT+08:00),推特rtTimeline：TypeError: Cannot use 'in' operator to search for 'full_text' in undefined
             });
         }
     });

@@ -367,7 +367,7 @@ function getRand() {
 }
 
 function getTime() {
-    return new Date().toLocaleString();
+    return new Date().toString();
 }
 
 function parseArgs(str, enableArray = false, _key = null) {
