@@ -50,6 +50,10 @@ function initialise() {
 function translate(sourceLang, targetLang, sourceText, context, reply = false) {
     //console.log(sourceText.replace(/\[CQ:image.*?\]/g,""));//清理图片CQ码
     //console.log(sourceText.replace(/(http|https):\/\/[\w\-_]+(\.[\w\-_]+)+([\w\-\.,@?^=%&:/~\+#]*[\w\-\@?^=%&/~\+#])?/g, ''));//清理链接
+    let temp = sourceText.replace(/&amp;/g, "&").replace(/&#91;/g, "[").replace(/&#93;/g, "]").replace(/&lt;/g, "<").replace(/&gt;/g, ">").replace(/\[CQ:image.*?\]/g, "").replace(/(http|https):\/\/[\w\-_]+(\.[\w\-_]+)+([\w\-\.,@?^=%&:/~\+#]*[\w\-\@?^=%&/~\+#])?/g, '');
+    if (temp == "") {
+        return;
+    }
     axios({
         url: TENCENT_TRANS_API,
         method: "POST",
@@ -60,7 +64,7 @@ function translate(sourceLang, targetLang, sourceText, context, reply = false) {
             "source": sourceLang,
             "target": targetLang,
             "sourceText": sourceText.replace(/&amp;/g, "&").replace(/&#91;/g, "[").replace(/&#93;/g, "]")
-                .replace(/&lt;/g, "<").replace(/&gt;/g, ">").replace(/\[CQ:image.*?\]/g,"").replace(/(http|https):\/\/[\w\-_]+(\.[\w\-_]+)+([\w\-\.,@?^=%&:/~\+#]*[\w\-\@?^=%&/~\+#])?/g, '')
+                .replace(/&lt;/g, "<").replace(/&gt;/g, ">").replace(/\[CQ:image.*?\]/g, "").replace(/(http|https):\/\/[\w\-_]+(\.[\w\-_]+)+([\w\-\.,@?^=%&:/~\+#]*[\w\-\@?^=%&/~\+#])?/g, '')
         }
     }).then(res => {
         let targetText = "";
