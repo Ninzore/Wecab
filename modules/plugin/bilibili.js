@@ -2,8 +2,8 @@ const logger2 = require('../logger2'); //日志功能
 const node_localStorage = require('node-localstorage');
 const node_localStorage2 = node_localStorage.LocalStorage;
 const wecab = new node_localStorage2('./wecab'); //插件是否连上机器人
-var axios = require('axios');
-var mongodb = require('mongodb').MongoClient;
+const axios = require('axios');
+const mongodb = require('mongodb').MongoClient;
 const db_port = 27017;
 const db_path = "mongodb://127.0.0.1:" + db_port;
 
@@ -14,6 +14,7 @@ const option_map = {
     "视频更新": "video_only",
     "全部": "all"
 }
+let liveList = [];
 
 /** 用value找key*/
 function findKey(obj, value) {
@@ -86,14 +87,39 @@ function searchName(keyword = "") {
 }
 
 //choose 选择需要查找的人
-//num 选择需要获取的b站动态，0为置顶或者最新，1是次新，以此类推，只允许0到9
+//num 选择需要获取的b站动态，-1为置顶，0为最新，1是次新，以此类推，只允许0到9
 function getDynamicList(uid, num = 0) {
     let header = httpHeader(uid);
+    if (num == -1) {
+        header.params.need_top = 1; //这样才能得到动态置顶内容
+        num = 0;
+    }
     return axios(header).then(response => {
         //logger2.info(JSON.stringify(response.data.data.cards));
         //logger2.info(JSON.stringify(response.data.data.cards[-1]));
         return (response.data.data.cards[num])
     }).catch(err => logger2.error(new Date().toString() + ",bili1:" + err));
+}
+// 检测直播状态
+function checkliveStatus(mid) {
+    return axios({
+        method: "GET",
+        url: "https://api.live.bilibili.com/room/v1/Room/getRoomInfoOld",
+        headers: {
+            "authority": "api.live.bilibili.com",
+            "user-agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/85.0.4183.102 Safari/537.36",
+            "accept": "text/html,application/xhtml+xml,application/xml;q=0.9,image/avif,image/webp,image/apng,*/*;q=0.8,application/signed-exchange;v=b3;q=0.9",
+            "cookie": "CURRENT_FNVAL=80; blackside_state=1; sid=b1ghamj1"
+        },
+        params: {
+            mid: mid
+        }
+    }).then(response => {
+        return response.data.data;
+    }).catch(err => {
+        logger2.error(new Date().toString() + " , " + err.response.data + "\nBilibili checkliveStatus error");
+        return false;
+    });
 }
 
 function getDynamicDetail(dynamic_id = "") {
@@ -104,7 +130,8 @@ function getDynamicDetail(dynamic_id = "") {
     }).catch(err => logger2.error(new Date().toString() + ",bili2:" + err));
 }
 
-function dynamicProcess(dynamic, origin = false) {
+function dynamicProcess(dynamic, origin = false, dynamic_url = null) {
+    //logger2.info(JSON.stringify(dynamic.desc.rid_str));
     let card = JSON.parse(dynamic.card);
     let text = "";
     let name = "";
@@ -133,7 +160,7 @@ function dynamicProcess(dynamic, origin = false) {
         let origin = card.origin;
         rt_dynamic = dynamicProcess({
             card: origin
-        }, true);
+        }, true, dynamic.desc.rid_str);
     }
     if ("pic" in card) pics += "[CQ:image,cache=0,file=" + card.pic + "]";
     if ("item" in card) {
@@ -152,7 +179,7 @@ function dynamicProcess(dynamic, origin = false) {
             }
         }
     } else if ("summary" in card) {
-        text = "发布文章" + card.title + "\n" + card.summary + "\nhttps://www.bilibili.com/read/cv" + dynamic.desc.rid_str;
+        text = "发布文章" + card.title + "\n" + card.summary + "\nhttps://www.bilibili.com/read/cv" + card.id;
         pics += "[CQ:image,cache=0,file=" + card.origin_image_urls[0] + "]";
     }
     //解析CV号专栏
@@ -317,6 +344,31 @@ function checkBiliDynamic() {
                     }
                     setTimeout(async function () {
                         if (subscribes[i].groups.length > 0) {
+                            await checkliveStatus(subscribes[i].uid).then(status => {
+                                if (status) {
+                                    if (status.liveStatus === 1 && liveList.indexOf(subscribes[i].uid) == -1) {
+                                        liveList.push(subscribes[i].uid);
+                                        subscribes[i].groups.forEach(group_id => {
+                                            replyFunc({
+                                                    group_id: group_id,
+                                                    message_type: "group"
+                                                },
+                                                `你订阅的${subscribes[i].name}开播啦！\n标题: ${status.title}\n${status.url}`);
+                                        });
+                                    } else if (status.liveStatus === 0 && liveList.indexOf(subscribes[i].uid) != -1) {
+                                        liveList = liveList.filter(value => {
+                                            return value != subscribes[i].uid
+                                        });
+                                        subscribes[i].groups.forEach(group_id => {
+                                            replyFunc({
+                                                    group_id: group_id,
+                                                    message_type: "group"
+                                                },
+                                                `你订阅的${subscribes[i].name}下播啦！`);
+                                        });
+                                    }
+                                }
+                            });
                             await getDynamicList(subscribes[i].uid, 0).then(dynamic => {
                                 let last_timestamp = subscribes[i].timestamp;
                                 let curr_timestamp = dynamic.desc.timestamp;
@@ -568,7 +620,7 @@ function bilibiliCheck(context) {
     if (/^看看.+?B站$/i.test(context.message)) {
         var num = 1;
         var name = "";
-        if (/置顶/.test(context.message))(num = 0); //-1
+        if (/置顶/.test(context.message))(num = -1);
         else if (/最新/.test(context.message))(num = 0);
         else if (/上上上条/.test(context.message))(num = 3);
         else if (/上上条/.test(context.message))(num = 2);
