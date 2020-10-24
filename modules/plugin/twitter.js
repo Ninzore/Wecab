@@ -396,6 +396,7 @@ function checkTwiTimeline() {
             let coll = mongo.db('bot').collection('twitter');
             let subscribes = await coll.find({}).toArray();
             //logger2.info("twittersubscribes:" + JSON.stringify(subscribes));
+            //console.log(subscribes.length);
             if (subscribes != undefined && subscribes.length > 0) {
                 i = 0;
                 checkEach();
