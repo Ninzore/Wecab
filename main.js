@@ -257,6 +257,7 @@ function groupMsg(e, context) {
              helpZen(context, replyMsg, bot, rand) ||
              translate.transEntry(context) ||
              iHaveAfriend.deal(context, replyMsg, bot) ||
+             nbnhhsh.demyth(context) ||
              pokemon.pokemonCheck(context, replyMsg)) {
         e.stopPropagation();
         return;
