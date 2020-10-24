@@ -684,7 +684,7 @@ function weiboAggr(context) {
         return true;
         //    } else if (/^看看\s?https:\/\/m.weibo.cn\/\d+\/\d+$/.test(context.message) || /^看看\s?https:\/\/m.weibo.cn\/status\/\d+$/.test(context.message) || /^看看\s?https:\/\/www.weibo.com\/\d+\/[A-Za-z0-9]+$/.test(context.message)) { //查看链接内容
     } else if (/^看看\s?https:\/\/m\.weibo\.cn\/\d+\/\d+/.test(context.message) || /^看看\s?https:\/\/m\.weibo\.cn\/status\/\d+/.test(context.message) || /^看看\s?https:\/\/(www\.weibo\.com|weibo\.com)\/\d+\/[A-Za-z0-9]+/.test(context.message)) { //查看链接内容
-        let id = /https:\/\/m\.weibo\.cn\/\d+\/(\d+)/.exec(context.message) || /https:\/\/m\.weibo\.cn\/status\/(\d+)$/.exec(context.message) || /https:\/\/www\.weibo\.com\/\d+\/([A-Za-z0-9]+)/.exec(context.message) || /https:\/\/weibo\.com\/\d+\/([A-Za-z0-9]+)/.exec(context.message);
+        let id = /https:\/\/m\.weibo\.cn\/\d+\/(\d+)/.exec(context.message) || /https:\/\/m\.weibo\.cn\/status\/(\d+)$/.exec(context.message)|| /https:\/\/m\.weibo\.cn\/detail\/(\d+)$/.exec(context.message) || /weibo\.com\/\d+\/([A-Za-z0-9]+)/.exec(context.message);
         //https://m.weibo.cn/数字/数字 移动端
         //https://m.weibo.cn/status/数字 移动端
         //https://www.weibo.com/数字/大小写字母+数字 PC端 兼容移动端api返回json
