@@ -2,3 +2,6 @@
 debug.log
 node_modules
 logs
+config.json
+data
+package-lock.json
