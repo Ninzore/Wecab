@@ -8,7 +8,7 @@ const wecab = new node_localStorage2('./wecab'); //插件是否连上机器人
 const mongodb = require('mongodb').MongoClient;
 const logger2 = require('../logger2'); //日志功能
 const admin = parseInt(config.bot.admin);
-
+var parser = require('fast-xml-parser');
 
 //没找到反微博小程序
 var db_port = 27017;
@@ -96,7 +96,7 @@ function getUserId(user_name = "") {
  */
 function getTimeline(uid, num = -1) {
     let payload = httpHeader(uid);
-    let data2="";
+    let data2 = "";
     return axios({
         method: 'GET',
         url: "https://m.weibo.cn/profile/info",
@@ -106,7 +106,7 @@ function getTimeline(uid, num = -1) {
         headers: payload.headers
     }).then(response => {
         //logger2.info(JSON.stringify(response.data));
-        data2=JSON.stringify(response.data);
+        data2 = JSON.stringify(response.data);
         if (num == -2) {
             if ("isTop" in response.data.data.statuses[0] && response.data.data.statuses[0].isTop == 1) {
                 return response.data.data.statuses[0];
@@ -126,8 +126,8 @@ function getTimeline(uid, num = -1) {
             return response.data.data.statuses[card_num_seq[0]];
         } else return response.data.data.statuses[num];
     }).catch(err => {
-        logger2.error(new Date().toString() + ":" + err + ",weibo getTimeline error, uid= " + uid+"\n"+data2);
-        return false;//{"ok":0,"errno":"21301","msg":"认证失败"}
+        logger2.error(new Date().toString() + ":" + err + ",weibo getTimeline error, uid= " + uid + "\n" + data2);
+        return false; //{"ok":0,"errno":"21301","msg":"认证失败"}
     });
 }
 
@@ -238,8 +238,8 @@ function unSubscribe(name, context) {
  * 每过x分钟检查一次订阅列表，如果订阅一个微博账号的群的数量是0就删除
  */
 function checkWeiboDynamic() {
-    let check_interval = 6 * 60 * 1000;//10分钟
-    let check_interval2 = 30 * 1000;//30秒
+    let check_interval = 6 * 60 * 1000; //10分钟
+    let check_interval2 = 30 * 1000; //30秒
     let i = 0;
     let firish = false;
     //logger2.info(wecab.getItem("huozhe"))
@@ -301,13 +301,13 @@ function checkWeiboDynamic() {
                             }).catch(err => logger2.error(new Date().toString() + ",微博3：" + err));
                         }
                     } catch (err) {
-                        logger2.error(new Date().toString() + ",微博4：" + err + ',' + subscribes[i] + "," + i+","+subscribes.length);
+                        logger2.error(new Date().toString() + ",微博4：" + err + ',' + JSON.stringify(subscribes[i]) + "," + i + "," + subscribes.length);
                     } finally {
                         i++;
                         if (i < subscribes.length) checkEach();
                         else firish = false;
                     }
-                },check_interval2);
+                }, check_interval2);
             }
         }).catch(err => logger2.error(new Date().toString() + ",微博5：" + err));
     }, check_interval);
@@ -637,14 +637,16 @@ console.log(pic[0].replace('<picture cover="', "").replace('"', ""));
 function antiweibo(context) {
     let msg = context.message;
     if (msg.indexOf('CQ:xml') !== -1 && msg.indexOf('微博') !== -1) {
+        let jsonobj = parser.parse(CQ.unescape(msg));
         logger2.info(msg);
-        const url = /<source url="(.+?)"/.exec(CQ.unescape(msg))[0].replace('<source url="', "").replace('"', "");
+        logger2.info(JSON.stringify(parser.parse(CQ.unescape(msg))));
+        const url = /<source url="(.+?)"/.exec(CQ.unescape(msg))[1].split("?")[0];//.replace('<source url="', "").replace('"', "");
         //logger2.info(url[0].replace('<source url="', "").replace('"', ""));
-        const title = /<summary>(.+?)<\/summary>/.exec(CQ.unescape(msg))[0].replace('<summary>', "").replace('</summary>', "");
+        const title = jsonobj.msg.item.summary; ///<summary>(.+?)<\/summary>/.exec(CQ.unescape(msg))[1];
         //logger2.info(title[0].replace('<summary>', "").replace('</summary>', ""));
         const pic = /<picture cover="(.+?)"/.exec(CQ.unescape(msg))[0].replace('<picture cover="', "").replace('"', "");
         //logger2.info(pic[0].replace('<picture cover="', "").replace('"', ""));
-        replyFunc(context, `新浪微博\n封面图:[CQ:image,cache=0,file=${pic}]\n内容${title}\n链接${url}`, true);
+        replyFunc(context, `新浪微博\n封面图：[CQ:image,cache=0,file=${pic}]\n内容：${title}\n链接：${url}`, true);
     }
 }
 /**
@@ -684,7 +686,7 @@ function weiboAggr(context) {
         return true;
         //    } else if (/^看看\s?https:\/\/m.weibo.cn\/\d+\/\d+$/.test(context.message) || /^看看\s?https:\/\/m.weibo.cn\/status\/\d+$/.test(context.message) || /^看看\s?https:\/\/www.weibo.com\/\d+\/[A-Za-z0-9]+$/.test(context.message)) { //查看链接内容
     } else if (/^看看\s?https:\/\/m\.weibo\.cn\/\d+\/\d+/.test(context.message) || /^看看\s?https:\/\/m\.weibo\.cn\/status\/\d+/.test(context.message) || /^看看\s?https:\/\/(www\.weibo\.com|weibo\.com)\/\d+\/[A-Za-z0-9]+/.test(context.message)) { //查看链接内容
-        let id = /https:\/\/m\.weibo\.cn\/\d+\/(\d+)/.exec(context.message) || /https:\/\/m\.weibo\.cn\/status\/(\d+)$/.exec(context.message)|| /https:\/\/m\.weibo\.cn\/detail\/(\d+)$/.exec(context.message) || /weibo\.com\/\d+\/([A-Za-z0-9]+)/.exec(context.message);
+        let id = /https:\/\/m\.weibo\.cn\/\d+\/(\d+)/.exec(context.message) || /https:\/\/m\.weibo\.cn\/status\/(\d+)$/.exec(context.message) || /https:\/\/m\.weibo\.cn\/detail\/(\d+)$/.exec(context.message) || /weibo\.com\/\d+\/([A-Za-z0-9]+)/.exec(context.message);
         //https://m.weibo.cn/数字/数字 移动端
         //https://m.weibo.cn/status/数字 移动端
         //https://www.weibo.com/数字/大小写字母+数字 PC端 兼容移动端api返回json
@@ -746,3 +748,125 @@ export default {
     clearSubs,
     antiweibo
 };
+/*
+How to use
+To use it in NPM package install it first
+
+$npm install fast-xml-parser or using yarn $yarn add fast-xml-parser
+
+To use it from a CLI install it globally with the -g option.
+
+$npm install fast-xml-parser -g
+
+To use it on a webpage include it from a CDN
+
+XML to JSON
+var jsonObj = parser.parse(xmlData [,options] );
+var parser = require('fast-xml-parser');
+var he = require('he');
+
+var options = {
+    attributeNamePrefix : "@_",
+    attrNodeName: "attr", //default is 'false'
+    textNodeName : "#text",
+    ignoreAttributes : true,
+    ignoreNameSpace : false,
+    allowBooleanAttributes : false,
+    parseNodeValue : true,
+    parseAttributeValue : false,
+    trimValues: true,
+    cdataTagName: "__cdata", //default is 'false'
+    cdataPositionChar: "\\c",
+    parseTrueNumberOnly: false,
+    arrayMode: false, //"strict"
+    attrValueProcessor: (val, attrName) => he.decode(val, {isAttributeValue: true}),//default is a=>a
+    tagValueProcessor : (val, tagName) => he.decode(val), //default is a=>a
+    stopNodes: ["parse-me-as-string"]
+};
+
+if( parser.validate(xmlData) === true) { //optional (it'll return an object in case it's not valid)
+    var jsonObj = parser.parse(xmlData,options);
+}
+
+// Intermediate obj
+var tObj = parser.getTraversalObj(xmlData,options);
+var jsonObj = parser.convertToJson(tObj,options);
+As you can notice in the above code, validator is not embedded with in the parser and expected to be called separately. However, you can pass true or validation options as 3rd parameter to the parser to trigger validator internally. It is same as above example.
+
+try{
+  var jsonObj = parser.parse(xmlData,options, true);
+}catch(error){
+  console.log(error.message)
+}
+Validator returns the following object in case of error;
+
+{
+  err: {
+    code: code,
+    msg: message,
+    line: lineNumber,
+  },
+};
+Note: he library is used in this example
+OPTIONS :
+attributeNamePrefix : prepend given string to attribute name for identification
+attrNodeName: (Valid name) Group all the attributes as properties of given name.
+ignoreAttributes : Ignore attributes to be parsed.
+ignoreNameSpace : Remove namespace string from tag and attribute names.
+allowBooleanAttributes : a tag can have attributes without any value
+parseNodeValue : Parse the value of text node to float, integer, or boolean.
+parseAttributeValue : Parse the value of an attribute to float, integer, or boolean.
+trimValues : trim string values of an attribute or node
+decodeHTMLchar : This options has been removed from 3.3.4. Instead, use tagValueProcessor, and attrValueProcessor. See above example.
+cdataTagName : If specified, parser parse CDATA as nested tag instead of adding it's value to parent tag.
+cdataPositionChar : It'll help to covert JSON back to XML without losing CDATA position.
+parseTrueNumberOnly: if true then values like "+123", or "0123" will not be parsed as number.
+arrayMode : When false, a tag with single occurrence is parsed as an object but as an array in case of multiple occurences. When true, a tag will be parsed as an array always excluding leaf nodes. When strict, all the tags will be parsed as array only.
+tagValueProcessor : Process tag value during transformation. Like HTML decoding, word capitalization, etc. Applicable in case of string only.
+attrValueProcessor : Process attribute value during transformation. Like HTML decoding, word capitalization, etc. Applicable in case of string only.
+stopNodes : an array of tag names which are not required to be parsed. Instead their values are parsed as string.
+To use from command line
+$xml2js [-ns|-a|-c|-v|-V] <filename> [-o outputfile.json]
+$cat xmlfile.xml | xml2js [-ns|-a|-c|-v|-V] [-o outputfile.json]
+-ns : To include namespaces (by default ignored)
+-a : To ignore attributes
+-c : To ignore value conversion (i.e. "-3" will not be converted to number -3)
+-v : validate before parsing
+-V : only validate
+To use it on webpage
+var result = parser.validate(xmlData);
+if (result !== true) console.log(result.err);
+var jsonObj = parser.parse(xmlData);
+JSON / JS Object to XML
+var Parser = require("fast-xml-parser").j2xParser;
+//default options need not to set
+var defaultOptions = {
+    attributeNamePrefix : "@_",
+    attrNodeName: "@", //default is false
+    textNodeName : "#text",
+    ignoreAttributes : true,
+    cdataTagName: "__cdata", //default is false
+    cdataPositionChar: "\\c",
+    format: false,
+    indentBy: "  ",
+    supressEmptyNode: false,
+    tagValueProcessor: a=> he.encode(a, { useNamedReferences: true}),// default is a=>a
+    attrValueProcessor: a=> he.encode(a, {isAttributeValue: isAttribute, useNamedReferences: true})// default is a=>a
+};
+var parser = new Parser(defaultOptions);
+var xml = parser.parse(json_or_js_obj);
+OPTIONS :
+With the correct options, you can get the almost original XML without losing any information.
+
+attributeNamePrefix : Identify attributes with this prefix otherwise treat them as a tag.
+attrNodeName: Identify attributes when they are grouped under single property.
+ignoreAttributes : Don't check for attributes. Treats everything as tag.
+encodeHTMLchar : This option has been removed from 3.3.4. Use tagValueProcessor, and attrValueProcessor instead. See above example.
+cdataTagName : If specified, parse matching tag as CDATA
+cdataPositionChar : Identify the position where CDATA tag should be placed. If it is blank then CDATA will be added in the last of tag's value.
+format : If set to true, then format the XML output.
+indentBy : indent by this char when format is set to true
+supressEmptyNode : If set to true, tags with no value (text or nested tags) are written as self closing tags.
+tagValueProcessor : Process tag value during transformation. Like HTML encoding, word capitalization, etc. Applicable in case of string only.
+attrValueProcessor : Process attribute value during transformation. Like HTML encoding, word capitalization, etc. Applicable in case of string only.
+*/
