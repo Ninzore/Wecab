@@ -131,7 +131,7 @@ function getDynamicDetail(dynamic_id = "") {
 }
 
 function dynamicProcess(dynamic, origin = false, dynamic_url = null) {
-    //logger2.info(JSON.stringify(dynamic.desc.rid_str));
+    //logger2.info(JSON.stringify(dynamic.card));
     let card = JSON.parse(dynamic.card);
     let text = "";
     let name = "";
@@ -153,7 +153,7 @@ function dynamicProcess(dynamic, origin = false, dynamic_url = null) {
     if ("videos" in card) {
         name = card.owner.name;
         text = card.dynamic;
-        video = "发布视频:\n" + card.title + "\n" + card.desc + "\nhttps://www.bilibili.com/video/" + dynamic.desc.bvid;
+        video = "发布视频:\n" + card.title + "\n" + card.desc + "\nhttps://www.bilibili.com/video/av" + card.aid;//dynamic.desc.bvid;
     }
     //转发
     if ("origin" in card) {
