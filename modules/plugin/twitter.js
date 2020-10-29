@@ -4,6 +4,7 @@ const promisify = require('util').promisify;
 const exec = promisify(require('child_process').exec);
 const fs = require('fs-extra');
 
+const PROXY_CONF = require("../../config.json").proxy;
 const DB_PORT = 27017;
 const DB_PATH = "mongodb://127.0.0.1:" + DB_PORT;
 const BEARER_TOKEN = "Bearer AAAAAAAAAAAAAAAAAAAAANRILgAAAAAAnNwIzUejRCOuH5E6I8xnZz4puTs%3D1Zv7ttfk8LF81IUq16cHjhLTvJu4FA33AGWWjCpTnA";
@@ -24,6 +25,18 @@ let guest_token = "";
 let cookie = "";
 let connection = true;
 let replyFunc = (context, msg, at = false) => {console.log(msg)};
+
+function setAgent() {
+    if (PROXY_CONF.host.length > 0 && PROXY_CONF.port !== 0) {
+        axios = Axios.create({
+            proxy : {
+                host : PROXY_CONF.host,
+                port : PROXY_CONF.port,
+            }
+        });
+    }
+    else axios = Axios;
+}
 
 /** 用value找key*/
 function toOptNl(option) {
@@ -680,7 +693,7 @@ function twitterAggr(context) {
     else return false;
 }
 
-
+setAgent();
 firstConnect();
 
 module.exports = {twitterAggr, twitterReply, checkTwiTimeline, clearSubs};

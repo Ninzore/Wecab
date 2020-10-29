@@ -29,5 +29,9 @@
             "group_increase": "迎新",
             "group_decrease": "送客"
         }
+    },
+    "proxy": {
+        "host": "",
+        "port": 0
     }
 }
