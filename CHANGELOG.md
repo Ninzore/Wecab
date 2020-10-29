@@ -2,6 +2,12 @@
   
 ## 2020
 
+### 10/29 v1.3.9
+* Twitter
+  * feat: 增加proxy设置
+* config file
+  * feat: 增加proxy设置栏
+
 ### 10/25 v1.3.8
 * pokemon
   * Fix: 一堆数据库调用错误
