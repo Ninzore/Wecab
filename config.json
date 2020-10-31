@@ -31,5 +31,9 @@
         "twitter": {
             "whitegroup": []
         }
+    }, 
+    "proxy": {
+        "host": "",
+        "port": 0
     }
 }
