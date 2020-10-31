@@ -176,7 +176,7 @@ bot.on('socket.connecting', (wsType, attempts) => logger2.info(`${getTime()} 连
                     wecab.setItem("huozhe", true)
                     bot('send_private_msg', {
                         user_id: setting.admin,
-                        message: `已上线#${attempts}`,
+                        message: `wecab已上线#${attempts}`,
                     });
                 }
             }, 1000);
