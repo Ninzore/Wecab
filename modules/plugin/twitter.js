@@ -1,6 +1,6 @@
 const logger2 = require('../logger2'); //日志功能
 
-const axios = require('axios');
+const Axios = require('axios');
 const mongodb = require('mongodb').MongoClient;
 const promisify = require('util').promisify;
 const exec = promisify(require('child_process').exec);
@@ -10,6 +10,7 @@ const node_localStorage2 = node_localStorage.LocalStorage;
 const wecab = new node_localStorage2('./wecab'); //插件是否连上机器人
 const dayjs = require('dayjs');
 
+const PROXY_CONF = require("../../config.json").proxy;
 const DB_PORT = 27017;
 const DB_PATH = "mongodb://127.0.0.1:" + DB_PORT;
 const BEARER_TOKEN = "Bearer AAAAAAAAAAAAAAAAAAAAANRILgAAAAAAnNwIzUejRCOuH5E6I8xnZz4puTs%3D1Zv7ttfk8LF81IUq16cHjhLTvJu4FA33AGWWjCpTnA";
@@ -32,6 +33,20 @@ let connection = true;
 let replyFunc = (context, msg, at = false) => {
     //logger2.info("推特：" + msg)
 };
+let axios = null;
+
+//是否启用代理访问推特
+function setAgent() {
+    if (PROXY_CONF.host.length > 0 && PROXY_CONF.port !== 0) {
+        axios = Axios.create({
+            proxy: {
+                host: PROXY_CONF.host,
+                port: PROXY_CONF.port,
+            }
+        });
+    } else axios = Axios;
+}
+
 
 /** 用value找key*/
 function toOptNl(option) {
@@ -737,7 +752,10 @@ function rtTimeline(context, name, num) {
 
 function rtSingleTweet(tweet_id_str, context) {
     getSingleTweet(tweet_id_str).then(tweet => {
-        format(tweet).then(tweet_string => replyFunc(context, tweet_string))
+        format(tweet).then(tweet_string => {
+            logger2.info(tweet_string);
+            replyFunc(context, tweet_string);
+        })
     });
 }
 
@@ -824,7 +842,7 @@ function twitterAggr(context) {
     } else return false;
 }
 
-
+setAgent();
 firstConnect();
 
 module.exports = {
