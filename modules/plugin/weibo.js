@@ -897,4 +897,3 @@ supressEmptyNode : If set to true, tags with no value (text or nested tags) are 
 tagValueProcessor : Process tag value during transformation. Like HTML encoding, word capitalization, etc. Applicable in case of string only.
 attrValueProcessor : Process attribute value during transformation. Like HTML encoding, word capitalization, etc. Applicable in case of string only.
 */
-};
