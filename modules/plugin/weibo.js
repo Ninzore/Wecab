@@ -1,6 +1,8 @@
 import axios from 'axios';
 import config from '../config';
 import CQ from '../CQcode';
+import _ from 'lodash';
+
 import node_localStorage from 'node-localstorage';
 const node_localStorage2 = node_localStorage.LocalStorage;
 const wecab = new node_localStorage2('./wecab'); //插件是否连上机器人
@@ -636,18 +638,43 @@ console.log(pic[0].replace('<picture cover="', "").replace('"', ""));
 */
 function antiweibo(context) {
     let msg = context.message;
-    if (msg.indexOf('CQ:xml') !== -1 && msg.indexOf('微博') !== -1) {
+    if (msg.indexOf('[CQ:xml,') !== -1 && msg.indexOf('微博') !== -1) {
         let jsonobj = parser.parse(CQ.unescape(msg));
         logger2.info(msg);
         logger2.info(JSON.stringify(parser.parse(CQ.unescape(msg))));
-        const url = /<source url="(.+?)"/.exec(CQ.unescape(msg))[1].split("?")[0];//.replace('<source url="', "").replace('"', "");
+        let url = /<source.*url="(.+?)"/.exec(CQ.unescape(msg))[1].split("?")[0]; //.replace('<source url="', "").replace('"', "");
         //logger2.info(url[0].replace('<source url="', "").replace('"', ""));
-        const title = jsonobj.msg.item.summary; ///<summary>(.+?)<\/summary>/.exec(CQ.unescape(msg))[1];
+        let title = jsonobj.msg.item.summary; ///<summary>(.+?)<\/summary>/.exec(CQ.unescape(msg))[1];
         //logger2.info(title[0].replace('<summary>', "").replace('</summary>', ""));
-        const pic = /<picture cover="(.+?)"/.exec(CQ.unescape(msg))[0].replace('<picture cover="', "").replace('"', "");
+        let pic = /<picture cover="(.+?)"/.exec(CQ.unescape(msg))[0].replace('<picture cover="', "").replace('"', "");
         //logger2.info(pic[0].replace('<picture cover="', "").replace('"', ""));
         replyFunc(context, `新浪微博\n封面图：[CQ:image,cache=0,file=${pic}]\n内容：${title}\n链接：${url}`, true);
+    } else if (msg.indexOf('[CQ:json,') !== -1 && msg.indexOf('微博') !== -1) {
+        //json
+        logger2.info(msg);
+        logger2.info(JSON.stringify(CQ.unescape(msg)));
+        let data = parseJSON(msg);
+        if (data != null) {
+            let url = _.get(data, 'meta.detail_1.qqdocurl').split("?")[0].replace(/\\\//g, "/");
+            let title = _.get(data, 'meta.detail_1.desc');
+            let pic = _.get(data, 'meta.detail_1.preview').replace(/\\\//g, "/");
+            replyFunc(context, `新浪微博\n封面图：[CQ:image,cache=0,file=http://${pic}]\n内容：${title}\n链接：${url}`, true);
+        }
     }
+
+    function parseJSON(text) {
+        const start = text.indexOf('{');
+        const end = text.lastIndexOf('}');
+        if (start === -1 || end === -1) return null;
+        let jsonText = text.substring(start, end + 1);
+        //if (text.includes('[CQ:json,')) 
+        jsonText = CQ.unescape(jsonText);
+        try {
+            return JSON.parse(jsonText);
+        } catch (error) {}
+        return null;
+    };
+
 }
 /**
  * @param {object} context 
@@ -870,3 +897,4 @@ supressEmptyNode : If set to true, tags with no value (text or nested tags) are 
 tagValueProcessor : Process tag value during transformation. Like HTML encoding, word capitalization, etc. Applicable in case of string only.
 attrValueProcessor : Process attribute value during transformation. Like HTML encoding, word capitalization, etc. Applicable in case of string only.
 */
+};
