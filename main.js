@@ -219,8 +219,8 @@ function privateAndAtMsg(e, context) {
         e.stopPropagation();
         return;
     }
-    //其他指令
-    return setting.replys.default;
+    //其他指令, 现在没有
+    return;
 }
 
 //调试模式
