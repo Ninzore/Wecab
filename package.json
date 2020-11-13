@@ -5,6 +5,7 @@
     "main": "index.js",
     "dependencies": {
         "axios": "^0.20.0",
+        "axios-https-proxy-fix": "^0.17.1",
         "canvas": "^2.6.1",
         "cq-websocket": "^2.1.1",
         "dayjs": "^1.8.19",
