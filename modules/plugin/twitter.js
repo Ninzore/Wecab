@@ -1,6 +1,11 @@
 const logger2 = require('../logger2'); //日志功能
 
-const Axios = require('axios');
+//const Axios = require('axios');
+const axios = require('axios-https-proxy-fix');
+/*
+https://www.ucloud.cn/yun/106541.html
+nodejs使用axios代理https失败的解决方案
+*/
 const mongodb = require('mongodb').MongoClient;
 const promisify = require('util').promisify;
 const exec = promisify(require('child_process').exec);
@@ -33,10 +38,18 @@ let connection = true;
 let replyFunc = (context, msg, at = false) => {
     //logger2.info("推特：" + msg)
 };
-var axios = null;
+var proxy2 = false;
+if (PROXY_CONF.host.length > 0 && PROXY_CONF.port !== 0) {
+    proxy2 = {
+        host: PROXY_CONF.host,
+        port: PROXY_CONF.port
+    }
+}
+
+//var axios = null;
 
 //是否启用代理访问推特
-function setAgent() {
+/*function setAgent() {
     if (PROXY_CONF.host.length > 0 && PROXY_CONF.port !== 0) {
         axios = Axios.create({
             proxy: {
@@ -45,7 +58,7 @@ function setAgent() {
             }
         });
     } else axios = Axios;
-}
+}*/
 
 
 /** 用value找key*/
@@ -78,7 +91,13 @@ function twitterReply(replyMsg) {
 
 /** 检查网络情况，如果连不上twitter那后面都不用做了*/
 function checkConnection() {
-    return axios.get("https://twitter.com").then(res => {
+    return axios({
+        method: "GET",
+        url: "https://twitter.com",
+        //是否启用代理访问推特
+        proxy: proxy2,
+        timeout: 10000
+    }).then(res => {
         connection = (res.status == 200) ? true : false
     }).catch(err => connection = false);
 }
@@ -89,15 +108,21 @@ function firstConnect() {
             logger2.info(new Date().toString() + ",twitter无法连接，功能暂停");
         } else {
             getGuestToken();
-            setTimeout(() => getCookie(), 1000);
-            let get_cookie_routine = setInterval(() => getCookie(), 20 * 60 * 60 * 1000);
-            let get_gt_routine = setInterval(() => getGuestToken(), 0.9 * 60 * 60 * 1000);
+            setTimeout(() => getCookie(), 1000); //cookie有时间限制
+            //let get_cookie_routine = setInterval(() => getCookie(), 20 * 60 * 60 * 1000);
+            //let get_gt_routine = setInterval(() => getGuestToken(), 0.9 * 60 * 60 * 1000);
         }
     });
 }
 
 function sizeCheck(url) {
-    return axios.get(url).then(res => {
+    return axios({
+        method: "GET",
+        url: url,
+        //是否启用代理访问推特
+        proxy: proxy2,
+        timeout: 10000
+    }).then(res => {
         return parseInt(res.headers["content-length"]) < MAX_SIZE ? true : false;
     }).catch(err => {
         logger2.error(new Date().toString() + ",推特0：" + url + "," + err.response.status);
@@ -136,7 +161,10 @@ function getGuestToken() {
     axios({
         method: "POST",
         url: "https://api.twitter.com/1.1/guest/activate.json",
-        headers: headers
+        headers: headers,
+        //是否启用代理访问推特
+        proxy: proxy2,
+        timeout: 10000
     }).then(res => {
         guest_token = res.data.guest_token;
     }).catch(err => logger2.info(new Date().toString() + ",推特1：" + err.response.data))
@@ -149,23 +177,28 @@ function getCookie() {
     delete headers.cookie;
     delete headers.authorization;
     axios({
-        method: "GET",
-        url: "https://twitter.com/explore",
-        headers: headers
-    }).then(res => {
-        let temp = "";
-        let guest_id = ""; //expire 2 years
-        let personalization_id = ""; //expire 2 years
-        let ct0 = ""; //expire 1 day
-        let twitter_sess = ""; //not necessary
-        for (let i = 0; i < res.headers["set-cookie"].length; i++) {
-            if (temp = /guest_id=.+?; /.exec(res.headers["set-cookie"][i])) guest_id = temp[0];
-            else if (temp = /ct0=.+?; /.exec(res.headers["set-cookie"][i])) ct0 = temp[0];
-            else if (temp = /personalization_id=.+?; /.exec(res.headers["set-cookie"][i])) personalization_id = temp[0];
-            else if (temp = /(_twitter_sess=.+?);/.exec(res.headers["set-cookie"][i])) twitter_sess = temp[1];
-        }
-        cookie = `dnt=1; fm=0; csrf_same_site_set=1; csrf_same_site=1; gt=${guest_token}; ${ct0}${guest_id}${personalization_id}${twitter_sess}`;
-    }).catch(err => logger2.error(new Date().toString() + ",twitter cookie设置出错，错误：" + err.response.status + "," + err.response.statusText));
+            method: "GET",
+            url: "https://twitter.com/explore",
+            headers: headers,
+            //是否启用代理访问推特
+            proxy: proxy2,
+            timeout: 10000
+        }).then(res => {
+            //logger2.info("cookie：" + JSON.stringify(res.data));
+            let temp = "";
+            let guest_id = ""; //expire 2 years
+            let personalization_id = ""; //expire 2 years
+            let ct0 = ""; //expire 1 day
+            let twitter_sess = ""; //not necessary
+            for (let i = 0; i < res.headers["set-cookie"].length; i++) {
+                if (temp = /guest_id=.+?; /.exec(res.headers["set-cookie"][i])) guest_id = temp[0];
+                else if (temp = /ct0=.+?; /.exec(res.headers["set-cookie"][i])) ct0 = temp[0];
+                else if (temp = /personalization_id=.+?; /.exec(res.headers["set-cookie"][i])) personalization_id = temp[0];
+                else if (temp = /(_twitter_sess=.+?);/.exec(res.headers["set-cookie"][i])) twitter_sess = temp[1];
+            }
+            cookie = `dnt=1; fm=0; csrf_same_site_set=1; csrf_same_site=1; gt=${guest_token}; ${ct0}${guest_id}${personalization_id}${twitter_sess}`;
+        }) //.catch(err => logger2.error(new Date().toString() + ",twitter cookie设置出错，错误：" + err.response.status + "," + err.response.statusText));
+        .catch(err => logger2.error(new Date().toString() + ",twitter cookie设置出错，错误：" + err));
 }
 
 /** 
@@ -192,7 +225,10 @@ function getSingleTweet(tweet_id_str) {
             "include_cards": "1",
             "cards_platform": "Web-12",
 
-        }
+        },
+        //是否启用代理访问推特
+        proxy: proxy2,
+        timeout: 10000
     }).then(res => {
         return res.data;
     }).catch(err => {
@@ -222,7 +258,10 @@ function getUserTimeline(user_id, count = 2, include_rt = false, exclude_rp = tr
             "exclude_replies": exclude_rp,
             "include_rts": include_rt,
             "tweet_mode": "extended"
-        }
+        },
+        //是否启用代理访问推特
+        proxy: proxy2,
+        timeout: 10000
     }).then(res => {
         return res.data;
     }).catch(err => {
@@ -250,7 +289,10 @@ function searchUser(name) {
         params: {
             "q": name,
             "count": 1,
-        }
+        },
+        //是否启用代理访问推特
+        proxy: proxy2,
+        timeout: 10000
     }).then(res => {
         return res.data[0]
     }).catch(err => {
@@ -274,7 +316,10 @@ function fetch(name) {
         params: {
             "q": name,
             "count": 1,
-        }
+        },
+        //是否启用代理访问推特
+        proxy: proxy2,
+        timeout: 10000
     }).then(res => {
         return res.data[0]
     }).catch(err => {
@@ -723,7 +768,10 @@ function urlExpand(twitter_short_url) {
     return axios({
         method: "GET",
         url: twitter_short_url,
-        headers: httpHeader()
+        headers: httpHeader(),
+        //是否启用代理访问推特
+        proxy: proxy2,
+        timeout: 10000
     }).then(res => {
         return /URL=(http.+?)">/.exec(res.data)[1];
     }).catch(err => {
@@ -841,8 +889,7 @@ function twitterAggr(context) {
         return true;
     } else return false;
 }
-
-setAgent();
+//setAgent();
 firstConnect();
 
 module.exports = {
