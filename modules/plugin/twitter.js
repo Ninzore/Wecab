@@ -33,7 +33,7 @@ let connection = true;
 let replyFunc = (context, msg, at = false) => {
     //logger2.info("推特：" + msg)
 };
-let axios = null;
+var axios = null;
 
 //是否启用代理访问推特
 function setAgent() {
