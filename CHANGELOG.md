@@ -2,6 +2,10 @@
   
 ## 2020
 
+### 11/14 v1.4.0
+* Bilibili
+  * feat: 增加对直播间的解析
+
 ### 10/29 v1.3.9
 * Twitter
   * feat: 增加proxy设置
