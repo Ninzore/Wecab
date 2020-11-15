@@ -178,7 +178,7 @@ function dynamicProcess(dynamic) {
         switch (dynamic.desc.type) {
             case 64: {
                 text = `发布专栏：${card.title}\n${card.summary}`;
-                pics = `[CQ:image,cache=0,file=${card.banner_url}`;
+                pics = `[CQ:image,cache=0,file=${card.banner_url || card.image_urls[0]}`;
             }
         }
     }
