@@ -2,6 +2,12 @@
   
 ## 2020
 
+### 11/15 v1.4.5
+* Twitter
+  * Update: Twitter整体改版（未经过大量验证）
+* Bilibili
+  * Fix: 有时无法获取专栏封面
+
 ### 11/14 v1.4.0
 * Bilibili
   * feat: 增加对直播间的解析
