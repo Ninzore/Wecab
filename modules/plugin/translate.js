@@ -2,17 +2,23 @@ const axios = require("axios");
 
 const TENCENT_TRANS_INIT = "https://fanyi.qq.com/";
 const TENCENT_TRANS_API = "https://fanyi.qq.com/api/translate";
+const REAAUTH_URL = "https://fanyi.qq.com/api/reaauth";
+const TRACKER_URL = "https://tracker.appadhoc.com/tracker";
+const appKey = "ADHOC_5ec05c69-a3e4-4f5e-b281-d339b3774a2f";
 
 let qtv = "";
 let qtk = "";
 let fy_guid = "";
-
 let target = {};
-
 let replyFunc = (context, msg, at = false) => {};
 
 function transReply(replyMsg) {
     replyFunc = replyMsg;
+}
+
+function unescape(text) {
+    return text.replace(/&amp;/g, "&").replace(/&#91;/g, "[").replace(/&#93;/g, "]")
+        .replace(/&lt;/g, "<").replace(/&gt;/g, ">");
 }
 
 function httpHeader(with_cookie = false) {
@@ -32,22 +38,48 @@ function httpHeader(with_cookie = false) {
     return headers;
 }
 
-
 function initialise() {
     axios({
         url : TENCENT_TRANS_INIT,
         method : "GET",
         headers : httpHeader()
     }).then(res => {
-        qtv = /qtv = "(.+)"/.exec(res.data)[1];
-        qtk = /qtk = "(.+)"/.exec(res.data)[1];
         fy_guid = /fy_guid=(.+?); /.exec(res.headers["set-cookie"])[1];
+        reaauth(false);
+
+        // 最大1分钟
+        setInterval(reaauth, 45 * 1000);
+    }).catch(err => {
+        setTimeout(initialise, 5000);
     });
 }
 
-
-function translate(sourceLang, targetLang, sourceText, context, reply = false) {
+function reaauth(qt = true) {
     axios({
+        url : REAAUTH_URL,
+        method : "POST",
+        headers : httpHeader(),
+        params : qt ? {
+            qtv : qtv,
+            qtk : qtk
+        } : ""
+    }).then(res => {
+        qtv = res.data.qtv;
+        qtk = res.data.qtk;
+    }).catch(err => {
+        setTimeout(reaauth, 1000);
+    });
+}
+
+function transAgent(sourceLang, targetLang, sourceText, context, reply = false) {
+    translate(sourceLang, targetLang, sourceText).then(targetText => {
+        let trans_text = reply ? `[CQ:reply,id=${context.message_id}]${targetText}` : `[${targetText}]`;
+        replyFunc(context, trans_text);
+    });
+}
+
+function translate(sourceLang, targetLang, sourceText) {
+    return axios({
         url : TENCENT_TRANS_API,
         method : "POST",
         headers : httpHeader(true),
@@ -56,17 +88,17 @@ function translate(sourceLang, targetLang, sourceText, context, reply = false) {
             "qtv" : qtv,
             "source" : sourceLang,
             "target" : targetLang,
-            "sourceText" : sourceText.replace(/&amp;/g, "&").replace(/&#91;/g, "[").replace(/&#93;/g, "]")
-                                    .replace(/&lt;/g, "<").replace(/&gt;/g, ">")
+            "sourceText" : unescape(sourceText)
         }
     }).then(res => {
         let targetText = "";
         for (let i in res.data.translate.records) {
-            targetText += res.data.translate.records[i].targetText;
+            targetText += unescape(res.data.translate.records[i].targetText);
         }
-        trans_text = reply ? `[CQ:reply,id=${context.message_id}]${targetText}` : `[${targetText}]`;
-        replyFunc(context, trans_text);
-    }).catch(err => console.error(err))
+        return targetText;
+    }).catch(err => {
+        console.error(err.errno, err.code);
+    });
 }
 
 function toTargetLang(lang_opt) {
@@ -86,8 +118,8 @@ function orientedTrans(context) {
         if (/(开始|停止)定向翻译|停止全部翻译|定向翻译列表/.test(context.message)) return;
         let text = context.message.replace(/\[CQ.+\]/, "");
         if (text.length < 3) return;
-        if (/[\u4e00-\u9fa5]+/.test(text) && !/[\u3040-\u30FF]/.test(text)) translate("zh", "jp", text, context, true);
-        else translate("auto", "zh", text, context, true);
+        if (/[\u4e00-\u9fa5]+/.test(text) && !/[\u3040-\u30FF]/.test(text)) transAgent("zh", "jp", text, context, true);
+        else transAgent("auto", "zh", text, context, true);
     }
     else return;
 }
@@ -135,12 +167,12 @@ function viewTarget(context) {
 function transEntry(context) {
     if (/翻译[>＞].+/.test(context.message)) {
         let sourceText = context.message.substring(3, context.message.length);
-        translate("auto", "zh", sourceText, context);
+        transAgent("auto", "zh", sourceText, context);
         return true;
     }
     else if (/中译[日韩英法德俄][>＞].+/.test(context.message)) {
         let target_lang = toTargetLang(/中译(.)[>＞]/.exec(context.message)[1]);
-        translate("zh", target_lang, context.message.substring(4, context.message.length), context);
+        transAgent("zh", target_lang, context.message.substring(4, context.message.length), context);
         return true;
     }
     else if (/^开始定向翻译(\s?(\d{7,10}?|\[CQ:at,qq=\d+\])\s?)?$/.test(context.message)) {
@@ -166,7 +198,7 @@ function transEntry(context) {
     else return false;
 }
 
-initialise()
+initialise();
 let renewToken = setInterval(initialise, 3600000);
 
-module.exports = {transReply, transEntry, orientedTrans};
+module.exports = {transReply, transEntry, orientedTrans, translate};
