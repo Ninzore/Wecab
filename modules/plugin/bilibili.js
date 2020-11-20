@@ -153,7 +153,13 @@ function dynamicProcess(dynamic, origin = false, dynamic_url = null) {
     if ("videos" in card) {
         name = card.owner.name;
         text = card.dynamic;
-        video = "发布视频:\n" + card.title + "\n" + card.desc + "\nhttps://www.bilibili.com/video/av" + card.aid;//dynamic.desc.bvid;
+        video = "发布视频:\n" + card.title + "\n" + card.desc + "\nhttps://www.bilibili.com/video/av" + card.aid; //dynamic.desc.bvid;
+    }
+    if ("roomid" in card) {
+        let liveroom = `https://live.bilibili.com/${card.roomid}`;
+        text = `${card.uname}的直播间\n${liveroom}`;
+        pics += `[CQ:image,cache=0,file=${card.cover}]`;
+        name = 0;
     }
     //转发
     if ("origin" in card) {
@@ -181,6 +187,14 @@ function dynamicProcess(dynamic, origin = false, dynamic_url = null) {
     } else if ("summary" in card) {
         text = "发布文章" + card.title + "\n" + card.summary + "\nhttps://www.bilibili.com/read/cv" + card.id;
         pics += "[CQ:image,cache=0,file=" + card.origin_image_urls[0] + "]";
+    }
+    if ("desc" in dynamic) {
+        switch (dynamic.desc.type) {
+            case 64: {
+                text = `发布专栏：${card.title}\n${card.summary}`;
+                pics = `[CQ:image,cache=0,file=${card.banner_url || card.image_urls[0]}`;
+            }
+        }
     }
     //解析CV号专栏
     // logger2.info(name)
@@ -532,8 +546,10 @@ function sender(context, dynamicObj = {}, at = false) {
             else if (item === "rt_dynamic" && dynamicObj[item] != 0) {
                 let rt_payload = [];
                 for (let item in dynamicObj.rt_dynamic) {
-                    if (item === "name") rt_payload.push(["转发自", dynamicObj.rt_dynamic[item], "的B站动态"].join(""));
-                    else if (dynamicObj.rt_dynamic[item] != 0) rt_payload.push(dynamicObj.rt_dynamic[item]);
+                    if (dynamicObj.rt_dynamic[item] != 0) {
+                        if (item == "name") rt_payload.push(["转发自", dynamicObj.rt_dynamic[item], "的B站动态"].join(""));
+                        rt_payload.push(dynamicObj.rt_dynamic[item]);
+                    }
                 }
                 payload.push(rt_payload.join("\n"));
             } else if (dynamicObj[item] != 0) payload.push(dynamicObj[item]);
