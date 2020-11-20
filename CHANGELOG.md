@@ -2,6 +2,11 @@
   
 ## 2020
 
+### 11/20 v1.4.7
+* Twitter
+  * fix: 好像之前proxy并未起效
+* 注: package新增https-proxy-agent，注意安装
+
 ### 11/18 v1.4.6
 * Translate
   * feat: 适配腾讯翻译新的鉴权机制

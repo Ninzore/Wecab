@@ -2,6 +2,7 @@ const Axios = require('axios');
 const mongodb = require('mongodb').MongoClient;
 const promisify = require('util').promisify;
 const exec = promisify(require('child_process').exec);
+const HttpsProxyAgent = require("https-proxy-agent");
 const fs = require('fs-extra');
 
 const PROXY_CONF = require("../../config.json").proxy;
@@ -47,12 +48,13 @@ function checkConnection() {
 }
 
 function setAgent() {
-    if (PROXY_CONF.host.length > 0 && PROXY_CONF.port !== 0) {
+    if (PROXY_CONF.host.startsWith("http") && PROXY_CONF.port != 0) {
         axios = Axios.create({
-            proxy : {
-                host : PROXY_CONF.host,
+            httpsAgent : new HttpsProxyAgent({
+                hostname : PROXY_CONF.host,
                 port : PROXY_CONF.port,
-            }
+                protocol : /^https/.test(PROXY_CONF.host) ? "https" : "http"
+            })
         });
     }
     else axios = Axios;
