@@ -50,7 +50,7 @@ function replyOrigin(context, guess) {
 }
 
 function demyth(context) {
-    if (/^解[密迷][:：].+/.test(context.message)) {
+    if (/^解[密谜][:：].+/.test(context.message)) {
         findAndGuess(context);
         return true;
     } else return false;
