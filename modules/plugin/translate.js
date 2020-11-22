@@ -51,7 +51,7 @@ function initialise() {
         // 最大1分钟
         setInterval(reaauth, 45 * 1000);
     }).catch(err => {
-        logger2.error(new Date().toString() + " , " + JSON.stringify(err));
+        //logger2.error(new Date().toString() + " , " + JSON.stringify(err));
         setTimeout(initialise, 5000);
     });
 }
@@ -69,7 +69,7 @@ function reaauth(qt = true) {
         qtv = res.data.qtv;
         qtk = res.data.qtk;
     }).catch(err => {
-        logger2.error(new Date().toString() + " , " + JSON.stringify(err));
+        //logger2.error(new Date().toString() + " , " + JSON.stringify(err));
         setTimeout(reaauth, 1000);
     });
 }
