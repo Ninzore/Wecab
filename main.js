@@ -6,7 +6,6 @@ import Logger from './modules/Logger';
 import RandomSeed from 'random-seed';
 import _ from 'lodash';
 import minimist from 'minimist';
-import broadcast from './modules/broadcast';
 import weibo from './modules/plugin/weibo';
 import bilibili from './modules/plugin/bilibili';
 import twitter from './modules/plugin/twitter';
@@ -105,8 +104,6 @@ bot.on('message.private', (e, context) => {
             delete groupAddRequests[context.group_id];
         }
     }
-
-    if (args.broadcast) broadcast(bot, parseArgs(context.message, false, 'broadcast'));
 
     //Ban
     const { 'ban-u': bu, 'ban-g': bg } = args;
