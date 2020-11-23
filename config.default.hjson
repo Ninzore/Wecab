@@ -1,0 +1,39 @@
+{//实际使用时，需要复制config.default.hjson文件一份，改名为config.hjson和config.default.hjson放在一起，本文件作为备份文件，以后只改config.hjson
+    "cqws": {
+        "host": "127.0.0.1",//和go-cqhttp 正向ws匹配的ip
+        "port": 6700,//和go-cqhttp 正向ws匹配的端口号
+        "enableAPI": true,
+        "enableEvent": true,
+        "access_token": "",
+        "reconnection": true,//是否自动重连
+        "reconnectionAttempts": 10,
+        "reconnectionDelay": 5000
+    },
+    "bot": {
+        "debug": false,//// 调试模式，启用时只会响应来自 admin 的发言，方便独自测试
+        "admin": -1,//指定管理者QQ，请务必设置
+        "autoAddFriend": false,// 自动同意好友申请（false则忽略，但不会拒绝）
+        "addFriendAnswers": [],// 根据问题回答同意好友申请（后续详解 https://github.com/Tsuk1ko/cq-picsearcher-bot/wiki/%E9%85%8D%E7%BD%AE%E6%96%87%E4%BB%B6%E8%AF%B4%E6%98%8E
+        "autoAddGroup": false,// 自动同意入群申请（false同上，但可以用命令手动允许，后续有说明）
+        "repeat": {//复读功能配置
+            "enable": false,// 开关
+            "times": 3,// 当检测到某个群有这么多次相同发言后会概率参与复读
+            "probability": 40,// 复读概率（百分比）
+            "commonProb": 0.2 // 日常复读概率（百分比）
+        },
+        "learn": {
+            "probability": 80
+        },
+        "replys": {
+            "default": "",// 默认回复
+            "debug": "" // 调试模式时
+        },
+        "twitter": {//只有这里填上群号的qq群才能使用推特相关的功能，示例：12345,678910
+            "whitegroup": []
+        }
+    }, 
+    "proxy": {
+        "host": "",//示例：127.0.0.1
+        "port": 0//1080
+    }
+}
