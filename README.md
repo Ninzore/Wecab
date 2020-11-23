@@ -2,6 +2,19 @@
 
 # 使用node-sdk为 https://github.com/shitianshiwa/node-cq-websocket
 
+# 这个版本要用推特的话，除了要设置好代理外，还要加上群白名单
+```json
+"twitter": {
+            "whitegroup": [123456,78910]
+        }
+        
+"proxy": {
+        "host": "127.0.0.1",
+        "port": 1080
+   }
+```
+
+
 ### Web Content Aggregation Bot 网络内容聚合机器人  
 #### 最好的综合型订阅制机器人  
 前身是给[CQ-picfinder-robot](https://github.com/Tsuk1ko/CQ-picfinder-robot)做的小挂件（已完全脱离）  
