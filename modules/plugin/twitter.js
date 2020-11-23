@@ -15,7 +15,9 @@ const node_localStorage2 = node_localStorage.LocalStorage;
 const wecab = new node_localStorage2('./wecab'); //插件是否连上机器人
 const dayjs = require('dayjs');
 
-const PROXY_CONF = require("../../config.json").proxy;
+const config = require('../config');
+//console.log(config);
+const PROXY_CONF = config.default.proxy;//发现套了一个default。。！
 const DB_PORT = 27017;
 const DB_PATH = "mongodb://127.0.0.1:" + DB_PORT;
 const BEARER_TOKEN = "Bearer AAAAAAAAAAAAAAAAAAAAANRILgAAAAAAnNwIzUejRCOuH5E6I8xnZz4puTs%3D1Zv7ttfk8LF81IUq16cHjhLTvJu4FA33AGWWjCpTnA";
