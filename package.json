@@ -12,6 +12,7 @@
         "esm": "^3.2.25",
         "fast-xml-parser": "^3.17.4",
         "fs-extra": "^9.0.1",
+        "hjson": "^3.2.2",
         "lodash": "^4.17.20",
         "mongodb": "^3.6.2",
         "node-localstorage": "^2.1.5",
