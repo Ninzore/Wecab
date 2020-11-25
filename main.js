@@ -12,7 +12,7 @@ import twitter from './modules/plugin/twitter';
 import dice from './modules/plugin/dice';
 import pokemon from './modules/plugin/pokemon';
 import pretendLearn from "./modules/plugin/pretendLearn";
-import translate from "./modules/plugin/translate";
+// import translate from "./modules/plugin/translate";
 import pixivImage from "./modules/plugin/pixivImage";
 import helpZen from "./modules/plugin/zen";
 import nbnhhsh from "./modules/plugin/nbnhhsh";
@@ -28,7 +28,7 @@ weibo.weiboReply(replyMsg);
 bilibili.bilibiliReply(replyMsg);
 twitter.twitterReply(replyMsg);
 pretendLearn.learnReply(replyMsg, logger);
-translate.transReply(replyMsg);
+// translate.transReply(replyMsg);
 nbnhhsh.reply(replyMsg);
 
 weibo.checkWeiboDynamic();
@@ -238,7 +238,7 @@ function debugGroupMsg(e, context) {
 function groupMsg(e, context) {
     let text_bak = context.message;
     context.message = pretendLearn.replaceEqual(context);
-    translate.orientedTrans(context);
+    // translate.orientedTrans(context);
     
     if (commonHandle(e, context)) {
         e.stopPropagation();
@@ -252,7 +252,7 @@ function groupMsg(e, context) {
              twitter.twitterAggr(context) ||
              pixivImage.pixivCheck(context, replyMsg, bot) ||
              helpZen(context, replyMsg, bot, rand) ||
-             translate.transEntry(context) ||
+            //  translate.transEntry(context) ||
              iHaveAfriend.deal(context, replyMsg, bot) ||
              nbnhhsh.demyth(context) ||
              pokemon.pokemonCheck(context, replyMsg)) {
