@@ -1,50 +1,39 @@
-import {
-    version
-} from './package.json';
-import {
-    CQWebSocket
-} from 'cq-websocket';
+import { version } from './package.json';
+import { CQWebSocket } from 'cq-websocket';
 import config from './modules/config';
 import CQ from './modules/CQcode';
 import Logger from './modules/Logger';
 import RandomSeed from 'random-seed';
 import _ from 'lodash';
 import minimist from 'minimist';
-//import broadcast from './modules/broadcast';
 import weibo from './modules/plugin/weibo';
 import bilibili from './modules/plugin/bilibili';
 import twitter from './modules/plugin/twitter';
-//import dice from './modules/plugin/dice';
-//import pokemon from './modules/plugin/pokemon';
-//import pretendLearn from "./modules/plugin/pretendLearn";
-//import translate from "./modules/plugin/translate";
-//import pixivImage from "./modules/plugin/pixivImage";
-//import helpZen from "./modules/plugin/zen";
+import dice from './modules/plugin/dice';
+import pokemon from './modules/plugin/pokemon';
+import pretendLearn from "./modules/plugin/pretendLearn";
+// import translate from "./modules/plugin/translate";
+import pixivImage from "./modules/plugin/pixivImage";
+import helpZen from "./modules/plugin/zen";
 import nbnhhsh from "./modules/plugin/nbnhhsh";
-import logger2 from './modules/logger2'; //日志功能
 import iHaveAfriend from './modules/plugin/iHaveAfriend';
-import node_localStorage from 'node-localstorage';
-const node_localStorage2 = node_localStorage.LocalStorage;
-const wecab = new node_localStorage2('./wecab'); //插件是否连上机器人
 
 // 初始化开始
-//console.log(config);
 const setting = config.bot;
 const bot = new CQWebSocket(config.cqws);
 const rand = RandomSeed.create();
 const logger = new Logger();
 
-wecab.setItem("huozhe", false)
 weibo.weiboReply(replyMsg);
 bilibili.bilibiliReply(replyMsg);
 twitter.twitterReply(replyMsg);
-//pretendLearn.learnReply(replyMsg, logger);
-//translate.transReply(replyMsg);
+pretendLearn.learnReply(replyMsg, logger);
+// translate.transReply(replyMsg);
 nbnhhsh.reply(replyMsg);
 
 weibo.checkWeiboDynamic();
-setTimeout(() => bilibili.checkBiliDynamic(), 20 * 1000);
-setTimeout(() => twitter.checkTwiTimeline(), 40 * 1000);
+setTimeout(() => bilibili.checkBiliDynamic(replyMsg), 20000);
+setTimeout(() => twitter.checkTwiTimeline(), 40000);
 
 //好友请求
 bot.on('request.friend', context => {
@@ -58,7 +47,7 @@ bot.on('request.friend', context => {
                 if (ans != a) approve = false;
             });
         } catch (e) {
-            logger2.error(getTime() + ":" + e);
+            console.error(e);
             approve = false;
         }
     }
@@ -116,13 +105,8 @@ bot.on('message.private', (e, context) => {
         }
     }
 
-    //if (args.broadcast) broadcast(bot, parseArgs(context.message, false, 'broadcast'));
-
     //Ban
-    const {
-        'ban-u': bu,
-        'ban-g': bg
-    } = args;
+    const { 'ban-u': bu, 'ban-g': bg } = args;
     if (bu && typeof bu == 'number') {
         Logger.ban('u', bu);
         replyMsg(context, `已封禁用户${bu}`);
@@ -156,30 +140,27 @@ if (setting.debug) {
     //群组
     bot.on('message.group', groupMsg);
     //提醒
-    //bot.on('notice.group_increase', notice);
-    //bot.on('notice.group_decrease', notice);
+    bot.on('notice.group_increase', notice);
+    bot.on('notice.group_decrease', notice);
 }
 
 //连接相关监听
-bot.on('socket.connecting', (wsType, attempts) => logger2.info(`${getTime()} 连接中[${wsType}]#${attempts}`))
-    .on('socket.failed', (wsType, attempts) => logger2.info(`${getTime()} 连接失败[${wsType}]#${attempts}`))
+bot.on('socket.connecting', (wsType, attempts) => console.log(`${getTime()} 连接中[${wsType}]#${attempts}`))
+    .on('socket.failed', (wsType, attempts) => console.log(`${getTime()} 连接失败[${wsType}]#${attempts}`))
     .on('socket.error', (wsType, err) => {
-        logger2.error(`${getTime()} 连接错误[${wsType}]`);
-        logger2.error(err);
-        wecab.setItem("huozhe", false)
-        //process.exit();
+        console.error(`${getTime()} 连接错误[${wsType}]`);
+        console.error(err);
     })
     .on('socket.connect', (wsType, sock, attempts) => {
-        logger2.info(`${getTime()} 连接成功[${wsType}]#${attempts}`);
+        console.log(`${getTime()} 连接成功[${wsType}]#${attempts}`);
         if (wsType === '/api') {
             setTimeout(() => {
                 if (bot.isReady() && setting.admin > 0) {
-                    wecab.setItem("huozhe", true)
                     bot('send_private_msg', {
-                        user_id: setting.admin,
-                        message: `wecab已上线#${attempts}`,
+                      user_id : setting.admin,
+                      message : `已上线#${attempts}`,
                     });
-                }
+                  }
             }, 1000);
         }
     });
@@ -187,15 +168,15 @@ bot.on('socket.connecting', (wsType, attempts) => logger2.info(`${getTime()} 连
 //connect
 bot.connect();
 
-//以及每日需要更新的一些东西
-/*setInterval(() => {
-    if (bot.isReady() && logger.canAdminSign()) {}
-}, 60 * 60 * 1000);*/
+//以及每日需要更新的一些东西，暂时没用
+// setInterval(() => {
+//     if (bot.isReady()) {}
+// }, 60 * 60 * 1000);
 
 function notice(context) {
     context.message_type = 'group';
-    if (context.notice_type == 'group_increase') replyMsg(context, '年纪轻轻就加了这个群，你的未来毁了');
-    else if (context.notice_type == 'group_decrease') replyMsg(context, '有人退了');
+    if (context.notice_type == 'group_increase') replyMsg(context, setting.notification.group_increase);
+    else if (context.notice_type == 'group_decrease') replyMsg(context, setting.notification.group_decrease);
 }
 
 //通用处理
@@ -214,7 +195,7 @@ function commonHandle(e, context) {
         return true;
     }
     if (args.version) {
-        replyMsg(context, "wecab版本:" + version);
+        replyMsg(context, version);
         return true;
     }
     if (args.about) {
@@ -230,16 +211,13 @@ function privateAndAtMsg(e, context) {
     if (commonHandle(e, context)) {
         e.stopPropagation();
         return;
-    } else if (weibo.antiweibo(context, replyMsg)) {
+    }
+    else if (pretendLearn.learn(context)) {
         e.stopPropagation();
         return;
     }
-    /*else if (pretendLearn.learn(context)) {
-        e.stopPropagation();
-        return;
-    }*/
-    //其他指令
-    return setting.replys.default;
+    //其他指令, 现在没有
+    return;
 }
 
 //调试模式
@@ -259,46 +237,34 @@ function debugGroupMsg(e, context) {
 //群组消息处理
 function groupMsg(e, context) {
     let text_bak = context.message;
-    //context.message = pretendLearn.replaceEqual(context);
-    //translate.orientedTrans(context);
-
+    context.message = pretendLearn.replaceEqual(context);
+    // translate.orientedTrans(context);
+    
     if (commonHandle(e, context)) {
         e.stopPropagation();
         return;
     }
+ 
+    const { group_id, user_id } = context;
 
-    const {
-        group_id,
-        user_id
-    } = context;
-
-    let whitegroup = false;
-    let whitegroup2 = setting.twitter.whitegroup;
-    let i = 0;
-    for (i = 0; i < whitegroup2.length; i++) {
-        if (context.group_id == whitegroup2[i]) {
-            whitegroup = true;
-            break;
-        }
-    }
-    if (whitegroup == true) {
-        twitter.twitterAggr(context);
-    }
-    if (weibo.weiboAggr(context, replyMsg) || weibo.antiweibo(context, replyMsg) ||
-        bilibili.bilibiliCheck(context) /*|| translate.transEntry(context)*/ ||
-        iHaveAfriend.deal(context, replyMsg, bot) /*iHaveAfriend可以直接让后面的条件失效*/
-        /*pixivImage.pixivCheck(context, replyMsg, bot) ||*/
-        /*helpZen(context, replyMsg, bot, rand) ||*/
-        /*||
-               pokemon.pokemonCheck(context, replyMsg)*/
-    ) {
+    if (weibo.weiboAggr(context, replyMsg) ||
+             bilibili.bilibiliCheck(context) ||
+             twitter.twitterAggr(context) ||
+             pixivImage.pixivCheck(context, replyMsg, bot) ||
+             helpZen(context, replyMsg, bot, rand) ||
+            //  translate.transEntry(context) ||
+             iHaveAfriend.deal(context, replyMsg, bot) ||
+             nbnhhsh.demyth(context) ||
+             pokemon.pokemonCheck(context, replyMsg)) {
         e.stopPropagation();
         return;
-    } else if (/^\.dice.+/g.exec(context.message)) {
-        //dice(context, replyMsg, rand);
+    }
+    else if (/^\.dice.+/g.exec(context.message)) {
+        dice(context, replyMsg, rand);
         e.stopPropagation();
         return;
-    } else if (setting.repeat.enable) {
+    }
+    else if (setting.repeat.enable) {
         context.message = text_bak;
         //复读（
         //随机复读，rptLog得到当前复读次数
@@ -314,7 +280,7 @@ function groupMsg(e, context) {
                 replyMsg(context, context.message);
             }, 1000);
         } else {
-            //if (getRand() <= setting.learn.probability) pretendLearn.talk(context);
+            if (getRand() <= setting.learn.probability) pretendLearn.talk(context);
         }
     }
 }
@@ -368,15 +334,16 @@ function getRand() {
 }
 
 function getTime() {
-    return new Date().toString();
+    return new Date().toLocaleString();
 }
 
 function parseArgs(str, enableArray = false, _key = null) {
     const m = minimist(
         str
-        .replace(/(--\w+)(?:\s*)(\[CQ:)/g, '$1 $2')
-        .replace(/(\[CQ:[^\]]+\])(?:\s*)(--\w+)/g, '$1 $2')
-        .split(' '), {
+            .replace(/(--\w+)(?:\s*)(\[CQ:)/g, '$1 $2')
+            .replace(/(\[CQ:[^\]]+\])(?:\s*)(--\w+)/g, '$1 $2')
+            .split(' '),
+        {
             boolean: true,
         }
     );

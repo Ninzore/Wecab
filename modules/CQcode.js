@@ -20,7 +20,7 @@ function escape(str, insideCQ = false) {
  * @returns 反转义后的字符串
  */
 function unescape(str) {
-    return str.replace(/&#44;/g, ',').replace(/&#91;/g, '[').replace(/&#93;/g, ']').replace(/(&amp;|&#38;)/g, '&');
+    return str.replace(/&#44;/g, ',').replace(/&#91;/g, '[').replace(/&#93;/g, ']').replace(/&amp;/g, '&');
 }
 
 /**

@@ -1,54 +1,48 @@
 {
-    "name": "wecab",
-    "version": "1.4.5",
-    "description": "QQ上最好的订阅制bot",
-    "main": "index.js",
-    "dependencies": {
-        "axios": "^0.20.0",
-        "axios-https-proxy-fix": "^0.17.1",
-        "canvas": "^2.6.1",
-        "cq-websocket": "^2.1.1",
-        "dayjs": "^1.8.19",
-        "esm": "^3.2.25",
-        "fast-xml-parser": "^3.17.4",
-        "fs-extra": "^9.0.1",
-        "hjson": "^3.2.2",
-        "lodash": "^4.17.20",
-        "mongodb": "^3.6.2",
-        "node-localstorage": "^2.1.5",
-        "pm2": "^4.4.1",
-        "random-seed": "^0.3.0",
-        "seedrandom": "^3.0.5",
-        "sqlite": "^4.0.14",
-        "sqlite3": "^5.0.0",
-        "winston": "^3.2.1"
-    },
-    "devDependencies": {},
-    "scripts": {
-        "start": "node index.js",
-        "pm2start": "pm2 start ecosystem.config.js",
-        "pm2stop": "pm2 stop ecosystem.config.js",
-        "pm2restart": "pm2 restart ecosystem.config.js",
-        "pm2log": "pm2 logs Wecab",
-        "test": "echo \\\"Error: no test specified\\\" && exit 1"
-    },
-    "repository": {
-        "type": "git",
-        "url": "git+https://github.com/Ninzore/Wecab.git"
-    },
-    "keywords": [
-        "CoolQ",
-        "QQ",
-        "robot",
-        "subscribe",
-        "weibo",
-        "twitter",
-        "bilibili"
-    ],
-    "author": "Ninzore",
-    "license": "GPL-3.0",
-    "bugs": {
-        "url": "https://github.com/Ninzore/Wecab/issues"
-    },
-    "homepage": "https://github.com/Ninzore/Wecab#readme"
+  "name": "wecab",
+  "version": "1.4.9",
+  "description": "QQ上最好的订阅制bot",
+  "main": "index.js",
+  "dependencies": {
+    "axios": "^0.20.0",
+    "canvas": "^2.6.1",
+    "cq-websocket": "^2.1.1",
+    "esm": "^3.2.25",
+    "fs-extra": "^9.0.1",
+    "https-proxy-agent": "^5.0.0",
+    "lodash": "^4.17.20",
+    "mongodb": "^3.6.2",
+    "pm2": "^4.4.1",
+    "random-seed": "^0.3.0",
+    "sqlite": "^4.0.14",
+    "sqlite3": "^5.0.0"
+  },
+  "devDependencies": {},
+  "scripts": {
+    "start": "node index.js",
+    "pm2start": "pm2 start ecosystem.config.js",
+    "pm2stop": "pm2 stop ecosystem.config.js",
+    "pm2restart": "pm2 restart ecosystem.config.js",
+    "pm2log": "pm2 logs Wecab",
+    "test": "echo \\\"Error: no test specified\\\" && exit 1"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/Ninzore/Wecab.git"
+  },
+  "keywords": [
+    "CoolQ",
+    "QQ",
+    "robot",
+    "subscribe",
+    "weibo",
+    "twitter",
+    "bilibili"
+  ],
+  "author": "Ninzore",
+  "license": "GPL-3.0",
+  "bugs": {
+    "url": "https://github.com/Ninzore/Wecab/issues"
+  },
+  "homepage": "https://github.com/Ninzore/Wecab#readme"
 }

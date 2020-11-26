@@ -1,0 +1,37 @@
+
+{
+    "cqws": {
+        "host": "127.0.0.1",
+        "port": 6700,
+        "enableAPI": true,
+        "enableEvent": true,
+        "access_token": "",
+        "reconnection": true,
+        "reconnectionAttempts": 10,
+        "reconnectionDelay": 5000
+    },
+    "bot": {
+        "debug": false,
+        "admin": -1,
+        "autoAddFriend": false,
+        "addFriendAnswers": [],
+        "autoAddGroup": false,
+        "repeat": {
+            "enable": true,
+            "times": 3,
+            "probability": 40,
+            "commonProb": 0.2
+        },
+        "learn": {
+            "probability": 80
+        },
+        "notification": {
+            "group_increase": "迎新",
+            "group_decrease": "送客"
+        }
+    },
+    "proxy": {
+        "host": "",
+        "port": 0
+    }
+}
