@@ -1,9 +1,9 @@
 const mongodb = require('mongodb').MongoClient;
 
 const db_path = "mongodb://127.0.0.1:27017";
-var replyFunc = (context, msg, at = false) => {console.log(msg)};
+let replyFunc = (context, msg, at = false) => {};
 let logger;
-let equals = {}
+let equals = {};
 
 function learnReply(replyMsg, main_logger) {
     replyFunc = replyMsg;
@@ -39,8 +39,8 @@ function initialise() {
  * @param {object} context
  */
 function teach(context) {
-    let qa_with_mode = RegExp(/我教你\s?(?<qes>.+?)\s?[＞>]\s?(?<ans>.+?)\s?[＞>]\s?(?<mode_name>精确|模糊|正则)/i);
-    let qa_common = RegExp(/我教你\s?(?<qes>.+?)\s?[＞>]\s?(?<ans>.+)/i);
+    let qa_with_mode = RegExp(/我教你\s?(?<qes>.+?)\s?[＞>]\s?(?<ans>.+?)\s?[＞>]\s?(?<mode_name>精确|模糊|正则)/is);
+    let qa_common = RegExp(/我教你\s?(?<qes>.+?)\s?[＞>]\s?(?<ans>.+)/is);
     
     let result = context.message.match(qa_with_mode);
     if (result == undefined) {
@@ -50,6 +50,7 @@ function teach(context) {
         let {groups : {qes, ans, mode_name}} = result;
 
         let text = "";
+        if (mode_name == undefined && ans.length > 20) mode_name = "精确";
         let {err, error_text, mode} = check(qes, mode_name);
         
         //如果没有错误就写入数据库
@@ -77,19 +78,23 @@ function makeEqual(context) {
     if (eql_reg.test(context.message) && context.group_id) {
         if (!checkPermission(context)) return true;
         let {lhs, rhs} = eql_reg.exec(context.message).groups;
-        if (/\[CQ:image/.test(lhs)) lhs = replaceImg(lhs);
+        if (/\[CQ:/.test(lhs)) {
+            replyFunc(context, "只能写字哦");
+            return;
+        }
         lhs = lhs.trim();
         rhs = rhs.trim();
         let lhs_min_len = 4;
         let rhs_min_len = 4;
         if (lhs.length < lhs_min_len || rhs.length < rhs_min_len) {
             replyFunc(context, `等式两边长度都必须分别大于${lhs_min_len}和${rhs_min_len}`);
+            return true;
         }
         else if (/\[CQ/.test(rhs)) {
             replyFunc(context, "等式右侧不能包含图片");
+            return true;
         }
         else {
-            
             mongodb(db_path, {useUnifiedTopology: true}).connect().then(async (mongo) => {
                 let coll = mongo.db('qa_set').collection("equation" + String(context.group_id));
                 await coll.updateOne({lhs : lhs}, {$set : {rhs : rhs}}, {upsert : true});
@@ -112,8 +117,8 @@ function makeEqual(context) {
  * @param {object} context
  */
 function record(context) {
-    let repeat_with_mode = RegExp(/(?<!不准)复读\s?(?<repeat_word>.+?)\s?[＞>]\s?(?<mode_name>精确|模糊|正则)/);
-    let rp_common = RegExp(/(?<!不准)复读\s?(?<repeat_word>.+)/);
+    let repeat_with_mode = RegExp(/^(?<!不准)复读\s?(?<repeat_word>.+?)\s?[＞>]\s?(?<mode_name>精确|模糊|正则)/);
+    let rp_common = RegExp(/^(?<!不准)复读\s?(?<repeat_word>.+)/);
     
     let result = context.message.match(repeat_with_mode);
     if (result == undefined) {
@@ -167,7 +172,7 @@ function check(word, mode_name) {
                 //处理CQ自带的转义
                 word = word.replace("&amp;", "&").replace("&#91;", "[").replace("&#93;", "]");
                 let test_reg = word.replace(/"[CQ:.+?]"/g, "");
-                if (!/[\[\]\^\$\\d\\w\\s\\b\.\{\}\|]/i.test(test_reg)) {
+                if (!/[\[\]^$\\d\\w\\s\\b\.*\+{}?!|]/i.test(test_reg)) {
                     text = "吾日三省吾身\n1. 我真的会正则吗？\n2. 精确和模糊不够用，必须要正则吗？\n3. 这正则写对了吗？";
                     err = true;
                     break;
@@ -362,7 +367,6 @@ function rank(context) {
 
 function recallEquations(context) {
     if (!/你觉得哪些一样/.test(context.message)) return false;
-    if (!checkPermission(context)) return true;
     let group_equal = equals[context.group_id];
     let text = [];
 
@@ -412,7 +416,7 @@ function forget(context) {
 
             replyFunc(context, text);
             mongo.close();
-        }).catch((err) => {console.log(err)});
+        }).catch((err) => {console.error(err)});
         return true;
     }
     else return false;
@@ -531,7 +535,7 @@ async function reply(context) {
             }
             if (cplt_flag) break;
         }
-        
+
         if (cplt_flag) {
             answers = match.answers;
             let rand = Math.floor(Math.random() * answers.length);
@@ -548,14 +552,14 @@ async function reply(context) {
     }).catch((err) => {console.error(err)});
 }
 
-
 function replaceEqual(context) {
     let group_equal = equals[context.group_id];
     if (group_equal != undefined && group_equal.length > 0) {
         let text = context.message;
         if (/\[CQ:image/.test(text)) text = replaceImg(text);
         for (let pair of group_equal) {
-            if (text == pair.lhs) return pair.rhs;
+            let lhs = new RegExp(pair.lhs, 'i');
+            if (lhs.test(text)) return text.replace(lhs, pair.rhs);
         }
         return text;
     }
