@@ -91,16 +91,24 @@ function getDynamicList(uid, num = 0) {
         header.params.need_top = 1;
         num = 0;
     }
-    return axios(header).then(response => {
-            return (response.data.data.cards[num]);
-        }).catch(err => console.error(err));
+    return axios(header)
+    .then(response => {
+        return (response.data.data.cards[num]);
+    }).catch(err => {
+        console.error("Bilibili getDynamicList error with ", err.response.status, err.response.statusText);
+        return false;
+    });
 }
 
 function getDynamicDetail(dynamic_id = "") {
     let header = httpHeader(0, dynamic_id, 0);
-    return axios(header).then(response => {
-            return response.data.data.card;
-        }).catch(err => console.error(err));
+    return axios(header)
+    .then(response => {
+        return response.data.data.card;
+    }).catch(err => {
+        console.error("Bilibili getDynamicDetail error with ", err.response.status, err.response.statusText);
+        return false;
+    });
 }
 
 function checkliveStatus(mid) {
@@ -314,6 +322,11 @@ function checkBiliDynamic() {
                             }
                         });
                     }
+                    await new Promise(resolve => {
+                        setTimeout(() => {
+                            resolve();
+                        }, 4.5 * 60000 / subscribes.length);
+                    });
                 }
             }
         });
