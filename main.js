@@ -4,7 +4,6 @@ import config from './modules/config';
 import CQ from './modules/CQcode';
 import Logger from './modules/Logger';
 import RandomSeed from 'random-seed';
-import _ from 'lodash';
 import minimist from 'minimist';
 import weibo from './modules/plugin/weibo';
 import bilibili from './modules/plugin/bilibili';
