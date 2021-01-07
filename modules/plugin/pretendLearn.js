@@ -50,7 +50,8 @@ function teach(context) {
         let {groups : {qes, ans, mode_name}} = result;
 
         let text = "";
-        if (mode_name == undefined && ans.length > 20) mode_name = "精确";
+        if (mode_name == undefined && !/\[CQ:/.test(ans) && ans.length > 20) mode_name = "精确";
+        else mode_name = "模糊";
         let {err, error_text, mode} = check(qes, mode_name);
         
         //如果没有错误就写入数据库
@@ -154,41 +155,43 @@ function check(word, mode_name) {
 
     if (mode_name != undefined) {
         switch (mode_name) {
-            case "精确": 
+            case "精确": {
                 if (word.length < 2) {
                     err = true;
                     text = "太短了";
                 } 
                 break;
-            case "模糊": 
+            }
+            case "模糊": {
                 mode = "fuzzy";
                 if (word.length < 2) {
                     err = true;
                     text = "太短了";
                 }
                 break;
-            case "正则": 
-                mode = "regexp"; 
+            }
+            case "正则": {
+                mode = "regexp";
                 //处理CQ自带的转义
                 word = word.replace("&amp;", "&").replace("&#91;", "[").replace("&#93;", "]");
                 let test_reg = word.replace(/"[CQ:.+?]"/g, "");
                 if (!/[\[\]^$\\d\\w\\s\\b\.*\+{}?!|]/i.test(test_reg)) {
                     text = "吾日三省吾身\n1. 我真的会正则吗？\n2. 精确和模糊不够用，必须要正则吗？\n3. 这正则写对了吗？";
                     err = true;
-                    break;
                 }
                 else try {
                     new RegExp(word);
-                } catch(err) {
+                } catch(regerr) {
                     err = true;
                     text = "正则都写错了，重修去吧";
-                } finally {
-                    break;
                 }
-            default : 
-            err = true;
+                break;
+            }
+            default : {
+                err = true;
                 text = "哇你会不会写啊？";
                 break;
+            }
         }
     }
     //如果没有指定模式，使用这里的配置
@@ -200,7 +203,8 @@ function check(word, mode_name) {
         else if (word.length < 5 && !/^[0-9]{1,3}$/.test(word)) mode = "fuzzy";
         else mode = "exact";
     }
-    return {err : err, error_text : text, mode : mode};
+
+    return {err, error_text : text, mode};
 }
 
 /**
