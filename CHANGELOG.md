@@ -2,6 +2,12 @@
   
 ## 2021
 
+### 01/09 v1.5.4
+* main: 
+  * feat: 增加一些全局功能
+*  initilise:
+  * feat: axios增加重试机制 
+
 ### 01/07 v1.5.3
 * pretendLearn: 
   * Fix: 错误的正则并没有正确地报错跳出
