@@ -16,12 +16,19 @@ import pixivImage from "./modules/plugin/pixivImage";
 import helpZen from "./modules/plugin/zen";
 import nbnhhsh from "./modules/plugin/nbnhhsh";
 import iHaveAfriend from './modules/plugin/iHaveAfriend';
+import {initialise} from "./utils/initilise";
 
 // 初始化开始
 const setting = config.bot;
 const bot = new CQWebSocket(config.cqws);
 const rand = RandomSeed.create();
 const logger = new Logger();
+
+initialise();
+Object.assign(global, {
+    bot,
+    "replyFunc" : replyMsg
+});
 
 weibo.weiboReply(replyMsg);
 bilibili.bilibiliReply(replyMsg);
