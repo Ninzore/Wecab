@@ -50,8 +50,6 @@ function teach(context) {
         let {groups : {qes, ans, mode_name}} = result;
 
         let text = "";
-        if (mode_name == undefined && !/\[CQ:/.test(ans) && ans.length > 20) mode_name = "精确";
-        else mode_name = "模糊";
         let {err, error_text, mode} = check(qes, mode_name);
         
         //如果没有错误就写入数据库
@@ -152,6 +150,11 @@ function check(word, mode_name) {
     let text = "";
     let err = false;
     let mode = "exact";
+
+    if (mode_name == undefined) {
+        if (!/\[CQ:/.test(word) && word.length > 20) mode_name = "精确";
+        else mode_name = "模糊";
+    }
 
     if (mode_name != undefined) {
         switch (mode_name) {

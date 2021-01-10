@@ -2,11 +2,17 @@
   
 ## 2021
 
+### 01/10 v1.5.5
+* pretendLearn: 
+  * feat: 对于复读和教学，**没有**指定模式时，如果满足以下条件会变为精确匹配: 
+    1. 如果句子长度大于20
+    2. 包含CQ码
+
 ### 01/09 v1.5.4
 * main: 
   * feat: 增加一些全局功能
 *  initilise:
-  * feat: axios增加重试机制 
+  * feat: axios增加重试机制
 
 ### 01/07 v1.5.3
 * pretendLearn: 
