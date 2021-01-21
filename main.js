@@ -16,6 +16,7 @@ import pixivImage from "./modules/plugin/pixivImage";
 import helpZen from "./modules/plugin/zen";
 import nbnhhsh from "./modules/plugin/nbnhhsh";
 import iHaveAfriend from './modules/plugin/iHaveAfriend';
+import telephone from './modules/plugin/telephone';
 import {initialise} from "./utils/initilise";
 
 // 初始化开始
@@ -36,6 +37,7 @@ twitter.twitterReply(replyMsg);
 pretendLearn.learnReply(replyMsg, logger);
 // translate.transReply(replyMsg);
 nbnhhsh.reply(replyMsg);
+telephone.init(replyMsg, bot);
 
 weibo.checkWeiboDynamic();
 setTimeout(() => bilibili.checkBiliDynamic(replyMsg), 20000);
@@ -261,7 +263,9 @@ function groupMsg(e, context) {
             //  translate.transEntry(context) ||
              iHaveAfriend.deal(context, replyMsg, bot) ||
              nbnhhsh.demyth(context) ||
-             pokemon.pokemonCheck(context, replyMsg)) {
+             pokemon.pokemonCheck(context, replyMsg) ||
+             telephone.paging(context)
+             ) {
         e.stopPropagation();
         return;
     }
