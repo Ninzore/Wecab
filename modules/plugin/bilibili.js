@@ -91,16 +91,24 @@ function getDynamicList(uid, num = 0) {
         header.params.need_top = 1;
         num = 0;
     }
-    return axios(header).then(response => {
-            return (response.data.data.cards[num]);
-        }).catch(err => console.error(err));
+    return axios(header)
+    .then(response => {
+        return (response.data.data.cards[num]);
+    }).catch(err => {
+        console.error("Bilibili getDynamicList error with ", err.response.status, err.response.statusText);
+        return false;
+    });
 }
 
 function getDynamicDetail(dynamic_id = "") {
     let header = httpHeader(0, dynamic_id, 0);
-    return axios(header).then(response => {
-            return response.data.data.card;
-        }).catch(err => console.error(err));
+    return axios(header)
+    .then(response => {
+        return response.data.data.card;
+    }).catch(err => {
+        console.error("Bilibili getDynamicDetail error with ", err.response.status, err.response.statusText);
+        return false;
+    });
 }
 
 function checkliveStatus(mid) {
@@ -142,10 +150,15 @@ function dynamicProcess(dynamic) {
         text = card.dynamic;
         video = "发布视频:\n" + card.title;
     }
+    if ("roomid" in card) {
+        let liveroom = `https://live.bilibili.com/${card.roomid}`;
+        text = `${card.uname}的直播间\n${liveroom}`;
+        pics += `[CQ:image,cache=0,file=${card.cover}]`; 
+        name = 0;
+    }
     //转发
     if ("origin" in card) {
-        let origin = card.origin;
-        rt_dynamic = dynamicProcess({card : origin});
+        rt_dynamic = dynamicProcess({card : card.origin});
     }
     if ("pic" in card) pics += "[CQ:image,cache=0,file=" + card.pic + "]"; 
     if ("item" in card) {
@@ -169,10 +182,12 @@ function dynamicProcess(dynamic) {
         pics += "[CQ:image,cache=0,file=" + card.origin_image_urls[0] + "]";
     }
     
-    switch (dynamic.desc.type) {
-        case 64: {
-            text = `发布专栏：${card.title}\n${card.summary}`;
-            pics = `[CQ:image,cache=0,file=${card.banner_url}`;
+    if ("desc" in dynamic) {
+        switch (dynamic.desc.type) {
+            case 64: {
+                text = `发布专栏：${card.title}\n${card.summary}`;
+                pics = `[CQ:image,cache=0,file=${card.banner_url || card.image_urls[0]}]`;
+            }
         }
     }
 
@@ -307,6 +322,11 @@ function checkBiliDynamic() {
                             }
                         });
                     }
+                    await new Promise(resolve => {
+                        setTimeout(() => {
+                            resolve();
+                        }, 4.5 * 60000 / subscribes.length);
+                    });
                 }
             }
         });
@@ -413,8 +433,10 @@ function sender(context, dynamicObj = {}, at = false) {
             else if (item === "rt_dynamic" && dynamicObj[item] != 0) {
                 let rt_payload = [];
                 for (let item in dynamicObj.rt_dynamic) {
-                    if (item === "name") rt_payload.push(["转发自", dynamicObj.rt_dynamic[item], "的B站动态"].join(""));
-                    else if (dynamicObj.rt_dynamic[item] != 0) rt_payload.push(dynamicObj.rt_dynamic[item]);
+                    if (dynamicObj.rt_dynamic[item] != 0) {
+                        if (item == "name")rt_payload.push(["转发自", dynamicObj.rt_dynamic[item], "的B站动态"].join(""));
+                        rt_payload.push(dynamicObj.rt_dynamic[item]);
+                    }
                 }
                 payload.push(rt_payload.join("\n"));
             }

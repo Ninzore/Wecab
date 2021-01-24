@@ -366,7 +366,6 @@ async function format(mblog, textForm = false) {
         let rt_weibo = await format(mblog.retweeted_status);
         payload = payload.concat("转发自: " + rt_weibo)
     }
-    // console.log(payload)
     if (textForm = true) payload = payload.join("\n");
     return payload;
 }
@@ -514,8 +513,8 @@ function weiboAggr(context) {
         rtWeibo(name, num, context);
         return true;
 	}
-    else if (/^看看\s?https:\/\/(m\.weibo\.cn\/(detail|\d+)\/\d+$|(www\.)?weibo\.com\/\d+\/[A-Za-z0-9]{9}$)/.test(context.message)) {
-        let id = /com\/\d+\/([A-Za-z0-9]{9})|cn\/\d+\/(\d+)|detail\/(\d+)/.exec(context.message)
+    else if (/^看看\s?https:\/\/(m\.weibo\.cn\/(detail|status|\d+)\/\d+$|(www\.)?weibo\.com\/\d+\/[A-Za-z0-9]{9}$)/.test(context.message)) {
+        let id = /com\/\d+\/([A-Za-z0-9]{9})|cn\/\d+\/(\d+)|detail|status\/(\d+)/.exec(context.message)
             .filter((noEmpty) => {return noEmpty != undefined})[1];
         rtSingleWeibo(id, context);
         return true;

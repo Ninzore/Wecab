@@ -16,18 +16,27 @@ function letItGuess(heihua) {
 }
 
 function findAndGuess(context) {
-    if (/http/.test(context.message)) return;
+    if (context.message.length > 100) {
+        replyFunc(context, "太长了一口吃不下");
+        return;
+    } else if (/http|\[CQ:/.test(context.message)) {
+        replyFunc(context, "别把怪东西带进来啊");
+        return;
+    }
+    const message = context.message;
+    context.message = message.substring(/[:：]/.exec(message).index+1, message.length);
+
     let heihua = context.message.match(/[a-z]{3,}/ig);
     if (heihua != undefined && heihua.length > 0) {
         heihua = heihua.join(',').toLowerCase();
         letItGuess(heihua).then(guess => {
-            if (guess != undefined) replyOnrigin(context, guess);
+            if (guess != undefined) replyOrigin(context, guess);
         })
     }
     else return;
 }
 
-function replyOnrigin(context, guess) {
+function replyOrigin(context, guess) {
     let guessText = context.message;
     let nameReg = "";
     for (i in guess) {
@@ -40,4 +49,11 @@ function replyOnrigin(context, guess) {
     replyFunc(context, "翻译一下：" + guessText)
 }
 
-module.exports = {findAndGuess, reply};
+function demyth(context) {
+    if (/^解[密谜][:：].+/.test(context.message)) {
+        findAndGuess(context);
+        return true;
+    } else return false;
+}
+
+module.exports = {demyth, reply};
