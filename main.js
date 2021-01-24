@@ -4,7 +4,6 @@ import config from './modules/config';
 import CQ from './modules/CQcode';
 import Logger from './modules/Logger';
 import RandomSeed from 'random-seed';
-import _ from 'lodash';
 import minimist from 'minimist';
 import weibo from './modules/plugin/weibo';
 import bilibili from './modules/plugin/bilibili';
@@ -17,6 +16,8 @@ import pixivImage from "./modules/plugin/pixivImage";
 import helpZen from "./modules/plugin/zen";
 import nbnhhsh from "./modules/plugin/nbnhhsh";
 import iHaveAfriend from './modules/plugin/iHaveAfriend';
+import telephone from './modules/plugin/telephone';
+import {initialise} from "./utils/initilise";
 
 // 初始化开始
 const setting = config.bot;
@@ -24,12 +25,19 @@ const bot = new CQWebSocket(config.cqws);
 const rand = RandomSeed.create();
 const logger = new Logger();
 
+initialise();
+Object.assign(global, {
+    bot,
+    "replyFunc" : replyMsg
+});
+
 weibo.weiboReply(replyMsg);
 bilibili.bilibiliReply(replyMsg);
 twitter.twitterReply(replyMsg);
 pretendLearn.learnReply(replyMsg, logger);
 // translate.transReply(replyMsg);
 nbnhhsh.reply(replyMsg);
+telephone.init(replyMsg, bot);
 
 weibo.checkWeiboDynamic();
 setTimeout(() => bilibili.checkBiliDynamic(replyMsg), 20000);
@@ -255,7 +263,9 @@ function groupMsg(e, context) {
             //  translate.transEntry(context) ||
              iHaveAfriend.deal(context, replyMsg, bot) ||
              nbnhhsh.demyth(context) ||
-             pokemon.pokemonCheck(context, replyMsg)) {
+             pokemon.pokemonCheck(context, replyMsg) ||
+             telephone.paging(context)
+             ) {
         e.stopPropagation();
         return;
     }

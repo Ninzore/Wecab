@@ -44,7 +44,15 @@ function twitterReply(replyMsg) {
 
 /** 检查网络情况，如果连不上Twitter那后面都不用做了*/
 function checkConnection() {
-    return axios.get("https://twitter.com").then(res => {connection = (res.status == 200) ? true : false}).catch(err => connection = false);
+    return axios.get("https://twitter.com", {
+        headers : {
+            "User-Agent" : "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/87.0.4280.88 Safari/537.36"
+        }
+    }).then(res => {connection = (res.status == 200) ? true : false})
+    .catch(err => {
+        console.error("Twitter checkConnection error with", err.response.status, err.response.statusText);
+        return false;
+    });
 }
 
 function setAgent() {
