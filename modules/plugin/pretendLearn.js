@@ -50,7 +50,8 @@ function teach(context) {
         let {groups : {qes, ans, mode_name}} = result;
 
         let text = "";
-        let {err, error_text, mode} = check(qes, mode_name);
+        let {word, err, error_text, mode} = check(qes, mode_name);
+        if (mode == "regexp") qes = word;
         
         //如果没有错误就写入数据库
         if (!err) {
@@ -127,7 +128,8 @@ function record(context) {
     if (result != null) {
         let {groups : {repeat_word, mode_name}} = result;
         let text = "";
-        let {err, error_text, mode} = check(repeat_word, mode_name);
+        let {word, err, error_text, mode} = check(repeat_word, mode_name);
+        if (mode == "regexp") repeat_word = word;
 
         if (!err) {
             mongodb(db_path, {useUnifiedTopology: true}).connect().then(async (mongo) => {
@@ -150,7 +152,7 @@ function check(word, mode_name) {
     let text = "";
     let err = false;
     let mode = "exact";
-
+    
     if (mode_name == undefined) {
         if (!/\[CQ:/.test(word) && word.length > 20) mode_name = "精确";
         else mode_name = "模糊";
@@ -176,8 +178,8 @@ function check(word, mode_name) {
             case "正则": {
                 mode = "regexp";
                 //处理CQ自带的转义
-                word = word.replace("&amp;", "&").replace("&#91;", "[").replace("&#93;", "]");
-                let test_reg = word.replace(/"[CQ:.+?]"/g, "");
+                word = word.replace(/&amp;/g, "&").replace(/&#91;/g, "[").replace(/&#93;/g, "]");
+                let test_reg = word.replace(/"\[CQ:.+?\]"/g, "");
                 if (!/[\[\]^$\\d\\w\\s\\b\.*\+{}?!|]/i.test(test_reg)) {
                     text = "吾日三省吾身\n1. 我真的会正则吗？\n2. 精确和模糊不够用，必须要正则吗？\n3. 这正则写对了吗？";
                     err = true;
@@ -207,7 +209,7 @@ function check(word, mode_name) {
         else mode = "exact";
     }
 
-    return {err, error_text : text, mode};
+    return {word, err, error_text : text, mode};
 }
 
 /**
