@@ -1,24 +1,21 @@
-const axios = require("axios");
+import axios from "axios";
 
 const TENCENT_TRANS_INIT = "https://fanyi.qq.com/";
 const TENCENT_TRANS_API = "https://fanyi.qq.com/api/translate";
-const REAAUTH_URL = "https://fanyi.qq.com/api/reaauth";
-const TRACKER_URL = "https://tracker.appadhoc.com/tracker";
-const appKey = "ADHOC_5ec05c69-a3e4-4f5e-b281-d339b3774a2f";
+const REAAUTH_URL = "https://fanyi.qq.com/api/aaa123";
+// const TRACKER_URL = "https://tracker.appadhoc.com/tracker";
+// const appKey = "ADHOC_5ec05c69-a3e4-4f5e-b281-d339b3774a2f";
 
 let qtv = "";
 let qtk = "";
 let fy_guid = "";
 let target = {};
-let replyFunc = (context, msg, at = false) => {};
-
-function transReply(replyMsg) {
-    replyFunc = replyMsg;
-}
+let reauth_schedule = undefined;
 
 function unescape(text) {
     return text.replace(/&amp;/g, "&").replace(/&#91;/g, "[").replace(/&#93;/g, "]")
-        .replace(/&lt;/g, "<").replace(/&gt;/g, ">");
+        .replace(/&lt;/g, "<").replace(/&gt;/g, ">")
+        .replace(/[(http(s)?):\/\/(www\.)?a-zA-Z0-9@:%._\+~#=]{2,256}\.[a-z]{2,6}\b([-a-zA-Z0-9@:%_\+.~#?&//=]*)/g, "链接");
 }
 
 function httpHeader(with_cookie = false) {
@@ -39,6 +36,8 @@ function httpHeader(with_cookie = false) {
 }
 
 function initialise() {
+    if (reauth_schedule) reauth_schedule = clearInterval(reauth_schedule);
+
     axios({
         url : TENCENT_TRANS_INIT,
         method : "GET",
@@ -48,9 +47,11 @@ function initialise() {
         reaauth(false);
 
         // 最大1分钟
-        setInterval(reaauth, 45 * 1000);
+        reauth_schedule = setInterval(reaauth, 45 * 1000);
+        console.log("translate initialisation successed");
     }).catch(err => {
-        setTimeout(initialise, 5000);
+        console.error(new Date().toISOString(), 
+            "translate initialisation failed with", err.response.status, err.response.statusText);
     });
 }
 
@@ -67,7 +68,7 @@ function reaauth(qt = true) {
         qtv = res.data.qtv;
         qtk = res.data.qtk;
     }).catch(err => {
-        setTimeout(reaauth, 1000);
+        setTimeout(initialise, 1000);
     });
 }
 
@@ -78,7 +79,9 @@ function transAgent(sourceLang, targetLang, sourceText, context, reply = false) 
     });
 }
 
-function translate(sourceLang, targetLang, sourceText) {
+async function translate(sourceLang, targetLang, sourceText) {
+    sourceLang = sourceLang.replace(/\[CQ:.+?\]/g, "");
+
     return axios({
         url : TENCENT_TRANS_API,
         method : "POST",
@@ -93,11 +96,12 @@ function translate(sourceLang, targetLang, sourceText) {
     }).then(res => {
         let targetText = "";
         for (let i in res.data.translate.records) {
-            targetText += unescape(res.data.translate.records[i].targetText);
+            targetText += res.data.translate.records[i].targetText;
         }
         return targetText;
     }).catch(err => {
-        console.error(err.errno, err.code);
+        console.error(new Date().toISOString(), 
+            "translate failed with", err.response.status, err.response.statusText);
     });
 }
 
@@ -186,12 +190,12 @@ function transEntry(context) {
         return true;
     }
     else if (/^停止全部翻译$/.test(context.message)) {
-        if (/owner|admin/.test(context.sender.role)) allClear(context);
+        if (!context.sender.role == "member") allClear(context);
         else replyFunc(context, "您配吗");
         return true;
     }
     else if (/^定向翻译列表$/.test(context.message)) {
-        if (/owner|admin/.test(context.sender.role)) viewTarget(context);
+        if (!context.sender.role == "member") viewTarget(context);
         else replyFunc(context, "您配吗");
         return true;
     }
@@ -199,6 +203,5 @@ function transEntry(context) {
 }
 
 initialise();
-let renewToken = setInterval(initialise, 3600000);
 
-module.exports = {transReply, transEntry, orientedTrans, translate};
+export default {transEntry, orientedTrans, translate};
