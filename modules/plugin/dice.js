@@ -23,7 +23,7 @@ function dice(context, replyFunc, rand) {
         num = reOut[2];
         for (var i=0;i<num;i++)
         {
-            arr[i] = rand.intBetween(0, high);
+            arr[i] = rand.intBetween(1, high);
             sum += arr[i]; 
         }
         message = num + "个D" + high + ": " + arr.join(" ") + "， 总计 " + sum;
@@ -38,7 +38,7 @@ function dice(context, replyFunc, rand) {
     else if (/\.dice\d{1,3}/.exec(content)) {
         let reOut = /\.dice(\d{1,3})/.exec(content);
         let high = parseInt(reOut[1]);
-        let val = rand.intBetween(0, high);
+        let val = rand.intBetween(1, high);
         message = "D" + high + " = " + val;
     }
     else {
@@ -48,9 +48,3 @@ function dice(context, replyFunc, rand) {
 }
 
 module.exports = dice;
-
-let context = ".dice10x12"
-if (/^\.dice.+/g.exec(context)) {
-    console.log(1)
-    // dice(context, replyMsg, rand);
-}
