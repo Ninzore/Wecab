@@ -263,7 +263,7 @@ function groupMsg(e, context) {
              iHaveAfriend.deal(context, replyMsg, bot) ||
              nbnhhsh.demyth(context) ||
              pokemon.pokemonCheck(context, replyMsg) ||
-             telephone.paging(context)
+             telephone.dial(context)
              ) {
         e.stopPropagation();
         return;
