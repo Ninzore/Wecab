@@ -94,13 +94,18 @@ function toOptNl(option) {
 function firstConnect() {
     checkConnection().then(() => {
         if (!connection) {
-            console.log("Twitter无法连接，功能暂停");
+            console.error("Twitter无法连接，功能暂停");
         }
         else {
             getGuestToken();
             setTimeout(() => getCookie(), 1000);
-            let get_cookie_routine = setInterval(() => getCookie(), 20*60*60*1000);
-            let get_gt_routine = setInterval(() => getGuestToken(), 0.9*60*60*1000);
+
+            let refresh = setInterval(() => {
+                cookie = "";
+                guest_token = "";
+                getGuestToken();
+                setTimeout(getCookie, 1000);
+            }, 1*60*60*1000);
         }
     });
 }
