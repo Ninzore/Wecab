@@ -36,7 +36,7 @@ function authentication(context) {
     else return true;
 }
 
-async function calling(context) {
+async function calling(context, notice = true, withBlock = true) {
     if (context.message.length > 200) {
         replyFunc(context, "太长了");
         return;
@@ -49,7 +49,7 @@ async function calling(context) {
     if (receiver == sender_group) {
         replyFunc(context, "不能自己给自己发");
         return;
-    } else if (BLACKBOOK.some(value => value == receiver)) {
+    } else if (BLACKBOOK.some(value => value == receiver) && withBlock) {
         replyFunc(context, "该地址已禁用连线");
         return;
     } else if (BLACKBOOK.some(value => value == sender_group)) {
@@ -73,7 +73,7 @@ async function calling(context) {
 
     const message = `来自${sender_group_name}的${sender}说道:\n${context.message.substring(temp[0].length, context.message.length)}`;
 
-    replyFunc(context, `发送成功了哟`);
+    if (notice === true) replyFunc(context, `发送成功了哟`);
     replyFunc({group_id : receiver, message_type : "group"}, message);
 }
 
@@ -105,6 +105,20 @@ function paging(context) {
     calling(context);
 }
 
+async function boardcast(context) {
+    if (!authentication(context)) return;
+
+    replyFunc(context, "开始公告");
+    let message = new RegExp("公告[:：](.+)").exec(context.message)[1];    
+    for (let group_id of Object.values(YELLOWBOOK)) {
+        if (group_id == context.group_id) continue;
+        context.message = `发送${group_id},${message}`;
+        calling(context, false, false);
+        await new Promise(resolve => setTimeout(resolve, 1000));
+    }
+    replyFunc(context, "公告完成");
+}
+
 function yellowBook(context) {
     if (!authentication(context)) return;
     let text = "黄页总览\n" + Object.keys(YELLOWBOOK).join("，");
@@ -130,6 +144,10 @@ function dial(context) {
     }
     else if (/^查看黄页$/.test(context.message)) {
         yellowBook(context);
+        return true;
+    }
+    else if (/^公告[:：].+/.test(context.message)) {
+        boardcast(context);
         return true;
     }
     else if (/^刷新黄页$/.test(context.message)) {
