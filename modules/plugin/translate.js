@@ -2,7 +2,7 @@ import axios from "axios";
 
 const TENCENT_TRANS_INIT = "https://fanyi.qq.com/";
 const TENCENT_TRANS_API = "https://fanyi.qq.com/api/translate";
-const REAAUTH_URL = "https://fanyi.qq.com/api/aaa123";
+const REAAUTH_URL = "https://fanyi.qq.com/api/aa2a123";
 // const TRACKER_URL = "https://tracker.appadhoc.com/tracker";
 // const appKey = "ADHOC_5ec05c69-a3e4-4f5e-b281-d339b3774a2f";
 
