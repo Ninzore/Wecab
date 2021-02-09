@@ -2,6 +2,10 @@
   
 ## 2021
 
+### 02/09 v1.6.4
+* telephone:
+  * Fix: Twitter card的summary部分可能没有description导致的无法转发
+
 ### 02/05 v1.6.3
 * telephone:
   * Feat: 添加公告（给黄页中所有人发消息）

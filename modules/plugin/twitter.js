@@ -661,7 +661,8 @@ async function format(tweet, end_point=false) {
                 }
                 else payload.push(`[CQ:image,cache=0,file=${tweet.card.binding_values.photo_image_full_size_large.image_value.url}]`);
             }
-            payload.push(tweet.card.binding_values.title.string_value, tweet.card.binding_values.description.string_value);
+            if ("title" in tweet.card.binding_values) payload.push(tweet.card.binding_values.title.string_value)
+            if ("description" in tweet.card.binding_values) payload.push(tweet.card.binding_values.description.string_value);
         }
     }
     if ("urls" in tweet.entities && tweet.entities.urls.length > 0) {
