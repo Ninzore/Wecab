@@ -2,8 +2,14 @@
   
 ## 2021
 
+### 02/28 v1.6.5
+* Twitter:
+  * Feat: 视频内容改为用小视频形式发送 (需要后端支持，如go-cqhttp v0.9.38以上)
+  * Feat: 排列Twitter内容时增加错误处理，失败时报错
+  * Doc: 修改format的Doc
+
 ### 02/09 v1.6.4
-* telephone:
+* Twitter:
   * Fix: Twitter card的summary部分可能没有description导致的无法转发
 
 ### 02/05 v1.6.3

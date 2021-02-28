@@ -1,6 +1,6 @@
 {
   "name": "wecab",
-  "version": "1.6.4",
+  "version": "1.6.5",
   "description": "QQ上最好的订阅制bot",
   "main": "index.js",
   "dependencies": {

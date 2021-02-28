@@ -434,9 +434,10 @@ function checkTwiTimeline() {
                                             url_list.push(url);
                                         }
                                         addon.push(url);
-                                        format(tweet).then(payload => {
+                                        const context = {group_id : group_id, message_type : "group"};
+                                        format(tweet, false, context).then(payload => {
                                             payload += `\n\n${addon.join("\n")}`
-                                            replyFunc({group_id : group_id, message_type : "group"}, payload);
+                                            replyFunc(context, payload);
                                         }).catch(err => console.error(err));
                                     }
                                 }
@@ -567,111 +568,124 @@ function clearSubs(context, group_id) {
 /**
  * 整理tweet_obj
  * @param {object} tweet Tweet object
- * @param {string} from_user Twitter用户名
+ * @param {string} end_point 是否停止进一步挖掘
+ * @param {object} end_point 用于发送的context
  * @returns Promise  排列完成的Tweet String
  */
-async function format(tweet, end_point=false) {
+async function format(tweet, end_point = false, context = false) {
+    if (!tweet) return "Twitter转发时错误";
     let payload = [];
     let text = "";
     if('full_text' in tweet) text = tweet.full_text;
     else text = tweet.text;
-    if ("retweeted_status" in tweet) {
-        let rt_status = await format(tweet.retweeted_status)
-        payload.push(`来自${tweet.user.name}的Twitter\n转推了`, rt_status);
+    text = text.replace(/&amp;/g, "&").replace(/&#91;/g, "[").replace(/&#93;/g, "]").replace(/&lt;/g, "<").replace(/&gt;/g, ">");
+
+    try {
+        if ("retweeted_status" in tweet) {
+            let rt_status = await format(tweet.retweeted_status, true);
+            payload.push(`来自${tweet.user.name}的Twitter\n转推了`, rt_status);
+            return payload.join("\n");
+        }
+        let pics = "";
+        let src = "";
+        if ("extended_entities" in tweet) {
+            for (entity in tweet.extended_entities) {
+                if (entity == "media") {
+                    let media = tweet.extended_entities.media;
+                    for (let i = 0; i < media.length; i++) {
+                        text = text.replace(media[i].url, "");
+                        if (media[i].type == "photo") {
+                            src = [media[i].media_url_https.substring(0, media[i].media_url_https.length-4),
+                                `?format=${media[i].media_url_https.substring(media[i].media_url_https.length-3, media[i].media_url_https.length)}&name=4096x4096`].join("");
+                            pics += await sizeCheck(src) ? `[CQ:image,cache=0,file=${src}]` : `[CQ:image,cache=0,file=${media[i].media_url_https}] 注：这不是原图`;
+                        }
+                        else if (media[i].type == "animated_gif") {
+                            try {
+                                await exec(`ffmpeg -i ${media[i].video_info.variants[0].url} -loop 0 -y ${__dirname}/temp.gif`)
+                                    .then(async ({stdout, stderr}) => {
+                                        if (stdout.length == 0) {
+                                            if (fs.statSync(`${__dirname}/temp.gif`).size < MAX_SIZE) {
+                                                let gif = fs.readFileSync(`${__dirname}/temp.gif`);
+                                                let base64gif = Buffer.from(gif, 'binary').toString('base64');
+                                                pics += `[CQ:image,file=base64://${base64gif}]`;
+                                            }
+                                            else pics += `这是一张动图 [CQ:image,cache=0,file=${media[i].media_url_https}]` + `动起来看这里${media[i].video_info.variants[0].url}`;
+                                        }
+                                    })
+                            } catch(err) {
+                                console.error(err);
+                                pics += `这是一张动图 [CQ:image,cache=0,file=${media[i].media_url_https}]` + `动起来看这里${media[i].video_info.variants[0].url}`;
+                            }
+                        }
+                        else if (media[i].type == "video") {
+                            let mp4obj = [];
+                            for (let j = 0; j < media[i].video_info.variants.length; j++) {
+                                if (media[i].video_info.variants[j].content_type == "video/mp4") mp4obj.push(media[i].video_info.variants[j]);
+                            }
+                            mp4obj.sort((a, b) => {return b.bitrate - a.bitrate;});
+                            payload.push(`[CQ:image,cache=0,file=${media[i].media_url_https}]`);
+                            if (context) {
+                                replyFunc(context, `[CQ:video,file=${mp4obj[0].url}]`);
+                            }
+                            else payload.push(`视频地址: ${mp4obj[0].url}`);
+                        }
+                    }
+                }
+            }
+            if (pics != "") payload.push(pics);
+        }
+        if (!end_point && "is_quote_status" in tweet && tweet.is_quote_status == true) {
+            let quote_tweet = await getSingleTweet(tweet.quoted_status_id_str);
+            payload.push("引用了", await format(quote_tweet, true));
+            text = text.replace(tweet.quoted_status_permalink.url, "");
+        }
+        if ("in_reply_to_status_id" in tweet && tweet.in_reply_to_status_id != null && !end_point) {
+            let reply_tweet = await getSingleTweet(tweet.in_reply_to_status_id_str);
+            payload.push("回复了", await format(reply_tweet, true));
+        }
+        if ("card" in tweet) {
+            if (/poll\dchoice/.test(tweet.card.name)) {
+                if ("image_large" in tweet.card.binding_values) {
+                    payload.push(`[CQ:image,cache=0,file=${tweet.card.binding_values.image_large.url}]`);
+                }
+    
+                let end_time = new Intl.DateTimeFormat('zh-Hans-CN', {month: 'short', day: '2-digit', hour: '2-digit', minute: '2-digit', timeZone: 'Asia/Shanghai'})
+                    .format(new Date(tweet.card.binding_values.end_datetime_utc.string_value))
+                payload.push("", tweet.card.binding_values.counts_are_final.boolean_value === true ? "投票已结束" 
+                    : `正在投票,结束时间${end_time}`);
+                let nchoice = parseInt(/\d/.exec(tweet.card.name)[0]);
+                let count = "";
+                let lable = "";
+                for (i = 1; i < nchoice + 1; i++) {
+                    lable = tweet.card.binding_values[`choice${i}_label`].string_value;
+                    count = tweet.card.binding_values[`choice${i}_count`].string_value;
+                    payload.push(`${lable}:  ${count}`);
+                }
+            }
+            else if (/summary/.test(tweet.card.name)) {
+                if ("photo_image_full_size_original" in tweet.card.binding_values) {
+                    if (sizeCheck(tweet.card.binding_values.photo_image_full_size_original.image_value.url)) {
+                        payload.push(`[CQ:image,cache=0,file=${tweet.card.binding_values.photo_image_full_size_original.image_value.url}]`);
+                    }
+                    else payload.push(`[CQ:image,cache=0,file=${tweet.card.binding_values.photo_image_full_size_large.image_value.url}]`);
+                }
+                if ("title" in tweet.card.binding_values) payload.push(tweet.card.binding_values.title.string_value)
+                if ("description" in tweet.card.binding_values) payload.push(tweet.card.binding_values.description.string_value);
+            }
+        }
+        if ("urls" in tweet.entities && tweet.entities.urls.length > 0) {
+            for (let i = 0; i <  tweet.entities.urls.length; i++) {
+                text = text.replace(tweet.entities.urls[i].url, tweet.entities.urls[i].expanded_url);
+            }
+        }
+        payload.unshift(`${tweet.user.name}的Twitter`, text);
         return payload.join("\n");
     }
-    let pics = "";
-    let src = "";
-    if ("extended_entities" in tweet) {
-        for (entity in tweet.extended_entities) {
-            if (entity == "media") {
-                let media = tweet.extended_entities.media;
-                for (let i = 0; i < media.length; i++) {
-                    text = text.replace(media[i].url, "");
-                    if (media[i].type == "photo") {
-                        src = [media[i].media_url_https.substring(0, media[i].media_url_https.length-4),
-                            `?format=${media[i].media_url_https.substring(media[i].media_url_https.length-3, media[i].media_url_https.length)}&name=4096x4096`].join("");
-                        pics += await sizeCheck(src) ? `[CQ:image,cache=0,file=${src}]` : `[CQ:image,cache=0,file=${media[i].media_url_https}] 注：这不是原图`;
-                    }
-                    else if (media[i].type == "animated_gif") {
-                        try {
-                            await exec(`ffmpeg -i ${media[i].video_info.variants[0].url} -loop 0 -y ${__dirname}/temp.gif`)
-                                .then(async ({stdout, stderr}) => {
-                                    if (stdout.length == 0) {
-                                        if (fs.statSync(`${__dirname}/temp.gif`).size < MAX_SIZE) {
-                                            let gif = fs.readFileSync(`${__dirname}/temp.gif`);
-                                            let base64gif = Buffer.from(gif, 'binary').toString('base64');
-                                            pics += `[CQ:image,file=base64://${base64gif}]`;
-                                        }
-                                        else pics += `这是一张动图 [CQ:image,cache=0,file=${media[i].media_url_https}]` + `动起来看这里${media[i].video_info.variants[0].url}`;
-                                    }
-                                })
-                        } catch(err) {
-                            console.error(err);
-                            pics += `这是一张动图 [CQ:image,cache=0,file=${media[i].media_url_https}]` + `动起来看这里${media[i].video_info.variants[0].url}`;
-                        }
-                    }
-                    else if (media[i].type == "video") {
-                        let mp4obj = [];
-                        for (let j = 0; j < media[i].video_info.variants.length; j++) {
-                            if (media[i].video_info.variants[j].content_type == "video/mp4") mp4obj.push(media[i].video_info.variants[j]);
-                        }
-                        mp4obj.sort((a, b) => {return b.bitrate - a.bitrate;});
-                        payload.push(`[CQ:image,cache=0,file=${media[i].media_url_https}]`,
-                                     `视频地址: ${mp4obj[0].url}`);
-                    }
-                }
-            }
-        }
-        if (pics != "") payload.push(pics);
+    catch (err) {
+        console.error(err);
+        payload.push(`${tweet.user.name}的Twitter`, text);
+        return payload.join("\n");
     }
-    if ("is_quote_status" in tweet && tweet.is_quote_status == true) {
-        let quote_tweet = await getSingleTweet(tweet.quoted_status_id_str);
-        payload.push("引用了", await format(quote_tweet));
-        text = text.replace(tweet.quoted_status_permalink.url, "");
-    }
-    if ("in_reply_to_status_id" in tweet && tweet.in_reply_to_status_id != null && !end_point) {
-        let reply_tweet = await getSingleTweet(tweet.in_reply_to_status_id_str);
-        payload.push("回复了", await format(reply_tweet, true));
-    }
-    if ("card" in tweet) {
-        // payload.push(tweet.binding_values.title.string_value, urlExpand(card.url));
-        if (/poll\dchoice/.test(tweet.card.name)) {
-            if ("image_large" in tweet.card.binding_values) {
-                payload.push(`[CQ:image,cache=0,file=${tweet.card.binding_values.image_large.url}]`);
-            }
-
-            let end_time = new Intl.DateTimeFormat('zh-Hans-CN', {month: 'short', day: '2-digit', hour: '2-digit', minute: '2-digit', timeZone: 'Asia/Shanghai'})
-                .format(new Date(tweet.card.binding_values.end_datetime_utc.string_value))
-            payload.push("", tweet.card.binding_values.counts_are_final.boolean_value === true ? "投票已结束" 
-                : `正在投票,结束时间${end_time}`);
-            let nchoice = parseInt(/\d/.exec(tweet.card.name)[0]);
-            let count = "";
-            let lable = "";
-            for (i = 1; i < nchoice + 1; i++) {
-                lable = tweet.card.binding_values[`choice${i}_label`].string_value;
-                count = tweet.card.binding_values[`choice${i}_count`].string_value;
-                payload.push(`${lable}:  ${count}`);
-            }
-        }
-        else if (/summary/.test(tweet.card.name)) {
-            if ("photo_image_full_size_original" in tweet.card.binding_values) {
-                if (sizeCheck(tweet.card.binding_values.photo_image_full_size_original.image_value.url)) {
-                    payload.push(`[CQ:image,cache=0,file=${tweet.card.binding_values.photo_image_full_size_original.image_value.url}]`);
-                }
-                else payload.push(`[CQ:image,cache=0,file=${tweet.card.binding_values.photo_image_full_size_large.image_value.url}]`);
-            }
-            if ("title" in tweet.card.binding_values) payload.push(tweet.card.binding_values.title.string_value)
-            if ("description" in tweet.card.binding_values) payload.push(tweet.card.binding_values.description.string_value);
-        }
-    }
-    if ("urls" in tweet.entities && tweet.entities.urls.length > 0) {
-        for (let i = 0; i <  tweet.entities.urls.length; i++) {
-            text = text.replace(tweet.entities.urls[i].url, tweet.entities.urls[i].expanded_url);
-        }
-    }
-    payload.unshift(`${tweet.user.name}的Twitter`, text);
-    return payload.join("\n");
 }
 
 /**
@@ -711,7 +725,7 @@ function rtTimeline(context, name, num) {
 
 function rtSingleTweet(tweet_id_str, context) {
     getSingleTweet(tweet_id_str).then(tweet => {
-        format(tweet).then(tweet_string => replyFunc(context, tweet_string))
+        format(tweet, false, context).then(tweet_string => replyFunc(context, tweet_string));
     });
 }
 
