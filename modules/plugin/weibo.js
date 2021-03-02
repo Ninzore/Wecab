@@ -356,7 +356,7 @@ async function format(mblog, context) {
     if ("page_info" in mblog) {
         if("media_info" in mblog.page_info){
             let media = mblog.page_info.media_info;
-            let media_src = "视频地址: ";
+            let media_src = "";
             if ("hevc_mp4_hd" in media && media.hevc_mp4_hd != "") media_src += media.hevc_mp4_hd;
             else if ("h265_mp4_hd" in media && media.h265_mp4_hd != "") media_src += media.h265_mp4_hd;
             else if ("mp4_720p_mp4" in media && media.mp4_720p_mp4 != "") media_src += media.mp4_720p_mp4;
