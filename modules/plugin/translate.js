@@ -2,7 +2,7 @@ import axios from "axios";
 
 const TENCENT_TRANS_INIT = "https://fanyi.qq.com/";
 const TENCENT_TRANS_API = "https://fanyi.qq.com/api/translate";
-const REAAUTH_URL = "https://fanyi.qq.com/api/aa2a123";
+const REAAUTH_URL = "https://fanyi.qq.com/api/reauth1232f";
 // const TRACKER_URL = "https://tracker.appadhoc.com/tracker";
 // const appKey = "ADHOC_5ec05c69-a3e4-4f5e-b281-d339b3774a2f";
 
@@ -42,21 +42,29 @@ function initialise() {
         url : TENCENT_TRANS_INIT,
         method : "GET",
         headers : httpHeader()
-    }).then(res => {
+    }).then(async res => {
         fy_guid = /fy_guid=(.+?); /.exec(res.headers["set-cookie"])[1];
-        reaauth(false);
-
+        let authres = await reaauth(false);
+        if (authres.status != 200) {
+            console.error("unable to initialise the translation module\n", res);
+            return;
+        }
         // 最大1分钟
         reauth_schedule = setInterval(reaauth, 45 * 1000);
         console.log("translate initialisation successed");
     }).catch(err => {
+        if (!err && !err.response) {
+            console.error("unable to initialise the translation module");
+            return;
+        }
         console.error(new Date().toISOString(), 
             "translate initialisation failed with", err.response.status, err.response.statusText);
+        setTimeout(initialise, 1000);
     });
 }
 
-function reaauth(qt = true) {
-    axios({
+async function reaauth(qt = true) {
+    return axios({
         url : REAAUTH_URL,
         method : "POST",
         headers : httpHeader(),
@@ -67,8 +75,9 @@ function reaauth(qt = true) {
     }).then(res => {
         qtv = res.data.qtv;
         qtk = res.data.qtk;
+        return res;
     }).catch(err => {
-        setTimeout(initialise, 1000);
+        return err;
     });
 }
 
