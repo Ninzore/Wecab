@@ -39,7 +39,7 @@ async function singleImage(pic_id, replyFunc, context, bot) {
             delete_flag = false;
         }
     }
-    else if (res > 4194304) {
+    else if (res > 26214400) {
         payload = "图太大发不出来，原图看这里" + url;
         delete_flag = false;
     }
