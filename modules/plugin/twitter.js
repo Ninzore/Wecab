@@ -381,7 +381,7 @@ function unSubscribe(name, context) {
  */
 function checkTwiTimeline() {
     if (!connection) return;
-    let check_interval = 0.1 * 60 * 1000;
+    let check_interval = 7 * 60 * 1000;
 
     setInterval(async () => {
         await mongodb(DB_PATH, {useUnifiedTopology: true}).connect().then(async mongo => {
@@ -737,7 +737,7 @@ function rtTimeline(context, name, num) {
                         tweets.push(tweet);
                     }
                 }
-                if (tweets.length < num) tweet = timeline;
+                if (tweets.length < num) tweets = timeline;
                 let choose_one = tweets[num];
                 choose_one.user = {name : user.name};
                 format(choose_one).then(tweet_string => {
