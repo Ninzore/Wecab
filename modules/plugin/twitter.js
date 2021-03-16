@@ -186,7 +186,7 @@ function getCookie() {
  * @param {string} tweet_id_str 单条Tweet id
  * @returns {Promise} Tweet Object，如果错误，结果为false
  */
-function getSingleTweet(tweet_id_str) {
+async function getSingleTweet(tweet_id_str) {
     return axios({
         method:'GET',
         url: "https://api.twitter.com/1.1/statuses/show.json",
@@ -219,23 +219,41 @@ function getSingleTweet(tweet_id_str) {
  * @param {number} count 获取数量，最大为200
  * @returns {Promise} 用户时间线，如果错误结果为false
  */
-function getUserTimeline(user_id, count = 2, include_rt = false, exclude_rp = true, since_id = "1") {
+ async function getUserTimeline(user_id, count = 20, include_rt = 0, include_rp = 0) {
     return axios({
         method:'GET',
-        url: "https://api.twitter.com/1.1/statuses/user_timeline.json",
-        headers : {"Authorization" : BEARER_TOKEN},
+        url: `https://twitter.com/i/api/2/timeline/profile/${user_id}.json`,
+        headers : httpHeader(),
         params : {
             // screen_name : screen_name,
-            "user_id" : user_id,
+            "userId" : user_id,
             "count" : count,
-            "exclude_replies" : exclude_rp,
-            "include_rts" : include_rt,
+            "include_tweet_replies" : include_rp,
+            "include_want_retweets" : include_rt,
             "tweet_mode" : "extended",
-            since_id : since_id
+            "include_cards" : "1",
+            "cards_platform" : "Web-12",
+            "include_ext_alt_text": "true",
+            "include_ext_media_color" : "true",
+            "include_ext_media_availability" : "true",
+            "include_entities" : "true",
+            "include_ext_alt_text" : "true",
+            "include_card_uri" : "true"
         }
-    }).then(res => {return res.data;
+    }).then(res => {
+        let tweets = [];
+        let user = res.data.globalObjects.users[user_id];
+        for (let tweetid of Object.keys(res.data.globalObjects.tweets)) {
+            let tweet = res.data.globalObjects.tweets[tweetid];
+            tweet.user = {name: user.name, screen_name: user.screen_name};
+
+            tweets.push(tweet);
+        }
+        
+        tweets = tweets.sort((a, b) => {return (a.id_str > b.id_str) ? -1 : 1;});
+        return tweets;
     }).catch(err => {
-        console.error(err.response.data);
+        console.error("twitter getUserTimeline error: ", err);
         return false;
     });
 }
@@ -248,7 +266,7 @@ function getUserTimeline(user_id, count = 2, include_rt = false, exclude_rp = tr
  * @param {string} name 用户名称
  * @returns {Promise} user_object，如果没有或者错误会返回false
  */
-function searchUser(name) {
+async function searchUser(name) {
     let header = httpHeader();
     header["x-guest-token"] = guest_token;
     return axios({
@@ -363,7 +381,7 @@ function unSubscribe(name, context) {
  */
 function checkTwiTimeline() {
     if (!connection) return;
-    let check_interval = 7 * 60 * 1000;
+    let check_interval = 0.1 * 60 * 1000;
 
     setInterval(async () => {
         await mongodb(DB_PATH, {useUnifiedTopology: true}).connect().then(async mongo => {
@@ -391,7 +409,7 @@ function checkTwiTimeline() {
                 setTimeout(async() => {
                     process: try {
                         if (subscribes[i] == undefined) break process;
-                        let tweet_list = await getUserTimeline(subscribes[i].uid, 5, true, false, subscribes[i].tweet_id);
+                        let tweet_list = await getUserTimeline(subscribes[i].uid, 5, 1, 1);
                         if (tweet_list != undefined && tweet_list.length > 0 && tweet_list[0].id_str > subscribes[i].tweet_id) {
                             let groups = subscribes[i].groups;
                             let bbq_group = [];
@@ -711,11 +729,19 @@ function rtTimeline(context, name, num) {
         if (!user) replyFunc(context, "没这人");
         else if (user.protected == true) replyFunc(context, "这人的Twitter受保护");
         else {
-            getUserTimeline(user.id_str, 20).then(async timeline => {
-                if (timeline.length-1 < num) timeline = await getUserTimeline(user.id_str, 50);
-                if (timeline.length-1 < num) timeline = await getUserTimeline(user.id_str, 1, true, false);
-                format(timeline[num]).then(tweet_string => {
-                    let payload = [tweet_string, `https://twitter.com/${user.screen_name}/status/${timeline[num].id_str}`].join('\r\n\r\n');
+            getUserTimeline(user.id_str, 10).then(async timeline => {
+                let tweets = [];
+                for (let tweet of timeline) {
+                    if (!"retweeted_status_id_str" in tweet
+                    || !/^RT @/.test(tweet.full_text)) {
+                        tweets.push(tweet);
+                    }
+                }
+                if (tweets.length < num) tweet = timeline;
+                let choose_one = tweets[num];
+                choose_one.user = {name : user.name};
+                format(choose_one).then(tweet_string => {
+                    let payload = [tweet_string, `https://twitter.com/${user.screen_name}/status/${choose_one.id_str}`].join('\n\n');
                     replyFunc(context, payload);
                 }).catch(err => console.error(err));
             });

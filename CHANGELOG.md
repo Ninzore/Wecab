@@ -2,6 +2,11 @@
   
 ## 2021
 
+### 03/16 v1.6.8
+* Twitter:
+  * Fix: Twitter获取时间线失效
+  * Style: 加上async标识
+
 ### 03/11 v1.6.7
 * Translate:
   * Fix: reauth地址更新
