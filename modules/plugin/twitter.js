@@ -407,7 +407,7 @@ async function checkTwiTimeline() {
                         let curr_s = subscribes[i];
                         let tweet_list = await getUserTimeline(curr_s.uid, 5, 1, 1);
                         if (tweet_list != undefined && tweet_list.length > 0 && tweet_list[0].id_str > curr_s.tweet_id) {
-                            tweet_list = tweet_list.filter(t => t.id_str >= curr_s.tweet_id);
+                            tweet_list = tweet_list.filter(t => t.id_str > curr_s.tweet_id);
                             let groups = curr_s.groups;
                             let url_list = [];
                             for (let group_id of groups) {
