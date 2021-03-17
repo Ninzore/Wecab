@@ -404,9 +404,11 @@ async function checkTwiTimeline() {
                 setTimeout(async() => {
                     process: try {
                         if (subscribes[i] == undefined) break process;
-                        let tweet_list = await getUserTimeline(subscribes[i].uid, 5, 1, 1);
-                        if (tweet_list != undefined && tweet_list.length > 0 && tweet_list[0].id_str > subscribes[i].tweet_id) {
-                            let groups = subscribes[i].groups;
+                        let curr_s = subscribes[i];
+                        let tweet_list = await getUserTimeline(curr_s.uid, 5, 1, 1);
+                        if (tweet_list != undefined && tweet_list.length > 0 && tweet_list[0].id_str > curr_s.tweet_id) {
+                            tweet_list = tweet_list.filter(t => t.id_str >= curr_s.tweet_id);
+                            let groups = curr_s.groups;
                             let url_list = [];
                             for (let group_id of groups) {
                                 let option = false;
@@ -414,7 +416,7 @@ async function checkTwiTimeline() {
 
                                 for (let group of options) {
                                     if (group.group_id == group_id) {
-                                        option = group.twitter[subscribes[i].uid];
+                                        option = group.twitter[curr_s.uid];
                                         break;
                                     }
                                 }
@@ -441,7 +443,7 @@ async function checkTwiTimeline() {
                             }
 
                             //不好办啊
-                            setTimeout(updateTwitter, 500, tweet_list, subscribes[i]);
+                            setTimeout(updateTwitter, 500, tweet_list, curr_s);
                         }
                     } catch(err) {
                         console.error(err, '\n', subscribes[i]);
@@ -823,5 +825,5 @@ function twitterAggr(context) {
 
 setAgent();
 firstConnect();
-
+checkTwiTimeline()
 module.exports = {twitterAggr, twitterReply, checkTwiTimeline, clearSubs};

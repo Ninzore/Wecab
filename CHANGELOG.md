@@ -2,11 +2,13 @@
   
 ## 2021
 
-### 03/17 v1.6.9
+### 03/17 v1.7.0
 * Twitter:
   * Refactor: 检查更新机制更新
   * Remove: 多余代码块
   * Remove: 不再检查图片大小
+  * Fix: 转发时出现过多条Tweet
+  * Style: 变量重命名
 
 ### 03/16 v1.6.8
 * Twitter:
