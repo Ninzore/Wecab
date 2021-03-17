@@ -2,6 +2,12 @@
   
 ## 2021
 
+### 03/17 v1.6.9
+* Twitter:
+  * Refactor: 检查更新机制更新
+  * Remove: 多余代码块
+  * Remove: 不再检查图片大小
+
 ### 03/16 v1.6.8
 * Twitter:
   * Fix: Twitter获取时间线失效

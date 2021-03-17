@@ -110,15 +110,6 @@ function firstConnect() {
     });
 }
 
-function sizeCheck(url) {
-    return axios.get(url).then(res => {
-        return parseInt(res.headers["content-length"]) < MAX_SIZE ? true : false;
-    }).catch(err => {
-        console.error(url, err.response.status);
-        return false;
-    });
-}
-
 function httpHeader() {
     return headers = {
         "origin" : "https://twitter.com",
@@ -379,21 +370,25 @@ function unSubscribe(name, context) {
 /**
  * 每过x分钟检查一次订阅列表，如果订阅一个Twitter账号的群的数量是0就删除
  */
-function checkTwiTimeline() {
+async function checkTwiTimeline() {
     if (!connection) return;
-    let check_interval = 7 * 60 * 1000;
-
-    setInterval(async () => {
+    const mongo = await mongodb(DB_PATH, {useUnifiedTopology: true}).connect();
+    const twitter_db = mongo.db('bot').collection('twitter');
+    let subscribes = await twitter_db.find({}).toArray();
+    let check_interval = subscribes.length > 0 ? subscribes.length * 30 * 1000 : 5 * 60 * 1000;
+    mongo.close();
+    
+    async function refreshTimeline() {
         await mongodb(DB_PATH, {useUnifiedTopology: true}).connect().then(async mongo => {
             const twitter_db = mongo.db('bot').collection('twitter');
             const group_option = mongo.db('bot').collection('group_option');
-            const twe_sum = mongo.db('bot').collection('twe_sum');
             let subscribes = await twitter_db.find({}).toArray();
             let options = await group_option.find({}).toArray();
-            let summ = await twe_sum.find({}, {$projection : {list : 0}}).toArray();
 
             if (subscribes.length > 0 && options.length > 0) {
                 i = 0;
+                check_interval = subscribes.length * 30 * 1000;
+                setTimeout(refreshTimeline, check_interval + 30000);
                 checkEach();
             }
             else if (subscribes.length < 1 || options.length < 1) {
@@ -412,12 +407,10 @@ function checkTwiTimeline() {
                         let tweet_list = await getUserTimeline(subscribes[i].uid, 5, 1, 1);
                         if (tweet_list != undefined && tweet_list.length > 0 && tweet_list[0].id_str > subscribes[i].tweet_id) {
                             let groups = subscribes[i].groups;
-                            let bbq_group = [];
                             let url_list = [];
                             for (let group_id of groups) {
                                 let option = false;
                                 let post = false;
-                                let count = false;
 
                                 for (let group of options) {
                                     if (group.group_id == group_id) {
@@ -427,16 +420,6 @@ function checkTwiTimeline() {
                                 }
                                 if (!option) throw `Twitter转发时出错，${group_id}这个组没有配置`;
                                 else post = opt_dict(option.post);
-                                
-                                if (option.bbq == true) {
-                                    bbq_group.push(group_id);
-                                    for (let group of summ) {
-                                        if (group.group_id == group_id) {
-                                            count = group.count;
-                                            break;
-                                        }
-                                    }
-                                }
 
                                 for (let tweet of tweet_list) {
                                     let status = checkStatus(tweet);
@@ -445,10 +428,6 @@ function checkTwiTimeline() {
                                         let addon = [];
                                         if (status != "retweet") {
                                             if (option.notice != undefined) addon.push(`${option.notice}`);
-                                            if (option.bbq == true) {
-                                                count++;
-                                                addon.push(`坑位号: ${count}`);
-                                            }
                                             url_list.push(url);
                                         }
                                         addon.push(url);
@@ -462,7 +441,7 @@ function checkTwiTimeline() {
                             }
 
                             //不好办啊
-                            setTimeout(updateTwitter, 500, bbq_group, url_list, tweet_list, subscribes[i]);
+                            setTimeout(updateTwitter, 500, tweet_list, subscribes[i]);
                         }
                     } catch(err) {
                         console.error(err, '\n', subscribes[i]);
@@ -473,7 +452,8 @@ function checkTwiTimeline() {
                 }, (check_interval-subscribes.length*1000)/subscribes.length);
             }
         });
-    }, check_interval)
+    }
+    setTimeout(refreshTimeline, 5000);
 
     function checkStatus(tweet) {
         let status = "";
@@ -496,34 +476,19 @@ function checkTwiTimeline() {
         return false;
     }
 
-    function updateTwitter(bbq_group, url_list, tweet_list, subscribe) {
+    function updateTwitter(tweet_list, subscribe) {
         mongodb(DB_PATH, {useUnifiedTopology: true}).connect().then(async mongo => {
             const twitter_db = mongo.db('bot').collection('twitter');
             await twitter_db.updateOne(
                 {_id : subscribe._id},
                 {$set : {tweet_id : tweet_list[0].id_str, name : tweet_list[0].user.name}})
                 .then(result => {
-                    if (result.result.nModified < 1) {
+                    if (result.result.ok != 1 && result.result.nModified < 1) {
                         console.error(tweet_list[0].id_str, subscribe.tweet_id, tweet_list[0].user.name,
                              result, "\n twitter_db update error during checkTwitter");
                     }
                 })
                 .catch(err => console.error(err + "\n twitter_db update error during checkTwitter"));
-
-            if (url_list.length > 0) {
-                const twe_sum = mongo.db('bot').collection('twe_sum');
-                for (let group_id of bbq_group) {
-                    await twe_sum.updateOne(
-                        {group_id : group_id}, 
-                        {$inc : {count : url_list.length}, $push : {list : {$each : url_list}}})
-                        .then(result => {
-                            if (result.result.nModified < 1) {
-                                console.error("\n twe_sum can't update during checkTwitter, group_id=" + group_id + url_list);
-                            }
-                        })
-                        .catch(err => console.error(err + "\n twe_sum update error during checkTwitter"));
-                }
-            }
             mongo.close();
         });
     }
@@ -615,7 +580,7 @@ async function format(tweet, end_point = false, context = false) {
                         if (media[i].type == "photo") {
                             src = [media[i].media_url_https.substring(0, media[i].media_url_https.length-4),
                                 `?format=${media[i].media_url_https.substring(media[i].media_url_https.length-3, media[i].media_url_https.length)}&name=4096x4096`].join("");
-                            pics += await sizeCheck(src) ? `[CQ:image,cache=0,file=${src}]` : `[CQ:image,cache=0,file=${media[i].media_url_https}] 注：这不是原图`;
+                            pics += `[CQ:image,cache=0,file=${src}]`;
                         }
                         else if (media[i].type == "animated_gif") {
                             try {
@@ -682,10 +647,7 @@ async function format(tweet, end_point = false, context = false) {
             }
             else if (/summary/.test(tweet.card.name)) {
                 if ("photo_image_full_size_original" in tweet.card.binding_values) {
-                    if (sizeCheck(tweet.card.binding_values.photo_image_full_size_original.image_value.url)) {
-                        payload.push(`[CQ:image,cache=0,file=${tweet.card.binding_values.photo_image_full_size_original.image_value.url}]`);
-                    }
-                    else payload.push(`[CQ:image,cache=0,file=${tweet.card.binding_values.photo_image_full_size_large.image_value.url}]`);
+                    payload.push(`[CQ:image,cache=0,file=${tweet.card.binding_values.photo_image_full_size_original.image_value.url}]`);
                 }
                 if ("title" in tweet.card.binding_values) payload.push(tweet.card.binding_values.title.string_value)
                 if ("description" in tweet.card.binding_values) payload.push(tweet.card.binding_values.description.string_value);
