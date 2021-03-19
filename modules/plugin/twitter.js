@@ -210,7 +210,7 @@ async function getSingleTweet(tweet_id_str) {
  * @param {number} count 获取数量，最大为200
  * @returns {Promise} 用户时间线，如果错误结果为false
  */
- async function getUserTimeline(user_id, count = 20, include_rt = 0, include_rp = 0) {
+async function getUserTimeline(user_id, count = 20, include_rt = 0, include_rp = 0) {
     return axios({
         method:'GET',
         url: `https://twitter.com/i/api/2/timeline/profile/${user_id}.json`,
@@ -460,7 +460,7 @@ async function checkTwiTimeline() {
     function checkStatus(tweet) {
         let status = "";
         if ("retweeted_status" in tweet || "retweeted_status_id_str" in tweet || /^RT @/.test(tweet.full_text)) status = "retweet";
-        else if ("in_reply_to_status_id" in tweet && tweet.in_reply_to_status_id != null) status = "reply";
+        else if ("in_reply_to_status_id_str" in tweet && tweet.in_reply_to_status_id_str != null) status = "reply";
         else if ("media" in  tweet.entities && tweet.entities.media[0].type == "photo") status = "pic";
         else status = "origin"
 
@@ -825,5 +825,5 @@ function twitterAggr(context) {
 
 setAgent();
 firstConnect();
-checkTwiTimeline()
+
 module.exports = {twitterAggr, twitterReply, checkTwiTimeline, clearSubs};
