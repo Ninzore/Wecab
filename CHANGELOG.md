@@ -2,6 +2,11 @@
   
 ## 2021
 
+### 03/22 v1.7.1
+* Translate:
+  * Feat: 自动获取reauth链接
+  * Fix: typo
+
 ### 03/17 v1.7.02
 * Twitter:
   * Fix: 没有正确判断tweet类型（回复判断为原创）
