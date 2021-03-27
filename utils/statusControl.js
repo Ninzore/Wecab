@@ -1,17 +1,18 @@
 let gUserStatus = {};
 
-function entryStat(context, status) {
+function entryStat(context, status, exit_delay = 20000) {
     const kGroup_id = context.group_id;
     const kUser_id = context.user_id;
 
     gUserStatus[kGroup_id] == undefined ? 
     gUserStatus[kGroup_id] = {[kUser_id]: status} : 
     gUserStatus[kGroup_id][kUser_id] = status;
-    exitStatLater(context);
+
+    if (exit_delay && exit_delay > 0) exitStatLater(context, exit_delay);
 }
 
-function exitStatLater(context) {
-    setTimeout(exitStat, 20000, context);
+function exitStatLater(context, exit_delay = 20000) {
+    setTimeout(exitStat, exit_delay, context);
 }
 
 function exitStat(context) {
