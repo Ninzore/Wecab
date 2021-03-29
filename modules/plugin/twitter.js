@@ -6,6 +6,7 @@ const HttpsProxyAgent = require("https-proxy-agent");
 const fs = require('fs-extra');
 
 const PROXY_CONF = require("../../config.json").proxy;
+const PROXY = PROXY_CONF.proxy;
 const DB_PORT = 27017;
 const DB_PATH = "mongodb://127.0.0.1:" + DB_PORT;
 const BEARER_TOKEN = "Bearer AAAAAAAAAAAAAAAAAAAAANRILgAAAAAAnNwIzUejRCOuH5E6I8xnZz4puTs%3D1Zv7ttfk8LF81IUq16cHjhLTvJu4FA33AGWWjCpTnA";
@@ -48,21 +49,23 @@ function checkConnection() {
         headers : {
             "User-Agent" : "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/87.0.4280.88 Safari/537.36"
         }
-    }).then(res => {connection = (res.status == 200) ? true : false})
-    .catch(err => {
-        console.error("Twitter checkConnection error with", err.response.status, err.response.statusText);
+    }).then(res => {
+        if (res.status == 200) {
+            connection = true;
+            console.log("Twitter successfully connected");
+        }
+    }).catch(err => {
+        if (err.response == undefined) console.error("Twitter checkConnection error with no response");
+        else console.error("Twitter checkConnection error with", err.response.status, err.response.statusText);
         return false;
     });
 }
 
 function setAgent() {
-    if (PROXY_CONF.host.startsWith("http") && PROXY_CONF.port != 0) {
+    if (PROXY_CONF.proxy.startsWith("http")) {
         axios = Axios.create({
-            httpsAgent : new HttpsProxyAgent({
-                hostname : PROXY_CONF.host,
-                port : PROXY_CONF.port,
-                protocol : /^https/.test(PROXY_CONF.host) ? "https" : "http"
-            })
+            proxy: false,
+            httpsAgent : new HttpsProxyAgent(PROXY)
         });
     }
     else axios = Axios;
