@@ -1,6 +1,13 @@
 # 更新日志
   
 ## 2021
+
+### 03/29 v1.7.3
+* Twitter:
+  * Fix: 代理未正确运行
+* config:
+  * Change: 修改proxy字段（Object -> String)
+
 ### 03/26 v1.7.2
 * Bilibili:
   * Fix: 获取动态列表失败时读取了undefined
