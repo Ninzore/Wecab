@@ -30,8 +30,5 @@
             "group_decrease": "送客"
         }
     },
-    "proxy": {
-        "host": "",
-        "port": 0
-    }
+    "proxy": ""
 }
