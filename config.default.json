@@ -5,7 +5,7 @@
         "port": 6700,
         "enableAPI": true,
         "enableEvent": true,
-        "access_token": "",
+        "accessToken": "",
         "reconnection": true,
         "reconnectionAttempts": 10,
         "reconnectionDelay": 5000
