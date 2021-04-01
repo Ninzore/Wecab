@@ -195,6 +195,11 @@ function commonHandle(e, context) {
     //黑名单检测
     if (Logger.checkBan(context.user_id, context.group_id)) return true;
 
+    // admin权限拉高
+    if (context.user_id == config.bot.admin) {
+        context.sender.role = "SU";
+    }
+
     //兼容其他机器人
     const startChar = context.message.charAt(0);
     if (startChar == '/' || startChar == '<') return true;
