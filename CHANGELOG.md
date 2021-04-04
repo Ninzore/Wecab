@@ -2,6 +2,22 @@
   
 ## 2021
 
+### 04/04 v1.7.5
+* modules/plugin/weibo:
+  * Feat: 新增权限检查
+  * Feat: 新增停启判断
+  * Style: add semicolon
+* modules/config:
+  * Rename: configStorage => config
+* utils/initialise
+  * Feat: permissionCheck
+* main:
+  * Feat: 可以设定是否检查时间线
+* config.default.json:
+  * 新增 weibo, bilibili, twitter, mongoDB  
+    learn字段移出bot,  
+    bot字段新增noPermission
+
 ### 04/01 v1.7.41
 * Main:
   * Feat: 提高admin的权限
