@@ -1,15 +1,9 @@
 import axios from 'axios';
-import config from '../config';
 const mongodb = require('mongodb').MongoClient;
 
-const admin = parseInt(config.bot.admin);
-const db_port = 27017;
-const db_path = "mongodb://127.0.0.1:" + db_port;
-let replyFunc = (context, msg, at = false) => {console.log(msg)};
-
-function weiboReply(replyMsg) {
-    replyFunc = replyMsg;
-}
+const CONFIG = global.config.weibo;
+const db_path = global.config.mongoDB;
+const PERMISSION = new RegExp(CONFIG.permission);
 
 function unEscape(str) {
     const label = {"#44": ",", "#91": "[", "#93": "]", "amp": "&"}
@@ -492,6 +486,7 @@ function rtWeibo(name, num, context) {
  * @returns {boolean} 如果是这里的功能，返回true，否则为false
  */
 function weiboAggr(context) {
+    if (!CONFIG.enable) return false;
     if (/^看看(.+?)的?((第[0-9]?[一二三四五六七八九]?条)|(上*条)|(置顶)|(最新))?微博/.test(context.message)) {	
 		let num = 1;
         let name = "";
@@ -530,18 +525,21 @@ function weiboAggr(context) {
         return true;
     }
     else if (/^订阅.+的?微博([>＞](仅转发|只看图|全部))?/.test(context.message)) {
+        if (!global.permissionCheck(context, PERMISSION)) return true;
         let {groups : {name, option_nl}} = /订阅(?<name>.+)的?微博([>＞](?<option_nl>仅转发|只看图|全部))?/.exec(context.message);
-        if (option_nl == undefined) option_nl = "仅原创"
+        if (option_nl == undefined) option_nl = "仅原创";
         addSubByName(name, option_nl, context);
         return true;
     }
     else if (/^订阅微博\s?https:\/\/m.weibo.cn.+([>＞](仅转发|只看图|全部))?/.test(context.message)) {
+        if (!global.permissionCheck(context, PERMISSION)) return true;
         let {groups : {url, option_nl}} = /(?<url>https:\/\/m.weibo.cn.+)([>＞](?<option_nl>仅转发|只看图|全部))?/.exec(context.message);
-        if (option_nl == undefined) option_nl = "仅原创"
+        if (option_nl == undefined) option_nl = "仅原创";
         addSubByUid(url, option_nl, context);
         return true;
     }
     else if (/^取消订阅.+的?微博$/.test(context.message)) {
+        if (!global.permissionCheck(context, PERMISSION)) return true;
         let name = /取消订阅(.+)的?微博/i.exec(context.message)[1];
         unSubscribe(name, context);
         return true;
@@ -551,8 +549,7 @@ function weiboAggr(context) {
         return true;
     }
     else if (/^清空微博订阅$/.test(context.message)) {
-        if (/owner|admin/.test(context.sender.role) || context.user_id == admin) clearSubs(context, context.group_id);
-        else replyFunc(context, '您配吗？');
+        if (global.permissionCheck(context, /SU|owner|admin/)) clearSubs(context, context.group_id);
         return true;
     }
     else return false;
