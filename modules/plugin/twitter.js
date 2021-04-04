@@ -40,10 +40,12 @@ let axios = false;
 let guest_token = "";
 let cookie = "";
 let connection = true;
+let Bot = null;
 let replyFunc = (context, msg, at = false) => { };
 
-function twitterReply(replyMsg) {
+function twitterReply(replyMsg, bot) {
     replyFunc = replyMsg;
+    Bot = bot;
 }
 
 /** 检查网络情况，如果连不上Twitter那后面都不用做了*/
@@ -642,7 +644,7 @@ async function format(tweet, end_point = false, context = false) {
                         if (media[i].type == "photo") {
                             src = [media[i].media_url_https.substring(0, media[i].media_url_https.length - 4), (media[i].media_url_https.search("jpg") != -1 ? '?format=jpg&name=orig' : '?format=png&name=orig')].join(""); //?format=png&name=orig 可能出现这种情况
                             let temp = await sizeCheck(src);
-                            pics += (temp == true ? `[CQ:image,cache=0,file=file:///${await Downloadx(src)}]` : `[CQ:image,cache=0,file=file:///${await Downloadx(media[i].media_url_https)}] 注：这不是原图,原图大小为${temp}`);
+                            pics += (temp == true ? `[CQ:image,cache=0,file=file:///${await Downloadx(src)}]` : `[CQ:image,cache=0,file=file:///${await Downloadx(media[i].media_url_https)}] 注:这不是原图,原图大小为${temp}`);
                         }
                         else if (media[i].type == "animated_gif") {
                             try {
@@ -656,30 +658,38 @@ async function format(tweet, end_point = false, context = false) {
                                         stderr
                                     }) => {
                                         if (stdout.length == 0) {
-                                            //console.log("gifpath0：" + gifpath0);
+                                            //console.log("gifpath0:" + gifpath0);
                                             if (fs.statSync(`${gifpath0}/temp.gif`).size < PIC_MAX_SIZE) { //gif图片不能超过30MB，否则发不出来
                                                 try {
                                                     await exec(`ffmpeg -i ${gifpath0}/temp.gif -f null -`) //判断gif的总帧数 https://www.npmjs.com/package/gif-meta https://github.com/indatawetrust/gif-meta
                                                         .then(async giftemp => {
                                                             let giftemp2 = /frame=(.+?)fps/.exec(JSON.stringify(giftemp.stderr))[1].replace("fps", "").trim();
-                                                            console.info("gif的总帧数：" + giftemp2);
+                                                            console.info("gif的总帧数:" + giftemp2);
                                                             if (giftemp2 <= 300) {//帧数过高可能发不出来gif,gif和插件模块放在一块，不在tmp文件夹里
                                                                 pics += `这是一张动图 [CQ:image,cache=0,file=file:///${gifpath2}]` + `\n原gif视频地址: ${media[i].video_info.variants[0].url}\n`
                                                                 pics += `[CQ:image,cache=0,file=file:///${gifpath0}/temp.gif]`;
                                                             } else {
+                                                                //https://docs.go-cqhttp.org/api/#%E4%B8%8A%E4%BC%A0%E7%BE%A4%E6%96%87%E4%BB%B6 上传群文件
+                                                                Bot("upload_group_file", {//总帧数超过300帧的gif尝试上传到群文件
+                                                                    group_id: context.group_id,
+                                                                    file: gifpath2,
+                                                                    name: gifpath2.split("/tmp/")[0],
+                                                                }).catch(err => {
+                                                                    console.error(new Date().toString() + ",upload_group_file:" + err);
+                                                                });
                                                                 replyFunc(context, `[CQ:video,file=file:///${gifpath},cover=file:///${gifpath2}]`);
                                                                 payload.push(`[CQ:image,cache=0,file=file:///${gifpath2}]`,
                                                                     `原gif视频地址: ${media[i].video_info.variants[0].url}`);
                                                             }
                                                         })
                                                 } catch (err) {
-                                                    console.error(new Date().toString() + ",判断gif的总帧数：" + err);
+                                                    console.error(new Date().toString() + ",判断gif的总帧数:" + err);
                                                 }
                                             } else pics += `这是一张动图[CQ:image,cache=0,file=file:///${await Downloadx(media[i].media_url_https)}]` + `动起来看这里${media[i].video_info.variants[0].url}`;
                                         }
                                     })
                             } catch (err) {
-                                console.error(new Date().toString() + ",推特动图：" + err);
+                                console.error(new Date().toString() + ",推特动图:" + err);
                                 pics += `这是一张动图 [CQ:image,cache=0,file=file:///${await Downloadx(media[i].media_url_https)}]` + `动起来看这里${media[i].video_info.variants[0].url}`;
                             }
                         }

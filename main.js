@@ -17,7 +17,7 @@ import helpZen from "./modules/plugin/zen";
 import nbnhhsh from "./modules/plugin/nbnhhsh";
 import iHaveAfriend from './modules/plugin/iHaveAfriend';
 import telephone from './modules/plugin/telephone';
-import {initialise} from "./utils/initilise";
+import { initialise } from "./utils/initilise";
 import mkdirTmp from './modules/mkdirTmp'; //创建临时文件文件夹
 
 // 初始化开始
@@ -29,12 +29,12 @@ const logger = new Logger();
 initialise();
 Object.assign(global, {
     bot,
-    "replyFunc" : replyMsg
+    "replyFunc": replyMsg
 });
 mkdirTmp();
 weibo.weiboReply(replyMsg);
 bilibili.bilibiliReply(replyMsg);
-twitter.twitterReply(replyMsg);
+twitter.twitterReply(replyMsg, bot);
 pretendLearn.learnReply(replyMsg, logger);
 nbnhhsh.reply(replyMsg);
 telephone.init(replyMsg, bot);
@@ -165,10 +165,10 @@ bot.on('socket.connecting', (wsType, attempts) => console.log(`${getTime()} 连�
             setTimeout(() => {
                 if (bot.isReady() && setting.admin > 0) {
                     bot('send_private_msg', {
-                      user_id : setting.admin,
-                      message : `已上线#${attempts}`,
+                        user_id: setting.admin,
+                        message: `已上线#${attempts}`,
                     });
-                  }
+                }
             }, 1000);
         }
     });
@@ -184,9 +184,9 @@ bot.connect();
 function notice(context) {
     context.message_type = 'group';
     if (Logger.checkBan(context.user_id, context.group_id)) return true;
-    if (context.notice_type == 'group_increase' 
+    if (context.notice_type == 'group_increase'
         && setting.notification.group_increase.length > 0) replyMsg(context, setting.notification.group_increase);
-    else if (context.notice_type == 'group_decrease'  
+    else if (context.notice_type == 'group_decrease'
         && setting.notification.group_decrease.length > 0) replyMsg(context, setting.notification.group_decrease);
 }
 
@@ -255,25 +255,25 @@ function groupMsg(e, context) {
     let text_bak = context.message;
     context.message = pretendLearn.replaceEqual(context);
     translate.orientedTrans(context);
-    
+
     if (commonHandle(e, context)) {
         e.stopPropagation();
         return;
     }
- 
+
     const { group_id, user_id } = context;
 
     if (weibo.weiboAggr(context, replyMsg) ||
-             bilibili.bilibiliCheck(context) ||
-             twitter.twitterAggr(context) ||
-             pixivImage.pixivCheck(context, replyMsg, bot) ||
-             helpZen(context, replyMsg, bot, rand) ||
-             translate.transEntry(context) ||
-             iHaveAfriend.deal(context, replyMsg, bot) ||
-             nbnhhsh.demyth(context) ||
-             pokemon.pokemonCheck(context, replyMsg) ||
-             telephone.dial(context)
-             ) {
+        bilibili.bilibiliCheck(context) ||
+        twitter.twitterAggr(context) ||
+        pixivImage.pixivCheck(context, replyMsg, bot) ||
+        helpZen(context, replyMsg, bot, rand) ||
+        translate.transEntry(context) ||
+        iHaveAfriend.deal(context, replyMsg, bot) ||
+        nbnhhsh.demyth(context) ||
+        pokemon.pokemonCheck(context, replyMsg) ||
+        telephone.dial(context)
+    ) {
         e.stopPropagation();
         return;
     }
