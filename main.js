@@ -25,11 +25,7 @@ const bot = new CQWebSocket(config.cqws);
 const rand = RandomSeed.create();
 const logger = new Logger();
 
-initialise();
-Object.assign(global, {
-    bot,
-    "replyFunc" : replyMsg
-});
+initialise({bot, "replyFunc": replyMsg});
 
 weibo.weiboReply(replyMsg);
 bilibili.bilibiliReply(replyMsg);
@@ -38,9 +34,9 @@ pretendLearn.learnReply(replyMsg, logger);
 nbnhhsh.reply(replyMsg);
 telephone.init(replyMsg, bot);
 
-weibo.checkWeiboDynamic();
-setTimeout(() => bilibili.checkBiliDynamic(replyMsg), 20000);
-setTimeout(() => twitter.checkTwiTimeline(), 40000);
+if (config.weibo.timelineCheck) weibo.checkWeiboDynamic();
+if (config.bilibili.timelineCheck) setTimeout(() => bilibili.checkBiliDynamic(replyMsg), 20000);
+if (config.twitter.timelineCheck) setTimeout(() => twitter.checkTwiTimeline(), 40000);
 
 //好友请求
 bot.on('request.friend', context => {
@@ -297,7 +293,7 @@ function groupMsg(e, context) {
                 replyMsg(context, context.message);
             }, 1000);
         } else {
-            if (getRand() <= setting.learn.probability) pretendLearn.talk(context);
+            if (getRand() <= config.learn.probability) pretendLearn.talk(context);
         }
     }
 }
