@@ -670,13 +670,13 @@ async function format(tweet, end_point = false, context = false) {
                                                                 pics += `[CQ:image,cache=0,file=file:///${gifpath0}/temp.gif]`;
                                                             } else {
                                                                 //https://docs.go-cqhttp.org/api/#%E4%B8%8A%E4%BC%A0%E7%BE%A4%E6%96%87%E4%BB%B6 上传群文件
-                                                                Bot("upload_group_file", {//总帧数超过300帧的gif尝试上传到群文件
+                                                                /*Bot("upload_group_file", {//总帧数超过300帧的gif尝试上传到群文件
                                                                     group_id: context.group_id,
                                                                     file: gifpath2,
                                                                     name: gifpath2.split("/tmp/")[0],
                                                                 }).catch(err => {
                                                                     console.error(new Date().toString() + ",upload_group_file:" + err);
-                                                                });
+                                                                });*/
                                                                 replyFunc(context, `[CQ:video,file=file:///${gifpath},cover=file:///${gifpath2}]`);
                                                                 payload.push(`[CQ:image,cache=0,file=file:///${gifpath2}]`,
                                                                     `原gif视频地址: ${media[i].video_info.variants[0].url}`);
