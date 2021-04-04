@@ -12,7 +12,10 @@
     "https-proxy-agent": "^5.0.0",
     "minimist": "^1.2.5",
     "mongodb": "^3.6.4",
-    "random-seed": "^0.3.0"
+    "random-seed": "^0.3.0",
+    "js-md5": "^0.7.3",
+    "empty-folder": "^2.0.4",
+    "winston": "^3.2.1"
   },
   "devDependencies": {},
   "scripts": {

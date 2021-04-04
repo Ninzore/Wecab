@@ -18,6 +18,7 @@ import nbnhhsh from "./modules/plugin/nbnhhsh";
 import iHaveAfriend from './modules/plugin/iHaveAfriend';
 import telephone from './modules/plugin/telephone';
 import {initialise} from "./utils/initilise";
+import mkdirTmp from './modules/mkdirTmp'; //创建临时文件文件夹
 
 // 初始化开始
 const setting = config.bot;
@@ -30,7 +31,7 @@ Object.assign(global, {
     bot,
     "replyFunc" : replyMsg
 });
-
+mkdirTmp();
 weibo.weiboReply(replyMsg);
 bilibili.bilibiliReply(replyMsg);
 twitter.twitterReply(replyMsg);
