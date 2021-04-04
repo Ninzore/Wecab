@@ -615,7 +615,7 @@ async function format(tweet, end_point = false, context = false) {
                         if (media[i].type == "photo") {
                             src = [media[i].media_url_https.substring(0, media[i].media_url_https.length - 4),
                             `?format=${media[i].media_url_https.substring(media[i].media_url_https.length - 3, media[i].media_url_https.length)}&name=4096x4096`].join("");
-                            pics += `[CQ:image,cache=0,file=${await Downloadx(src)}]`;
+                            pics += `[CQ:image,cache=0,file=file:///${await Downloadx(src)}]`;
                         }
                         else if (media[i].type == "animated_gif") {
                             try {
@@ -627,12 +627,12 @@ async function format(tweet, end_point = false, context = false) {
                                                 let base64gif = Buffer.from(gif, 'binary').toString('base64');
                                                 pics += `[CQ:image,file=base64://${base64gif}]`;
                                             }
-                                            else pics += `这是一张动图 [CQ:image,cache=0,file=${await Downloadx(media[i].media_url_https)}]` + `动起来看这里${media[i].video_info.variants[0].url}`;
+                                            else pics += `这是一张动图 [CQ:image,cache=0,file=file:///${await Downloadx(media[i].media_url_https)}]` + `动起来看这里${media[i].video_info.variants[0].url}`;
                                         }
                                     })
                             } catch (err) {
                                 console.error(err);
-                                pics += `这是一张动图 [CQ:image,cache=0,file=${await Downloadx(media[i].media_url_https)}]` + `动起来看这里${media[i].video_info.variants[0].url}`;
+                                pics += `这是一张动图 [CQ:image,cache=0,file=file:///${await Downloadx(media[i].media_url_https)}]` + `动起来看这里${media[i].video_info.variants[0].url}`;
                             }
                         }
                         else if (media[i].type == "video") {
@@ -641,9 +641,9 @@ async function format(tweet, end_point = false, context = false) {
                                 if (media[i].video_info.variants[j].content_type == "video/mp4") mp4obj.push(media[i].video_info.variants[j]);
                             }
                             mp4obj.sort((a, b) => { return b.bitrate - a.bitrate; });
-                            payload.push(`[CQ:image,cache=0,file=${await Downloadx(media[i].media_url_https)}]`);
+                            payload.push(`[CQ:image,cache=0,file=file:///${await Downloadx(media[i].media_url_https)}]`);
                             if (context) {
-                                replyFunc(context, `[CQ:video,file=${await Downloadx(mp4obj[0].url, false)}]`);
+                                replyFunc(context, `[CQ:video,file=file:///${await Downloadx(mp4obj[0].url, false)}]`);
                             }
                             else payload.push(`视频地址: ${mp4obj[0].url}`);
                         }
@@ -664,7 +664,7 @@ async function format(tweet, end_point = false, context = false) {
         if ("card" in tweet) {
             if (/poll\dchoice/.test(tweet.card.name)) {
                 if ("image_large" in tweet.card.binding_values) {
-                    payload.push(`[CQ:image,cache=0,file=${await Downloadx(tweet.card.binding_values.image_large.url)}]`);
+                    payload.push(`[CQ:image,cache=0,file=file:///${await Downloadx(tweet.card.binding_values.image_large.url)}]`);
                 }
 
                 let end_time = new Intl.DateTimeFormat('zh-Hans-CN', { month: 'short', day: '2-digit', hour: '2-digit', minute: '2-digit', timeZone: 'Asia/Shanghai' })
@@ -682,7 +682,7 @@ async function format(tweet, end_point = false, context = false) {
             }
             else if (/summary/.test(tweet.card.name)) {
                 if ("photo_image_full_size_original" in tweet.card.binding_values) {
-                    payload.push(`[CQ:image,cache=0,file=${await Downloadx(tweet.card.binding_values.photo_image_full_size_original.image_value.url)}]`);
+                    payload.push(`[CQ:image,cache=0,file=file:///${await Downloadx(tweet.card.binding_values.photo_image_full_size_original.image_value.url)}]`);
                 }
                 if ("title" in tweet.card.binding_values) payload.push(tweet.card.binding_values.title.string_value)
                 if ("description" in tweet.card.binding_values) payload.push(tweet.card.binding_values.description.string_value);
