@@ -1,6 +1,6 @@
 import axios from "axios";
 
-function initialise() {
+function axiosAutoRetry() {
     axios.defaults.__retry = 2;
     let retry_delay = 500;
     
@@ -18,6 +18,19 @@ function initialise() {
             return axios(config);
         });
     });
+}
+
+function permissionCheck(context, permission_reg) {
+    if (permission_reg.test(context.sender.role)) return true;
+    else {
+        global.replyFunc(context, global.config.bot.noPermission, true);
+        return false;
+    }
+}
+
+function initialise(assign2global) {
+    axiosAutoRetry();
+    Object.assign(global, {permissionCheck, ...assign2global});
 }
 
 export {initialise};
