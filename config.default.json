@@ -22,13 +22,30 @@
             "probability": 40,
             "commonProb": 0.2
         },
-        "learn": {
-            "probability": 80
-        },
         "notification": {
             "group_increase": "迎新",
             "group_decrease": "送客"
-        }
+        },
+        "noPermission": "权限不足"
     },
-    "proxy": ""
+    "learn": {
+        "probability": 80
+    },
+    "weibo": {
+        "enable": true,
+        "timelineCheck": true,
+        "permission": "SU|admin|owner"
+    },
+    "bilibili": {
+        "enable": true,
+        "timelineCheck": true,
+        "permission": "SU|admin|owner"
+    },
+    "twitter": {
+        "enable": true,
+        "timelineCheck": true,
+        "permission": "SU|admin|owner"
+    },
+    "proxy": "",
+    "mongoDB": "mongodb://127.0.0.1:27017"
 }
