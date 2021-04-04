@@ -7,17 +7,14 @@ function isObject(obj) {
 
 function recursiveCopy(c, dc) {
     for (let key in dc) {
-        if (key == 'saucenaoHost' || key == 'whatanimeHost') {
-            if (typeof c[key] == 'string') c[key] = [c[key]];
-        }
         if (isObject(c[key]) && isObject(dc[key])) recursiveCopy(c[key], dc[key]);
         else if (typeof c[key] == 'undefined' || typeof c[key] != typeof dc[key]) c[key] = dc[key];
     }
 }
 
-if (!global.configStorage) {
+if (!global.config) {
     recursiveCopy(conf, dConf);
-    global.configStorage = conf;
+    global.config = conf;
 }
 
-export default global.configStorage;
+export default global.config;
