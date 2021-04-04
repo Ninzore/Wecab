@@ -11,7 +11,9 @@ const PROXY = CONFIG.proxy;
 const DB_PORT = 27017;
 const DB_PATH = "mongodb://127.0.0.1:" + DB_PORT;
 const BEARER_TOKEN = "Bearer AAAAAAAAAAAAAAAAAAAAANRILgAAAAAAnNwIzUejRCOuH5E6I8xnZz4puTs%3D1Zv7ttfk8LF81IUq16cHjhLTvJu4FA33AGWWjCpTnA";
-const MAX_SIZE = 4194304;
+const PIC_MAX_SIZE = 30 * 1024 * 1024; //图片最大体积
+const VID_MAX_SIZE = 100 * 1024 * 1024; //视频最大体积
+//const MAX_SIZE = 4194304;
 const OPTION_MAP = {
     "仅原创": "origin_only",
     "仅转发": "retweet_only",
@@ -118,6 +120,26 @@ function firstConnect() {
     });
 }
 
+function sizeCheck(url, pic = true) { //true 图片 false 视频
+    return axios({
+        method: "GET",
+        url: url,
+        headers: {
+            "User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/87.0.4280.88 Safari/537.36"
+        },
+        timeout: 15000
+    }).then(res => {
+        if (pic == true) {
+            return parseInt(res.headers["content-length"]) < PIC_MAX_SIZE ? true : ((res.headers["content-length"] / 1024 / 1024) + "MB"); //图片
+        } else {
+            return parseInt(res.headers["content-length"]) < VID_MAX_SIZE ? true : ((res.headers["content-length"] / 1024 / 1024) + "MB"); //视频
+        }
+    }).catch(err => {
+        console.error(new Date().toString() + ",sizeCheck:" + url + "," + err);
+        return "获取文件大小失败";
+    });
+}
+
 function httpHeader() {
     return headers = {
         "origin": "https://twitter.com",
@@ -130,7 +152,7 @@ function httpHeader() {
         "sec-fetch-user": "?1",
         "sec-fetch-site": "same-site",
         "upgrade-insecure-requests": "1",
-        "user-agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/80.0.3987.163 Safari/537.36",
+        "user-agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/87.0.4280.88 Safari/537.36",
         "accept": "application/json, text/plain, */*",
         "dnt": "1",
         // "accept-encoding" : "gzip, deflate, br",
@@ -149,7 +171,8 @@ function getGuestToken() {
     axios({
         method: "POST",
         url: "https://api.twitter.com/1.1/guest/activate.json",
-        headers: headers
+        headers: headers,
+        timeout: 10000
     }).then(res => {
         guest_token = res.data.guest_token;
     }).catch(err => {
@@ -168,7 +191,8 @@ function getCookie() {
     axios({
         method: "GET",
         url: "https://twitter.com/explore",
-        headers: headers
+        headers: headers,
+        timeout: 10000
     }).then(res => {
         let temp = "";
         let guest_id = "";  //expire 2 years
@@ -213,7 +237,8 @@ async function getSingleTweet(tweet_id_str) {
             "include_cards": "1",
             "cards_platform": "Web-12",
 
-        }
+        },
+        timeout: 10000
     }).then(res => {
         return res.data;
     }).catch(err => {
@@ -251,7 +276,8 @@ async function getUserTimeline(user_id, count = 20, include_rt = 0, include_rp =
             "include_entities": "true",
             "include_ext_alt_text": "true",
             "include_card_uri": "true"
-        }
+        },
+        timeout: 10000
     }).then(res => {
         let tweets = [];
         let user = res.data.globalObjects.users[user_id];
@@ -290,7 +316,8 @@ async function searchUser(name) {
         params: {
             "q": name,
             "count": 1,
-        }
+        },
+        timeout: 10000
     }).then(res => {
         return res.data[0]
     }).catch(err => {
@@ -613,39 +640,64 @@ async function format(tweet, end_point = false, context = false) {
                     for (let i = 0; i < media.length; i++) {
                         text = text.replace(media[i].url, "");
                         if (media[i].type == "photo") {
-                            src = [media[i].media_url_https.substring(0, media[i].media_url_https.length - 4),
-                            `?format=${media[i].media_url_https.substring(media[i].media_url_https.length - 3, media[i].media_url_https.length)}&name=4096x4096`].join("");
-                            pics += `[CQ:image,cache=0,file=file:///${await Downloadx(src)}]`;
+                            src = [media[i].media_url_https.substring(0, media[i].media_url_https.length - 4), (media[i].media_url_https.search("jpg") != -1 ? '?format=jpg&name=orig' : '?format=png&name=orig')].join(""); //?format=png&name=orig 可能出现这种情况
+                            let temp = await sizeCheck(src);
+                            pics += (temp == true ? `[CQ:image,cache=0,file=file:///${await Downloadx(src)}]` : `[CQ:image,cache=0,file=file:///${await Downloadx(media[i].media_url_https)}] 注：这不是原图,原图大小为${temp}`);
                         }
                         else if (media[i].type == "animated_gif") {
                             try {
-                                await exec(`ffmpeg -i ${await Downloadx(media[i].video_info.variants[0].url, false)} -loop 0 -y ${__dirname}/temp.gif`)
-                                    .then(async ({ stdout, stderr }) => {
+                                console.log("media[i].video_info.variants[0].url:" + media[i].video_info.variants[0].url);
+                                let gifpath0 = __dirname; //获取twitter.js文件的绝对路径
+                                let gifpath = await Downloadx(media[i].video_info.variants[0].url, false); //下载gif视频并获得本地路径
+                                let gifpath2 = await Downloadx(media[i].media_url_https); //gif第一帧封面
+                                await exec(`ffmpeg -i ${gifpath} -loop 0 -y ${gifpath0}/temp.gif`)
+                                    .then(async ({
+                                        stdout,
+                                        stderr
+                                    }) => {
                                         if (stdout.length == 0) {
-                                            if (fs.statSync(`${__dirname}/temp.gif`).size < MAX_SIZE) {
-                                                let gif = fs.readFileSync(`${__dirname}/temp.gif`);
-                                                let base64gif = Buffer.from(gif, 'binary').toString('base64');
-                                                pics += `[CQ:image,file=base64://${base64gif}]`;
-                                            }
-                                            else pics += `这是一张动图 [CQ:image,cache=0,file=file:///${await Downloadx(media[i].media_url_https)}]` + `动起来看这里${media[i].video_info.variants[0].url}`;
+                                            //console.log("gifpath0：" + gifpath0);
+                                            if (fs.statSync(`${gifpath0}/temp.gif`).size < PIC_MAX_SIZE) { //gif图片不能超过30MB，否则发不出来
+                                                try {
+                                                    await exec(`ffmpeg -i ${gifpath0}/temp.gif -f null -`) //判断gif的总帧数 https://www.npmjs.com/package/gif-meta https://github.com/indatawetrust/gif-meta
+                                                        .then(async giftemp => {
+                                                            let giftemp2 = /frame=(.+?)fps/.exec(JSON.stringify(giftemp.stderr))[1].replace("fps", "").trim();
+                                                            console.info("gif的总帧数：" + giftemp2);
+                                                            if (giftemp2 <= 300) {//帧数过高可能发不出来gif,gif和插件模块放在一块，不在tmp文件夹里
+                                                                pics += `这是一张动图 [CQ:image,cache=0,file=file:///${gifpath2}]` + `\n原gif视频地址: ${media[i].video_info.variants[0].url}\n`
+                                                                pics += `[CQ:image,cache=0,file=file:///${gifpath0}/temp.gif]`;
+                                                            } else {
+                                                                replyFunc(context, `[CQ:video,file=file:///${gifpath},cover=file:///${gifpath2}]`);
+                                                                payload.push(`[CQ:image,cache=0,file=file:///${gifpath2}]`,
+                                                                    `原gif视频地址: ${media[i].video_info.variants[0].url}`);
+                                                            }
+                                                        })
+                                                } catch (err) {
+                                                    console.error(new Date().toString() + ",判断gif的总帧数：" + err);
+                                                }
+                                            } else pics += `这是一张动图[CQ:image,cache=0,file=file:///${await Downloadx(media[i].media_url_https)}]` + `动起来看这里${media[i].video_info.variants[0].url}`;
                                         }
                                     })
                             } catch (err) {
-                                console.error(err);
+                                console.error(new Date().toString() + ",推特动图：" + err);
                                 pics += `这是一张动图 [CQ:image,cache=0,file=file:///${await Downloadx(media[i].media_url_https)}]` + `动起来看这里${media[i].video_info.variants[0].url}`;
                             }
                         }
                         else if (media[i].type == "video") {
                             let mp4obj = [];
                             for (let j = 0; j < media[i].video_info.variants.length; j++) {
-                                if (media[i].video_info.variants[j].content_type == "video/mp4") mp4obj.push(media[i].video_info.variants[j]);
+                                if (media[i].video_info.variants[j].content_type == "video/mp4") {
+                                    mp4obj.push(media[i].video_info.variants[j]);
+                                }
                             }
                             mp4obj.sort((a, b) => { return b.bitrate - a.bitrate; });
-                            payload.push(`[CQ:image,cache=0,file=file:///${await Downloadx(media[i].media_url_https)}]`);
-                            if (context) {
-                                replyFunc(context, `[CQ:video,file=file:///${await Downloadx(mp4obj[0].url, false)}]`);
+                            let tmp = await sizeCheck(mp4obj[0].url, false);
+                            if (tmp == true) {
+                                replyFunc(context, `[CQ:video,cache=0,file=file:///${await Downloadx(mp4obj[0].url, false)},cover=file:///${await Downloadx(media[i].media_url_https)}]`);
+                                payload.push(`[CQ:image,cache=0,file=file:///${temp}]`, `视频地址: ${mp4obj[0].url}`);
                             }
-                            else payload.push(`视频地址: ${mp4obj[0].url}`);
+                        } else {
+                            payload.push(`该视频超过100MB，无法直接发送.该视频大小为${tmp}`, `视频地址: ${mp4obj[0].url}`);
                         }
                     }
                 }
