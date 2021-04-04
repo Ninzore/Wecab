@@ -15,7 +15,7 @@ function replaceImg(img) {
 }
 
 function checkPermission(context) {
-    if (/owner|admin/.test(context.sender.role)) return true;
+    if (context.sender.role != "member") return true;
     else {
         replyFunc(context, "您配吗");
         return false;

@@ -54,7 +54,7 @@ function httpHeader(uid = 0, mid = 0) {
 * @param {string} user_name 用户名
 * @returns {Promise} number 用户uid，如果搜索不到返回false
 */
-function getUserId(user_name = "") {
+async function getUserId(user_name = "") {
     user_name = encodeURI(user_name);
     return axios({
         method:'GET',
@@ -82,7 +82,7 @@ function getUserId(user_name = "") {
  * @param {number} num 需要获取的微博，-1为查找最新，-2为查找置顶，0为置顶或者最新，1是次新，以此类推，只允许0到9
  * @returns {Promise} 单条微博mblog
 */
-function getTimeline(uid, num = -1) {
+async function getTimeline(uid, num = -1) {
     let payload = httpHeader(uid);
     return axios({
             method:'GET',
@@ -198,7 +198,10 @@ function checkWeiboDynamic() {
             let subscribes = await coll.find({}).toArray();
             mongo.close();
             i = 0;
-            checkEach();
+            if (subscribes && subscribes.length > 0) {
+                check_interval = subscribes.length * 1000 * 30;
+                checkEach();
+            }
 
             function checkEach() {
                 setTimeout(async function() {
@@ -212,7 +215,8 @@ function checkWeiboDynamic() {
                             let groups = stored_info.groups;
                             groups.forEach(group_id => {
                                 if (checkOption(mblog, stored_info[group_id])) {
-                                    format(mblog, true).then(payload => replyFunc({group_id : group_id, message_type : "group"}, payload)).catch(err => console.error(err));
+                                    const context = {group_id : group_id, message_type : "group"};
+                                    format(mblog, context).then(payload => replyFunc(context, payload)).catch(err => console.error(err));
                                 }
                                 else;
                             });
@@ -333,7 +337,7 @@ function textFilter(text) {
 * @param {boolean} textForm 是否整理为成string
 * @returns {Promise} Promise，由文字，图片，链接集合的单条微博的array或string
 */
-async function format(mblog, textForm = false) {
+async function format(mblog, context) {
     mblog = await mblog;
     let payload = [`${mblog.user.screen_name}的微博`];
     let text = mblog.text;
@@ -352,22 +356,23 @@ async function format(mblog, textForm = false) {
     if ("page_info" in mblog) {
         if("media_info" in mblog.page_info){
             let media = mblog.page_info.media_info;
-            let media_src = "视频地址: ";
+            let media_src = "";
             if ("hevc_mp4_hd" in media && media.hevc_mp4_hd != "") media_src += media.hevc_mp4_hd;
             else if ("h265_mp4_hd" in media && media.h265_mp4_hd != "") media_src += media.h265_mp4_hd;
             else if ("mp4_720p_mp4" in media && media.mp4_720p_mp4 != "") media_src += media.mp4_720p_mp4;
             else if ("mp4_hd_url" in media && media.mp4_hd_url != "") media_src += media.mp4_hd_url;
             else media_src += media.stream_url;
-            payload.push(`[CQ:image,cache=0,file=${mblog.page_info.page_pic.url}]`, media_src);
+            payload.push(`[CQ:image,cache=0,file=${mblog.page_info.page_pic.url}]`);
+            if (context) replyFunc(context, `[CQ:video,file=${media_src}]`);
         }
     }
 
     if ("retweeted_status" in mblog) {
-        let rt_weibo = await format(mblog.retweeted_status);
+        let rt_weibo = await format(mblog.retweeted_status, false);
         payload = payload.concat("转发自: " + rt_weibo)
     }
-    if (textForm = true) payload = payload.join("\n");
-    return payload;
+
+    return payload.join("\n");
 }
 
 /**
@@ -420,7 +425,7 @@ function weiboText(id) {
 function rtSingleWeibo(id, context) {
     axios.get("https://m.weibo.cn/statuses/show?id=" + id, {headers : httpHeader().headers})
     .then(async res => {
-        let payload = await format(res.data.data, true);
+        let payload = await format(res.data.data, context);
         replyFunc(context, payload);
     }).catch(err => {
         console.error(err.response);
@@ -474,7 +479,7 @@ function addSubByUid(url, option_nl, context) {
 function rtWeibo(name, num, context) {
     getUserId(name).then(uid => {
         if (uid) getTimeline(uid, num).then(res => {
-            format(res).then(payload => {
+            format(res, context).then(payload => {
                 replyFunc(context, payload);
             }).catch(err => {console.error(err); replyFunc(context, "中途错误", true);});
         }).catch(err => {console.error(err); replyFunc(context, "等下再试", true);});

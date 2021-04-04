@@ -71,16 +71,21 @@ function httpHeader(uid = 0, dynamic_id = 0, keyword = "") {
         method : "GET",
         url : url,
         headers : headers,
-        params : params
+        params : params,
+        timeout: 1000
     }
     return payload;
 }
 
 function searchName(keyword = "") {
     let header = httpHeader(0, 0, keyword);
-    return axios(header).then(response => {
-            return response.data.data.items[0];
-        }).catch(err => console.error(err));
+    return axios(header)
+    .then(response => {
+        return response.data.data.items[0];
+    }).catch(err => {
+        console.error("Bilibili searchName error with ", err.response.status, err.response.statusText);
+        return false;
+    });
 }
 
 //choose 选择需要查找的人
@@ -316,9 +321,11 @@ function checkBiliDynamic() {
 
                         getDynamicList(subscribes[i].uid, 0).then(dynamic => {
                             let last_timestamp = subscribes[i].timestamp;
-                            let curr_timestamp = dynamic.desc.timestamp;
-                            if (curr_timestamp > last_timestamp) {
-                                update(subscribes[i], dynamic);
+                            if (dynamic) {
+                                let curr_timestamp = dynamic.desc.timestamp;
+                                if (curr_timestamp > last_timestamp) {
+                                    update(subscribes[i], dynamic);
+                                }
                             }
                         });
                     }

@@ -182,14 +182,22 @@ bot.connect();
 
 function notice(context) {
     context.message_type = 'group';
-    if (context.notice_type == 'group_increase') replyMsg(context, setting.notification.group_increase);
-    else if (context.notice_type == 'group_decrease') replyMsg(context, setting.notification.group_decrease);
+    if (Logger.checkBan(context.user_id, context.group_id)) return true;
+    if (context.notice_type == 'group_increase' 
+        && setting.notification.group_increase.length > 0) replyMsg(context, setting.notification.group_increase);
+    else if (context.notice_type == 'group_decrease'  
+        && setting.notification.group_decrease.length > 0) replyMsg(context, setting.notification.group_decrease);
 }
 
 //通用处理
 function commonHandle(e, context) {
     //黑名单检测
     if (Logger.checkBan(context.user_id, context.group_id)) return true;
+
+    // admin权限拉高
+    if (context.user_id == config.bot.admin) {
+        context.sender.role = "SU";
+    }
 
     //兼容其他机器人
     const startChar = context.message.charAt(0);

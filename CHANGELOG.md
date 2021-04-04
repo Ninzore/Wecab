@@ -2,6 +2,74 @@
   
 ## 2021
 
+### 04/01 v1.7.41
+* Main:
+  * Feat: 提高admin的权限
+
+### 03/31 v1.7.4
+* Main:
+  * Fix: ban对提醒消息未生效
+
+### 03/30 v1.7.31
+* Twitter:
+  * Fix: 我是SB
+  * Change: 规范报错log格式
+
+### 03/29 v1.7.3
+* Twitter:
+  * Fix: 代理未正确运行
+* config:
+  * Change: 修改proxy字段（Object -> String)
+
+### 03/26 v1.7.2
+* Bilibili:
+  * Fix: 获取动态列表失败时读取了undefined
+  * Chore: 增加名字搜索失败时的报错信息
+
+### 03/22 v1.7.1
+* Translate:
+  * Feat: 自动获取reauth链接
+  * Fix: typo
+
+### 03/17 v1.7.02
+* Twitter:
+  * Fix: 没有正确判断tweet类型（回复判断为原创）
+
+### 03/17 v1.7.0
+* Twitter:
+  * Refactor: 检查更新机制更新
+  * Remove: 多余代码块
+  * Remove: 不再检查图片大小
+  * Fix: 转发时出现过多条Tweet
+  * Style: 变量重命名
+
+### 03/16 v1.6.8
+* Twitter:
+  * Fix: Twitter获取时间线失效
+  * Style: 加上async标识
+
+### 03/11 v1.6.7
+* Translate:
+  * Fix: reauth地址更新
+  * Reformat: 修改逻辑，在失败后不会一直尝试重新初始化
+
+### 03/01 v1.6.6
+* Twitter:
+  * Feat: 视频内容改为用小视频形式发送 (需要后端支持，如go-cqhttp v0.9.38以上)
+  * Refactor: 刷新周期改为固定30秒一次
+  * Fix: 微博没有订阅时仍然尝试读取
+  * Style: 增加async标识
+
+### 02/28 v1.6.5
+* Twitter:
+  * Feat: 视频内容改为用小视频形式发送 (需要后端支持，如go-cqhttp v0.9.38以上)
+  * Feat: 排列Twitter内容时增加错误处理，失败时报错
+  * Doc: 修改format的Doc
+
+### 02/09 v1.6.4
+* Twitter:
+  * Fix: Twitter card的summary部分可能没有description导致的无法转发
+
 ### 02/05 v1.6.3
 * telephone:
   * Feat: 添加公告（给黄页中所有人发消息）

@@ -2,9 +2,7 @@ import axios from "axios";
 
 const TENCENT_TRANS_INIT = "https://fanyi.qq.com/";
 const TENCENT_TRANS_API = "https://fanyi.qq.com/api/translate";
-const REAAUTH_URL = "https://fanyi.qq.com/api/aaa123";
-// const TRACKER_URL = "https://tracker.appadhoc.com/tracker";
-// const appKey = "ADHOC_5ec05c69-a3e4-4f5e-b281-d339b3774a2f";
+let reauthuri = "https://fanyi.qq.com/api/reauth1232f";
 
 let qtv = "";
 let qtk = "";
@@ -35,29 +33,51 @@ function httpHeader(with_cookie = false) {
     return headers;
 }
 
-function initialise() {
+async function getAuthUri() {
+    return axios({
+        url : TENCENT_TRANS_INIT,
+        method : "GET",
+        headers : httpHeader()
+    }).then(res => {
+        let newuri = /var reauthuri = "(.+?)"/.exec(res.data)[1];
+        if (newuri) reauthuri = ["https://fanyi.qq.com/api", newuri].join("/");
+    }).catch(err => {
+        console.log("translate getAuthUri error\n", err);
+    });
+}
+
+async function initialise() {
     if (reauth_schedule) reauth_schedule = clearInterval(reauth_schedule);
+    await getAuthUri();
 
     axios({
         url : TENCENT_TRANS_INIT,
         method : "GET",
         headers : httpHeader()
-    }).then(res => {
+    }).then(async res => {
         fy_guid = /fy_guid=(.+?); /.exec(res.headers["set-cookie"])[1];
-        reaauth(false);
-
+        let authres = await reAuth(false);
+        if (authres.status != 200) {
+            console.error("unable to initialise the translation module\n", res);
+            return;
+        }
         // 最大1分钟
-        reauth_schedule = setInterval(reaauth, 45 * 1000);
+        reauth_schedule = setInterval(reAuth, 45 * 1000);
         console.log("translate initialisation successed");
     }).catch(err => {
+        if (!err && !err.response) {
+            console.error("unable to initialise the translation module");
+            return;
+        }
         console.error(new Date().toISOString(), 
             "translate initialisation failed with", err.response.status, err.response.statusText);
+        setTimeout(initialise, 1000);
     });
 }
 
-function reaauth(qt = true) {
-    axios({
-        url : REAAUTH_URL,
+async function reAuth(qt = true) {
+    return axios({
+        url : reauthuri,
         method : "POST",
         headers : httpHeader(),
         params : qt ? {
@@ -67,8 +87,9 @@ function reaauth(qt = true) {
     }).then(res => {
         qtv = res.data.qtv;
         qtk = res.data.qtk;
+        return res;
     }).catch(err => {
-        setTimeout(initialise, 1000);
+        return err;
     });
 }
 
