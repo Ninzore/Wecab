@@ -34,17 +34,17 @@
     "weibo": {
         "enable": true,
         "timelineCheck": true,
-        "permission": "SU|admin|owner"
+        "permission": ["SU", "owner", "admin"]
     },
     "bilibili": {
         "enable": true,
         "timelineCheck": true,
-        "permission": "SU|admin|owner"
+        "permission": ["SU", "owner", "admin"]
     },
     "twitter": {
         "enable": true,
         "timelineCheck": true,
-        "permission": "SU|admin|owner"
+        "permission": ["SU", "owner", "admin"]
     },
     "proxy": "",
     "mongoDB": "mongodb://127.0.0.1:27017"

@@ -20,8 +20,8 @@ function axiosAutoRetry() {
     });
 }
 
-function permissionCheck(context, permission_reg) {
-    if (permission_reg.test(context.sender.role)) return true;
+function permissionCheck(context, permitRoles) {
+    if (permitRoles.some(role => context.sender.role == role)) return true;
     else {
         global.replyFunc(context, global.config.bot.noPermissionReply, true);
         return false;
