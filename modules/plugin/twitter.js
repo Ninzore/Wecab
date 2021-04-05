@@ -40,9 +40,9 @@ let axios = false;
 let guest_token = "";
 let cookie = "";
 let connection = true;
-let Bot = null;
+//let Bot = null;
 let replyFunc = (context, msg, at = false) => { };
-
+let cleardownload = false;
 function twitterReply(replyMsg, bot) {
     replyFunc = replyMsg;
     Bot = bot;
@@ -445,16 +445,18 @@ async function checkTwiTimeline() {
             const group_option = mongo.db('bot').collection('group_option');
             let subscribes = await twitter_db.find({}).toArray();
             let options = await group_option.find({}).toArray();
-
+            cleardownload = true;//用来规避看看推特撞到清理缓存
+            await ClearDownloadx();//清理缓存
+            cleardownload = false;
             if (subscribes.length > 0 && options.length > 0) {
                 i = 0;
-                ClearDownloadx();
                 check_interval = subscribes.length * 30 * 1000;
                 setTimeout(refreshTimeline, check_interval + 30000);
                 checkEach();
             }
             else if (subscribes.length < 1 || options.length < 1) {
                 console.error("twitter subs less than 1");
+                setTimeout(refreshTimeline, 5 * 60 * 1000);//5分钟一次
             }
             else if (subscribes == undefined || options == undefined) {
                 subscribes = await twitter_db.find({}).toArray();
@@ -788,7 +790,7 @@ function rtTimeline(context, name, num) {
         if (!user) replyFunc(context, "没这人");
         else if (user.protected == true) replyFunc(context, "这人的Twitter受保护");
         else {
-            ClearDownloadx();
+            //ClearDownloadx();
             getUserTimeline(user.id_str, 10).then(async timeline => {
                 let tweets = [];
                 for (let tweet of timeline) {
@@ -810,7 +812,7 @@ function rtTimeline(context, name, num) {
 }
 
 function rtSingleTweet(tweet_id_str, context) {
-    ClearDownloadx();
+    //ClearDownloadx();
     getSingleTweet(tweet_id_str).then(tweet => {
         format(tweet, false, context).then(tweet_string => replyFunc(context, tweet_string));
     });
@@ -860,7 +862,7 @@ async function addSub(name, option_nl, context) {
 }
 
 function twitterAggr(context) {
-    if (connection && /^看看(.+?)的?((第[0-9]?[一二三四五六七八九]?条)|(上*条)|(最新))?\s?(推特|Twitter)$/i.test(context.message)) {
+    if (connection && /^看看(.+?)的?((第[0-9]?[一二三四五六七八九]?条)|(上*条)|(最新))?\s?(推特|Twitter)$/i.test(context.message) && cleardownload == false) {
         let num = 1;
         let name = "";
         if (/最新/.test(context.message)) (num = 0);
@@ -885,7 +887,7 @@ function twitterAggr(context) {
         rtTimeline(context, name, num);
         return true;
     }
-    else if (connection && /^看看https:\/\/(mobile\.)?twitter.com\/.+?\/status\/(\d+)/i.test(context.message)) {
+    else if (connection && /^看看https:\/\/(mobile\.)?twitter.com\/.+?\/status\/(\d+)/i.test(context.message) && cleardownload == false) {
         let tweet_id = /status\/(\d+)/i.exec(context.message)[1];
         rtSingleTweet(tweet_id, context);
         return true;
