@@ -27,7 +27,6 @@ const logger = new Logger();
 
 initialise({bot, "replyFunc": replyMsg});
 
-weibo.weiboReply(replyMsg);
 bilibili.bilibiliReply(replyMsg);
 twitter.twitterReply(replyMsg);
 pretendLearn.learnReply(replyMsg, logger);
