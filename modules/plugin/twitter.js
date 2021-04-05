@@ -7,8 +7,9 @@ const fs = require('fs-extra');
 
 const CONFIG = require("../../config.json");
 const PROXY = CONFIG.proxy;
-const DB_PORT = 27017;
-const DB_PATH = "mongodb://127.0.0.1:" + DB_PORT;
+const CONFIG = global.config.bilibili;
+const DB_PATH = global.config.mongoDB;
+const PERMISSION = CONFIG.permission;
 const BEARER_TOKEN = "Bearer AAAAAAAAAAAAAAAAAAAAANRILgAAAAAAnNwIzUejRCOuH5E6I8xnZz4puTs%3D1Zv7ttfk8LF81IUq16cHjhLTvJu4FA33AGWWjCpTnA";
 const MAX_SIZE = 4194304;
 const OPTION_MAP = {
@@ -785,6 +786,7 @@ async function addSub(name, option_nl, context) {
 }
 
 function twitterAggr(context) {
+    if (!CONFIG.enable) return false;
     if (connection && /^看看(.+?)的?((第[0-9]?[一二三四五六七八九]?条)|(上*条)|(最新))?\s?(推特|Twitter)$/i.test(context.message)) {	
 		let num = 1;
         let name = "";
@@ -816,6 +818,7 @@ function twitterAggr(context) {
         return true;
     }
     else if (connection && /^订阅(推特|Twitter)https:\/\/twitter.com\/.+(\/status\/\d+)?([>＞](.{2,}))?/i.test(context.message)) {
+        if (!global.permissionCheck(context, PERMISSION)) return true;
         let name = (/status\/\d+/.test(context.message) && /\.com\/(.+)\/status/.exec(context.message)[1] ||
                     /\.com\/(.+)[>＞]/.exec(context.message)[1]);
         let option_nl = /[>＞](?<option_nl>.{2,})/.exec(context.message)[1];
@@ -824,11 +827,13 @@ function twitterAggr(context) {
         return true;
     }
     else if (connection && /^订阅.+的?(推特|Twitter)([>＞](?<option_nl>.{2,}))?/i.test(context.message)) {
+        if (!global.permissionCheck(context, PERMISSION)) return true;
         let {groups : {name, option_nl}} = /订阅(?<name>.+)的?(推特|Twitter)([>＞](?<option_nl>.{2,}))?/i.exec(context.message);
         addSub(name, option_nl, context);
         return true;
     }
     else if (/^取消订阅.+的?(推特|Twitter)$/i.test(context.message)) {
+        if (!global.permissionCheck(context, PERMISSION)) return true;
         let name = /取消订阅(.+)的?(推特|Twitter)/i.exec(context.message)[1];
         unSubscribe(name, context);
         return true;
@@ -838,8 +843,7 @@ function twitterAggr(context) {
         return true;
     }
     else if (/^清空(推特|Twitter)订阅$/i.test(context.message)) {
-        if (/owner|admin/.test(context.sender.role)) clearSubs(context, context.group_id);
-        else replyFunc(context, '您配吗？');
+        if (global.permissionCheck(context, ["SU", "owner"])) clearSubs(context, context.group_id);
         return true;
     }
     else return false;

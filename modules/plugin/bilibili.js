@@ -1,8 +1,9 @@
 const axios = require('axios');
 const mongodb = require('mongodb').MongoClient;
 
-const db_port = 27017;
-const db_path = "mongodb://127.0.0.1:" + db_port;
+const CONFIG = global.config.bilibili;
+const db_path = global.config.mongoDB;
+const PERMISSION = CONFIG.permission;
 
 const option_map = {
     "仅原创" : "origin",
@@ -521,6 +522,7 @@ function rtBiliByB23(context) {
 }
 
 function bilibiliCheck (context) {
+    if (!CONFIG.enable) return false;
     if (/^看看.+?B站$/i.test(context.message)) {	
 		var num = 1;
         var name = "";
@@ -557,6 +559,7 @@ function bilibiliCheck (context) {
         return true;
     }
     else if (/^订阅.+?B站([>＞](仅转发|只看图|全部|视频更新))?/i.test(context.message)) {
+        if (!global.permissionCheck(context, PERMISSION)) return true;
         let {groups : {name, option_nl}} = /订阅(?<name>.+?)B站([>＞](?<option_nl>仅转发|只看图|视频更新|全部))?/i.exec(context.message);
         console.log(`${context.group_id} ${name} 添加B站订阅`);
         if (option_nl == undefined) option_nl = "仅原创"
@@ -564,6 +567,7 @@ function bilibiliCheck (context) {
         return true;
     }
     else if (/^取消订阅.+?B站$/i.test(context.message)) {
+        if (!global.permissionCheck(context, PERMISSION)) return true;
         let name = /取消订阅(.+?)B站$/i.exec(context.message)[1];
         console.log(`${context.group_id} ${name} B站订阅取消`);
         rmBiliSubscribe(context, name);
@@ -574,8 +578,7 @@ function bilibiliCheck (context) {
         return true;
     }
     else if (/^清空B站订阅$/.test(context.message)) {
-        if (/owner|admin/.test(context.sender.role)) clearSubs(context, context.group_id);
-        else replyFunc(context, '您配吗？');
+        if (global.permissionCheck(context, ["SU", "owner"])) clearSubs(context, context.group_id);
         return true;
     }
     else return false;
