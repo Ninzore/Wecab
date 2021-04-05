@@ -1,13 +1,13 @@
 const config = require('../config');
-//const fileType = require('file-type');
 const fs = require('fs');
 const path = require('path');
-//const download = require('download');
 const logger2 = require('./logger2'); //日志功能
-//const axios = require('axios-https-proxy-fix');
 const Axios = require('axios');
 const HttpsProxyAgent = require("https-proxy-agent");
 const MD5 = require('js-md5');
+//const download = require('download');
+//const axios = require('axios-https-proxy-fix');
+
 
 let axios = false;
 //console.log(config);
@@ -31,7 +31,7 @@ module.exports = async function Downloadx(url, pic = true) {
     let name = MD5(url);
     logger2.info("下载文件 , " + url + " , " + name);
     let path2 = path.join(__dirname, `../tmp/`);
-    if (!fs.existsSync(path2)) {
+    if (fs.existsSync(path2) == false) {//没有tmp文件夹就创建文件夹
         fs.mkdirSync(path2);
     }
     let fileType2 = "";
@@ -40,6 +40,10 @@ module.exports = async function Downloadx(url, pic = true) {
     }
     else {
         fileType2 = "mp4";
+    }
+    const mypath = path.resolve(path2, `${name}.${fileType2}`);
+    if (fs.existsSync(mypath) == true) {
+        return mypath;//如果图片或视频已经存在则直接返回路径
     }
     const response = await axios({
         url,
@@ -52,8 +56,6 @@ module.exports = async function Downloadx(url, pic = true) {
         return false;
     });
     if (response != false) {
-        //const imgType = fileType(await streamToBuffer(response.data)).ext;
-        const mypath = path.resolve(path2, `${name}.${fileType2}`);
         const writer = fs.createWriteStream(mypath);
         response.data.pipe(writer);
         return await new Promise(async (resolve, reject) => {
@@ -72,3 +74,31 @@ module.exports = async function Downloadx(url, pic = true) {
         return "";
     }
 }
+
+
+/*
+//const fileType = require('file-type');
+//const imgType = fileType(await streamToBuffer(response.data)).ext;
+//stream 转 buffer
+function streamToBuffer(stream) {
+    return new Promise((resolve, reject) => {
+        let buffers = [];
+        stream.on('error', reject);
+        stream.on('data', (data) => buffers.push(data))
+        stream.on('end', () => resolve(Buffer.concat(buffers))
+    });
+}
+//buffer 转 stream
+let Duplex = require('stream').Duplex;
+
+function bufferToStream(buffer) {
+    let stream = new Duplex();
+    stream.push(buffer);
+    stream.push(null);
+    return stream;
+}
+//参考
+//stream to buffer: https://stackoverflow.com/questions/14269233/node-js-how-to-read-a-stream-into-a-buffer
+//buffer to stream: http://derpturkey.com/buffer-to-stream-in-node/
+//转载于:https://www.cnblogs.com/xiaoniuzai/p/7223151.html
+*/
