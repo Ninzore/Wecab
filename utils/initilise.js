@@ -23,7 +23,7 @@ function axiosAutoRetry() {
 function permissionCheck(context, permission_reg) {
     if (permission_reg.test(context.sender.role)) return true;
     else {
-        global.replyFunc(context, global.config.bot.noPermission, true);
+        global.replyFunc(context, global.config.bot.noPermissionReply, true);
         return false;
     }
 }
