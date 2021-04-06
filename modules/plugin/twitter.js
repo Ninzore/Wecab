@@ -902,7 +902,7 @@ function twitterAggr(context) {
     }
     else if (connection && /^订阅.+的?(推特|Twitter)([>＞](?<option_nl>.{2,}))?/i.test(context.message)) {
         if (!global.permissionCheck(context, PERMISSION)) return true;
-        let { groups: { name, option_nl } } = /订阅(?<name>.+)的?(推特|Twitter)([>＞](?<option_nl>.{2,}))?/i.exec(context.message);
+        let {groups : {name, option_nl}} = /订阅(?<name>.+)的?(推特|Twitter)([>＞](?<option_nl>.{2,}))?/i.exec(context.message);
         addSub(name, option_nl, context);
         return true;
     }
