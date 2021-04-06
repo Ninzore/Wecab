@@ -6,6 +6,7 @@ const promisify = require('util').promisify;
 const exec = promisify(require('child_process').exec);
 const HttpsProxyAgent = require("https-proxy-agent");
 const fs = require('fs-extra');
+
 const CONFIG = global.config.twitter;
 const PROXY = global.config.proxy;
 const DB_PATH = global.config.mongoDB;
