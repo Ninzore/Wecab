@@ -26,7 +26,7 @@
             "group_increase": "迎新",
             "group_decrease": "送客"
         },
-        "noPermission": "权限不足"
+        "noPermissionReply": "权限不足"
     },
     "learn": {
         "probability": 80
@@ -34,17 +34,17 @@
     "weibo": {
         "enable": true,
         "timelineCheck": true,
-        "permission": "SU|admin|owner"
+        "permission": ["SU", "owner", "admin"]
     },
     "bilibili": {
         "enable": true,
         "timelineCheck": true,
-        "permission": "SU|admin|owner"
+        "permission": ["SU", "owner", "admin"]
     },
     "twitter": {
         "enable": true,
         "timelineCheck": true,
-        "permission": "SU|admin|owner"
+        "permission": ["SU", "owner", "admin"]
     },
     "proxy": "",
     "mongoDB": "mongodb://127.0.0.1:27017"
