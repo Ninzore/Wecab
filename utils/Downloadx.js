@@ -75,12 +75,12 @@ module.exports = async function Downloadx(url, pic = true) {
         return await new Promise(async (resolve, reject) => {
             writer.on("finish",
                 data => {
-                    logger2.info(new Date().toString() + ",下载图片成功:" + JSON.stringify(data));
+                    logger2.info(new Date().toString() + ",下载资源成功:" + JSON.stringify(data));
                     resolve(mypath);
                 });
             writer.on("error",
                 err => {
-                    logger2.error(new Date().toString() + ",下载图片失败: " + JSON.stringify(err));
+                    logger2.error(new Date().toString() + ",下载资源失败: " + JSON.stringify(err));
                     resolve("");
                 });
         });
