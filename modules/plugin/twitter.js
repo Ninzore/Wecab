@@ -5,9 +5,8 @@ const exec = promisify(require('child_process').exec);
 const HttpsProxyAgent = require("https-proxy-agent");
 const fs = require('fs-extra');
 
-const CONFIG = require("../../config.json");
-const PROXY = CONFIG.proxy;
-const CONFIG = global.config.bilibili;
+const CONFIG = global.config.twitter;
+const PROXY = global.config.proxy;
 const DB_PATH = global.config.mongoDB;
 const PERMISSION = CONFIG.permission;
 const BEARER_TOKEN = "Bearer AAAAAAAAAAAAAAAAAAAAANRILgAAAAAAnNwIzUejRCOuH5E6I8xnZz4puTs%3D1Zv7ttfk8LF81IUq16cHjhLTvJu4FA33AGWWjCpTnA";
