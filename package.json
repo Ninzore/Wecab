@@ -14,7 +14,6 @@
     "mongodb": "^3.6.4",
     "random-seed": "^0.3.0",
     "js-md5": "^0.7.3",
-    "empty-folder": "^2.0.4",
     "winston": "^3.2.1"
   },
   "devDependencies": {},
