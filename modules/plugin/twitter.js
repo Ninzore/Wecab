@@ -124,13 +124,14 @@ function firstConnect() {
 /** 通过链接判断文件大小*/
 function sizeCheck(url, pic = true) { //true 图片 false 视频
     return axios({
-        method: "GET",
+        method: "head",
         url: url,
         headers: {
             "User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/87.0.4280.88 Safari/537.36"
         },
         timeout: 15000
     }).then(res => {
+        //console.log(JSON.stringify(res.headers));
         if (pic == true) {
             return parseInt(res.headers["content-length"]) < PIC_MAX_SIZE ? true : ((res.headers["content-length"] / 1024 / 1024) + "MB"); //图片
         } else {
@@ -860,7 +861,7 @@ async function addSub(name, option_nl, context) {
 
 function twitterAggr(context) {
     if (!CONFIG.enable) return false;
-    if (connection && /^看看(.+?)的?((第[0-9]?[一二三四五六七八九]?条)|(上*条)|(最新))?\s?(推特|Twitter)$/i.test(context.message)) {
+    if (connection && /^看看(.+?)的?((第[0-9]?[一二三四五六七八九]?条)|(上*条)|(最新))?\s?(推特|Twitter)$/i.test(context.message) && cleardownload == false) {
         let num = 1;
         let name = "";
         if (/最新/.test(context.message)) (num = 0);
@@ -885,7 +886,7 @@ function twitterAggr(context) {
         rtTimeline(context, name, num);
         return true;
     }
-    else if (connection && /^看看https:\/\/(mobile\.)?twitter.com\/.+?\/status\/(\d+)/i.test(context.message)) {
+    else if (connection && /^看看https:\/\/(mobile\.)?twitter.com\/.+?\/status\/(\d+)/i.test(context.message) && cleardownload == false) {
         let tweet_id = /status\/(\d+)/i.exec(context.message)[1];
         rtSingleTweet(tweet_id, context);
         return true;

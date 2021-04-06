@@ -1,4 +1,5 @@
 import axios from "axios";
+import mkdirTmp from './mkdirTmp'; //创建临时文件文件夹
 
 function axiosAutoRetry() {
     axios.defaults.__retry = 2;
@@ -30,6 +31,7 @@ function permissionCheck(context, permission_reg) {
 
 function initialise(assign2global) {
     axiosAutoRetry();
+    mkdirTmp();
     Object.assign(global, {permissionCheck, ...assign2global});
 }
 
