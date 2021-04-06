@@ -3,7 +3,7 @@ const mongodb = require('mongodb').MongoClient;
 
 const CONFIG = global.config.weibo;
 const db_path = global.config.mongoDB;
-const PERMISSION = new RegExp(CONFIG.permission);
+const PERMISSION = CONFIG.permission;
 
 function unEscape(str) {
     const label = {"#44": ",", "#91": "[", "#93": "]", "amp": "&"}
@@ -549,10 +549,10 @@ function weiboAggr(context) {
         return true;
     }
     else if (/^清空微博订阅$/.test(context.message)) {
-        if (global.permissionCheck(context, /SU|owner|admin/)) clearSubs(context, context.group_id);
+        if (global.permissionCheck(context, ["SU", "owner"])) clearSubs(context, context.group_id);
         return true;
     }
     else return false;
 }
 
-export default {weiboAggr, checkWeiboDynamic, weiboReply, clearSubs};
+export default {weiboAggr, checkWeiboDynamic, clearSubs};
