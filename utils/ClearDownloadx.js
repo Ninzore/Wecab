@@ -20,7 +20,8 @@ function emptyDir(filePath) {
 
 module.exports = async function ClearDownloadx() {
     return await new Promise(function (resolve, reject) {
-        emptyDir('./tmp');
+        emptyDir('./tmp/pic');
+        emptyDir('./tmp/video');
         resolve(null);
     });
 }

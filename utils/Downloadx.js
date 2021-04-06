@@ -43,7 +43,8 @@ function findSync(startPath) {
 module.exports = async function Downloadx(url, pic = true) {
     let name = MD5(url);
     logger2.info("下载文件 , " + url + " , 转成md5值:" + name);
-    let path2 = path.join(__dirname, `../tmp/`);
+    let path2 = path.join(__dirname, `../tmp/pic`);
+    let path3 = path.join(__dirname, `../tmp/video`);
     /*if (fs.existsSync(path2) == false) {//没有tmp文件夹就创建文件夹
         fs.mkdirSync(path2);
     }*/
@@ -57,14 +58,15 @@ module.exports = async function Downloadx(url, pic = true) {
             return temp[i];//如果图片或视频已经存在则直接返回路径
         }
     }*/
-    let temp = ["jpeg", "mp4", "jpg"]
-    let tmp = "";
-    for (let i = 0; i < temp.length; i++) {
-        tmp = path.resolve(path2, `${name}.${temp[i]}`);
-        if (fs.existsSync(path.resolve(path2, `${name}.${temp[i]}`)) == true) {
-            logger2.info("找到文件:" + tmp);
-            return tmp;//如果图片或视频已经存在则直接返回路径
-        }
+    let tmp = path.resolve(path2, `${name}.jpg`);
+    if (fs.existsSync(tmp) == true) {
+        logger2.info("找到文件:" + tmp);
+        return tmp;//如果图片已经存在则直接返回路径
+    }
+    tmp = path.resolve(path3, `${name}.mp4`);
+    if (fs.existsSync(tmp) == true) {
+        logger2.info("找到文件:" + tmp);
+        return tmp;//如果视频已经存在则直接返回路径
     }
     const response = await axios({
         url,
@@ -76,9 +78,15 @@ module.exports = async function Downloadx(url, pic = true) {
         return false;
     });
     if (response != false) {
-        const fileType = response.headers["content-type"].split("/")[1];
+        const fileType = response.headers["content-type"].split("/")[1].replace("jpeg", "jpg");
         logger2.info("content-type:" + fileType);
-        const mypath = path.resolve(path2, `${name}.${fileType}`);
+        let mypath = "";
+        if (fileType == "jpg") {
+            mypath = path.resolve(path.join(__dirname, `../tmp/pic`), `${name}.${fileType}`);
+        }
+        else {
+            mypath = path.resolve(path.join(__dirname, `../tmp/video`), `${name}.${fileType}`);
+        }
         const writer = fs.createWriteStream(mypath);
         response.data.pipe(writer);
         return await new Promise(async (resolve, reject) => {
