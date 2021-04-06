@@ -861,7 +861,7 @@ async function addSub(name, option_nl, context) {
 
 function twitterAggr(context) {
     if (!CONFIG.enable) return false;
-    if (connection && /^看看(.+?)的?((第[0-9]?[一二三四五六七八九]?条)|(上*条)|(最新))?\s?(推特|Twitter)$/i.test(context.message)&& cleardownload == false) {	
+    if (connection && /^看看(.+?)的?((第[0-9]?[一二三四五六七八九]?条)|(上*条)|(最新))?\s?(推特|Twitter)$/i.test(context.message) && cleardownload == false) {	
 		let num = 1;
         let name = "";
         if (/最新/.test(context.message)) (num = 0);
