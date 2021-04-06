@@ -1,4 +1,4 @@
-const fs = require('fs');
+const fs = require('fs-extra');
 const path = require('path');
 const logger2 = require('./logger2'); //日志功能
 const Axios = require('axios');
