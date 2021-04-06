@@ -18,7 +18,7 @@ import nbnhhsh from "./modules/plugin/nbnhhsh";
 import iHaveAfriend from './modules/plugin/iHaveAfriend';
 import telephone from './modules/plugin/telephone';
 import {initialise} from "./utils/initilise";
-
+import mkdirTmp from './modules/mkdirTmp'; //创建临时文件文件夹
 // 初始化开始
 const setting = config.bot;
 const bot = new CQWebSocket(config.cqws);
@@ -26,7 +26,7 @@ const rand = RandomSeed.create();
 const logger = new Logger();
 
 initialise({bot, "replyFunc": replyMsg});
-
+mkdirTmp();
 bilibili.bilibiliReply(replyMsg);
 twitter.twitterReply(replyMsg);
 pretendLearn.learnReply(replyMsg, logger);
