@@ -47,7 +47,7 @@ module.exports = async function Downloadx(url, pic = true) {
     /*if (fs.existsSync(path2) == false) {//没有tmp文件夹就创建文件夹
         fs.mkdirSync(path2);
     }*/
-    let temp = await findSync(path2);
+    /*let temp = await findSync(path2);
     let tmp = "";
     for (let i = 0; i < temp.length; i++) {
         tmp = temp[i].split(".")[0].split("\\tmp\\")[1] || temp[i].split(".")[0].split("/tmp/")[1];//windows路径+linux路径
@@ -55,6 +55,15 @@ module.exports = async function Downloadx(url, pic = true) {
         if (name == tmp) {
             logger2.info("找到文件:" + temp[i]);
             return temp[i];//如果图片或视频已经存在则直接返回路径
+        }
+    }*/
+    let temp = ["jpeg", "mp4", "jpg"]
+    let tmp = "";
+    for (let i = 0; i < temp.length; i++) {
+        tmp = path.resolve(path2, `${name}.${temp[i]}`);
+        if (fs.existsSync(path.resolve(path2, `${name}.${temp[i]}`)) == true) {
+            logger2.info("找到文件:" + tmp);
+            return tmp;//如果图片或视频已经存在则直接返回路径
         }
     }
     const response = await axios({
