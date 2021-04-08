@@ -5,18 +5,17 @@
   "main": "index.js",
   "dependencies": {
     "axios": "^0.21.1",
-    "canvas": "^2.6.1",
+    "canvas": "^2.7.0",
     "cq-websocket": "^2.1.1",
     "esm": "^3.2.25",
     "fs-extra": "^9.1.0",
     "https-proxy-agent": "^5.0.0",
-    "minimist": "^1.2.5",
-    "mongodb": "^3.6.4",
-    "random-seed": "^0.3.0",
     "js-md5": "^0.7.3",
-    "winston": "^3.2.1"
+    "minimist": "^1.2.5",
+    "mongodb": "^3.6.6",
+    "random-seed": "^0.3.0",
+    "winston": "^3.3.3"
   },
-  "devDependencies": {},
   "scripts": {
     "start": "node index.js",
     "pm2start": "pm2 start ecosystem.config.js --time",
