@@ -2,12 +2,12 @@ const winston = require('winston');
 
 const logger2 = winston.createLogger({
     level: 'info',
-    format: winston.format.json(),
+    format: winston.format.combine(
+        winston.format.timestamp(),
+        winston.format.splat(),
+        winston.format.simple(),
+    ),
     transports: [
-        //
-        // - Write to all logs with level `info` and below to `combined.log`
-        // - Write all logs error (and below) to `error.log`.
-        //
         new winston.transports.File({
             filename: 'logs/error.log',
             level: 'error',
@@ -16,22 +16,16 @@ const logger2 = winston.createLogger({
         new winston.transports.File({
             filename: 'logs/combined.log',
             maxsize:10485760
+        }),
+        new winston.transports.Console({
+            format: winston.format.combine(
+                winston.format.colorize(),
+                winston.format.timestamp(),
+                winston.format.simple(),
+            ),
+            silent: process.env.NODE_ENV === 'test'
         })
     ]
 });
-
-//
-// If we're not in production then log to the `console` with the format:
-// `${info.level}: ${info.message} JSON.stringify({ ...rest }) `
-//
-logger2.add(
-    new winston.transports.Console({
-        format: winston.format.combine(
-            winston.format.colorize(),
-            winston.format.simple()
-        ),
-        silent: process.env.NODE_ENV === 'test'
-    })
-);
 
 module.exports = logger2;
