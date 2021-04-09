@@ -2,6 +2,10 @@
   
 ## 2021
 
+### 04/09 v1.7.51
+* modules/plugin/weibo:
+  * Fix: 视频链接未转义导致CQ码错误视频发送失败
+
 ### 04/04 v1.7.5
 * modules/plugin/weibo:
   * Feat: 新增权限检查

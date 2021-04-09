@@ -12,6 +12,10 @@ function unEscape(str) {
     })
 }
 
+// function loadFilter() {
+    
+// }
+
 /**
 * @param {number} uid 用户uid
 * @param {number} mid 单条微博mid
@@ -186,6 +190,7 @@ function unSubscribe(name, context) {
 function checkWeiboDynamic() {
     let check_interval = 6 * 60 * 1000;
     let i = 0;
+    // const AUTO_PUSH_FILTER = CONFIG.autoPushfilter;
     setInterval(() => {
         mongodb(db_path, {useUnifiedTopology: true}).connect().then(async mongo => {
             let coll = mongo.db('bot').collection('weibo');
@@ -357,7 +362,7 @@ async function format(mblog, context) {
             else if ("mp4_hd_url" in media && media.mp4_hd_url != "") media_src += media.mp4_hd_url;
             else media_src += media.stream_url;
             payload.push(`[CQ:image,cache=0,file=${mblog.page_info.page_pic.url}]`);
-            if (context) replyFunc(context, `[CQ:video,file=${media_src}]`);
+            if (context) replyFunc(context, `[CQ:video,file=${media_src.replace(",", "&#44;")}]`);
         }
     }
 
