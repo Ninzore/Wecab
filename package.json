@@ -1,6 +1,6 @@
 {
   "name": "wecab",
-  "version": "1.7.51",
+  "version": "1.7.52",
   "description": "QQ上最好的订阅制bot",
   "main": "index.js",
   "dependencies": {
@@ -17,12 +17,10 @@
     "winston": "^3.3.3"
   },
   "scripts": {
-    "start": "node index.js",
-    "pm2start": "pm2 start ecosystem.config.js --time",
-    "pm2stop": "pm2 stop ecosystem.config.js",
-    "pm2restart": "pm2 restart ecosystem.config.js --time",
-    "pm2log": "pm2 logs Wecab --lines 30",
-    "test": "echo \\\"Error: no test specified\\\" && exit 1"
+    "start": "pm2 start ecosystem.config.js",
+    "stop": "pm2 stop ecosystem.config.js",
+    "restart": "pm2 restart ecosystem.config.js",
+    "log": "pm2 logs wecab --lines 30"
   },
   "repository": {
     "type": "git",
