@@ -1,8 +1,9 @@
 module.exports = {
     apps: [
         {
-            name: 'Wecab',
+            name: 'wecab',
             script: 'index.js',
+            time: true,
             instances: 1,
             autorestart: true,
             max_restarts: 5,
