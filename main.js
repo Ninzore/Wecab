@@ -1,22 +1,22 @@
 import { version } from './package.json';
 import { CQWebSocket } from 'cq-websocket';
-import config from './modules/config';
-import CQ from './modules/CQcode';
-import Logger from './modules/Logger';
+import config from './utils/config';
+import CQ from './utils/CQcode';
+import Logger from './utils/Logger';
 import RandomSeed from 'random-seed';
 import minimist from 'minimist';
-import weibo from './modules/plugin/weibo';
-import bilibili from './modules/plugin/bilibili';
-import twitter from './modules/plugin/twitter';
-import dice from './modules/plugin/dice';
-import pokemon from './modules/plugin/pokemon';
-import pretendLearn from "./modules/plugin/pretendLearn";
-import translate from "./modules/plugin/translate";
-import pixivImage from "./modules/plugin/pixivImage";
-import helpZen from "./modules/plugin/zen";
-import nbnhhsh from "./modules/plugin/nbnhhsh";
-import iHaveAfriend from './modules/plugin/iHaveAfriend';
-import telephone from './modules/plugin/telephone';
+import weibo from './plugin/weibo';
+import bilibili from './plugin/bilibili';
+import twitter from './plugin/twitter';
+import dice from './plugin/dice';
+import pokemon from './plugin/pokemon';
+import pretendLearn from "./plugin/pretendLearn";
+import translate from "./plugin/translate";
+import pixivImage from "./plugin/pixivImage";
+import helpZen from "./plugin/zen";
+import nbnhhsh from "./plugin/nbnhhsh";
+import iHaveAfriend from './plugin/iHaveAfriend';
+import telephone from './plugin/telephone';
 import {initialise} from "./utils/initilise";
 
 // 初始化开始

@@ -2,6 +2,19 @@
   
 ## 2021
 
+### 04/11 v1.7.53
+* Chore: move around
+  * move modules => utils
+  * move modules/plugin => plugin
+
+### 04/10 v1.7.52
+* Feat: 更新指令
+  * pm2start => start
+  * pm2stop => stop
+  * pm2log => log
+  * start => use node .
+  * test => (remove)
+
 ### 04/09 v1.7.51
 * modules/plugin/weibo:
   * Fix: 视频链接未转义导致CQ码错误视频发送失败
