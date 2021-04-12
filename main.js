@@ -1,7 +1,9 @@
 import { version } from './package.json';
 import { CQWebSocket } from 'cq-websocket';
 import config from './utils/config';
+import {initialise} from "./utils/initilise";
 import CQ from './utils/CQcode';
+import userManagement from "./utils/userManagement";
 import Logger from './utils/Logger';
 import RandomSeed from 'random-seed';
 import minimist from 'minimist';
@@ -17,7 +19,6 @@ import helpZen from "./plugin/zen";
 import nbnhhsh from "./plugin/nbnhhsh";
 import iHaveAfriend from './plugin/iHaveAfriend';
 import telephone from './plugin/telephone';
-import {initialise} from "./utils/initilise";
 
 // 初始化开始
 const setting = config.bot;
@@ -194,6 +195,9 @@ function commonHandle(e, context) {
         context.sender.role = "SU";
     }
 
+    // SU权限拉高
+    context = userManagement.updateRole(context);
+
     //兼容其他机器人
     const startChar = context.message.charAt(0);
     if (startChar == '/' || startChar == '<') return true;
@@ -258,16 +262,16 @@ function groupMsg(e, context) {
     const { group_id, user_id } = context;
 
     if (weibo.weiboAggr(context, replyMsg) ||
-             bilibili.bilibiliCheck(context) ||
-             twitter.twitterAggr(context) ||
-             pixivImage.pixivCheck(context, replyMsg, bot) ||
-             helpZen(context, replyMsg, bot, rand) ||
-             translate.transEntry(context) ||
-             iHaveAfriend.deal(context, replyMsg, bot) ||
-             nbnhhsh.demyth(context) ||
-             pokemon.pokemonCheck(context, replyMsg) ||
-             telephone.dial(context)
-             ) {
+        bilibili.bilibiliCheck(context) ||
+        twitter.twitterAggr(context) ||
+        pixivImage.pixivCheck(context, replyMsg, bot) ||
+        helpZen(context, replyMsg, bot, rand) ||
+        translate.transEntry(context) ||
+        iHaveAfriend.deal(context, replyMsg, bot) ||
+        nbnhhsh.demyth(context) ||
+        pokemon.pokemonCheck(context, replyMsg) ||
+        telephone.dial(context)
+    ) {
         e.stopPropagation();
         return;
     }

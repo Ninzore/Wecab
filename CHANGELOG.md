@@ -6,7 +6,7 @@
 * utils/userManagement:
   * Feat: 增加SU用户列表（在data/userControl.json）
 * main:
-  * Feat: 把SU列表里面的人权限提高
+  * Feat: 把SU列表里的人权限提高
   * Style: 缩进
 
 ### 04/11 v1.7.53
