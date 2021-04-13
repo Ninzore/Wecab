@@ -1,52 +1,12 @@
-import Fs from 'fs';
-import Path from 'path';
-import config from './config';
-
-const banListFile = Path.resolve(__dirname, '../data/ban.json');
-
-if (!Fs.existsSync(banListFile)) {
-    Fs.writeFileSync(
-        banListFile,
-        JSON.stringify({
-            u: [],
-            g: [],
-        })
-    );
-}
-
-let banList = require(banListFile);
-
-function updateBanListFile() {
-    Fs.writeFileSync(banListFile, JSON.stringify(banList));
-}
-
 /**
  * 各种记录
  *
  * @class Logger
  */
-class Logger {
+ class RptLogger {
     constructor() {
         this.repeater = []; //复读
         this.date = new Date().getDate();
-    }
-
-    static ban(type, id) {
-        switch (type) {
-            case 'u':
-                banList.u.push(id);
-                break;
-            case 'g':
-                banList.g.push(id);
-                break;
-        }
-        updateBanListFile();
-    }
-
-    static checkBan(u, g = 0) {
-        if (banList.u.includes(u)) return true;
-        if (g != 0 && banList.g.includes(g)) return true;
-        return false;
     }
 
     /**
@@ -56,7 +16,7 @@ class Logger {
      * @param {number} u QQ号
      * @param {string} msg 消息
      * @returns 如果已经复读则返回0，否则返回当前复读次数
-     * @memberof Logger
+     * @memberof RptLogger
      */
     rptLog(g, u, msg) {
         let t = this.repeater[g];
@@ -81,11 +41,11 @@ class Logger {
      * 标记该群已复读
      *
      * @param {number} g 群号
-     * @memberof Logger
+     * @memberof RptLogger
      */
     rptDone(g) {
         this.repeater[g].done = true;
     }
 }
 
-export default Logger;
+export default RptLogger;

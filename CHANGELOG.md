@@ -2,6 +2,11 @@
   
 ## 2021
 
+### 04/13 v1.7.7
+* main:
+  * Feat: 可以使用指令增加管理员了
+  * Change: 原Logger仅作为复读计数使用，其他功能移动到userManagement
+
 ### 04/12 v1.7.6
 * utils/userManagement:
   * Feat: 增加SU用户列表（在data/userControl.json）

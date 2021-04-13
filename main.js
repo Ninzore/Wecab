@@ -4,7 +4,7 @@ import config from './utils/config';
 import {initialise} from "./utils/initilise";
 import CQ from './utils/CQcode';
 import userManagement from "./utils/userManagement";
-import Logger from './utils/Logger';
+import RptLogger from './utils/rptLogger';
 import RandomSeed from 'random-seed';
 import minimist from 'minimist';
 import weibo from './plugin/weibo';
@@ -24,13 +24,13 @@ import telephone from './plugin/telephone';
 const setting = config.bot;
 const bot = new CQWebSocket(config.cqws);
 const rand = RandomSeed.create();
-const logger = new Logger();
+const rptLog = new RptLogger();
 
 initialise({bot, "replyFunc": replyMsg});
 
 bilibili.bilibiliReply(replyMsg);
 twitter.twitterReply(replyMsg);
-pretendLearn.learnReply(replyMsg, logger);
+pretendLearn.learnReply(replyMsg, rptLog);
 nbnhhsh.reply(replyMsg);
 telephone.init(replyMsg, bot);
 
@@ -111,12 +111,19 @@ bot.on('message.private', (e, context) => {
     //Ban
     const { 'ban-u': bu, 'ban-g': bg } = args;
     if (bu && typeof bu == 'number') {
-        Logger.ban('u', bu);
+        userManagement.ban('u', bu);
         replyMsg(context, `已封禁用户${bu}`);
     }
     if (bg && typeof bg == 'number') {
-        Logger.ban('g', bg);
+        userManagement.ban('g', bg);
         replyMsg(context, `已封禁群组${bg}`);
+    }
+
+    //addSuperuser
+    const {'su': su} = args;
+    if (su && typeof su == 'number') {
+        userManagement.addSu(su);
+        replyMsg(context, `已设置管理员${su}`);
     }
 
     //停止程序（利用pm2重启）
@@ -284,8 +291,8 @@ function groupMsg(e, context) {
         context.message = text_bak;
         //复读（
         //随机复读，rptLog得到当前复读次数
-        if (logger.rptLog(group_id, user_id, context.message) >= setting.repeat.times && getRand() <= setting.repeat.probability) {
-            logger.rptDone(group_id);
+        if (rptLog.rptLog(group_id, user_id, context.message) >= setting.repeat.times && getRand() <= setting.repeat.probability) {
+            rptLog.rptDone(group_id);
             //延迟2s后复读
             setTimeout(() => {
                 replyMsg(context, context.message);
