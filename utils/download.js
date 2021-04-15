@@ -1,21 +1,12 @@
-const fs = require('fs-extra');
-const path = require('path');
-const logger2 = require('./logger2');
-const Axios = require('axios');
-const HttpsProxyAgent = require("https-proxy-agent");
-const MD5 = require('js-md5');
-const PROXY = global.config.proxy;
+import fs from "fs-extra";
+import path from "path";
+import logger2 from "./logger2";
+import MD5 from "js-md5";
+import axiosDirect from "axios";
+import {axiosProxied} from "./axiosProxied";
 
-let axios = false;
-if (PROXY.startsWith("http")) {
-    axios = Axios.create({
-        proxy: false,
-        httpsAgent: new HttpsProxyAgent(PROXY)
-    });
-}
-else axios = Axios;
-
-async function Downloadx(url) {
+async function download(url, useProxy = false) {
+    const axios = useProxy ? axiosDirect : axiosProxied;
     let name = MD5(url);
     logger2.info(["下载文件", url, "目标文件名", name].join(", "));
     
@@ -33,23 +24,26 @@ async function Downloadx(url) {
     }
     
     const response = await axios({
-        url,
+        url: url,
         method: "GET",
         responseType: "stream",
         timeout: 3000,
     }).catch(err => {
-        logger2.warn("下载资源失败:", err);
+        logger2.warn("下载资源失败:", url, err);
         return false;
     });
 
     if (response) {
-        const fileType = response.headers["content-type"].split("/")[1].replace("jpeg", "jpg");
+        const mimeType = response.headers["content-type"].split("/")[1];
         let mypath = "";
-        let filename = `${name}.${fileType}`;
+        let filename = `${name}.${mimeType}`;
 
-        if (fileType == "jpg") mypath = path.join("./tmp/pic", filename);
-        else if (fileType == "mp4") mypath = path.join("./tmp/video", filename);
-        else return false;
+        if (["jpeg", "png", "gif"].some(t => t == mimeType)) mypath = path.join("./tmp/pic", filename);
+        else if (mimeType == "mp4") mypath = path.join("./tmp/video", filename);
+        else {
+            logger2.warn("不支持下载的文件格式: " + mimeType, url);
+            return false;
+        };
 
         const writer = fs.createWriteStream(mypath);
         response.data.pipe(writer);
@@ -64,8 +58,9 @@ async function Downloadx(url) {
             });
         });
     } else {
+        logger2.warn("下载资源失败:", url, err);
         return false;
     }
 }
 
-module.exports = Downloadx;
+export {download};
