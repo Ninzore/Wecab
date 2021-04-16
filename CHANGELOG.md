@@ -2,6 +2,10 @@
   
 ## 2021
 
+### 04/16 v1.7.9
+* main & utils/userManagement:
+  * Feat: 增加取消管理员指令 `desu`
+
 ### 04/15 v1.7.8
 * utils/axiosProxied.js:
   * Feat: axios代理

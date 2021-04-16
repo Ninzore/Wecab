@@ -45,9 +45,14 @@ function addSu(user_id) {
     updateUsersFile();
 }
 
+function rmSu(user_id) {
+    list.superuser.filter(uid => uid != user_id);
+    updateUsersFile();
+}
+
 function updateRole(context) {
     if (context.sender && list.superuser.includes(context.user_id)) context.sender.role = "SU";
     return context;
 }
 
-export default {ban, checkBan, addSu, updateRole};
+export default {ban, checkBan, addSu, rmSu, updateRole};
