@@ -2,6 +2,14 @@
   
 ## 2021
 
+### 04/15 v1.7.8
+* utils/axiosProxied.js:
+  * Feat: axios代理
+* utils/download.js
+  * Feat: 更多可下载文件格式
+  * Feat: 不支持的格式会提示，失败时会显示链接
+  * Style: esm
+
 ### 04/13 v1.7.7
 * main:
   * Feat: 可以使用指令增加管理员了
