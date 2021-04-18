@@ -1,21 +1,13 @@
-const Axios = require('axios');
-const logger2 = require('./logger2');
-const HttpsProxyAgent = require("https-proxy-agent");
+import axiosDirect from "axios";
+import {axiosProxied} from "./axiosProxied";
+import logger from "./logger";
 
 const PIC_MAX_SIZE = 30 * 1024 * 1024; //图片最大体积
 const VID_MAX_SIZE = 100 * 1024 * 1024; //视频最大体积
-let axios = false;
-
-if (PROXY.startsWith("http")) {
-    axios = Axios.create({
-        proxy: false,
-        httpsAgent: new HttpsProxyAgent(PROXY)
-    });
-}
-else axios = Axios;
 
 /** 通过链接判断文件大小*/
-module.exports = async function sizeCheck(url) {
+export function sizeCheck(url, useProxy = false) {
+    const axios = useProxy ? axiosDirect : axiosProxied;
     return axios({
         method: "head",
         url: url,
@@ -28,11 +20,11 @@ module.exports = async function sizeCheck(url) {
         let max_size = filetype == "image/jpeg" ? PIC_MAX_SIZE : VID_MAX_SIZE
         if (parseInt(res.headers["content-length"]) < max_size) return true;
         else {
-            logger2.warn([url, filetype, "exceed maximum allowed size", max_size].join(" "));
+            logger.warn([url, filetype, "exceed maximum allowed size", max_size].join(" "));
             return false;
         }
     }).catch(err => {
-        logger2.error("sizeCheck:" + url, err);
+        logger.error("sizeCheck:" + url, err);
         return false;
     });
 }
