@@ -1,12 +1,10 @@
-const Axios = require('axios');
-const mongodb = require('mongodb').MongoClient;
-const promisify = require('util').promisify;
+import {axiosProxied as axios} from '../utils/axiosProxied';
+import {MongoClient as mongodb} from "mongodb";
+import {promisify} from "util"
+import fs from "fs-extra";
 const exec = promisify(require('child_process').exec);
-const HttpsProxyAgent = require("https-proxy-agent");
-const fs = require('fs-extra');
 
 const CONFIG = global.config.twitter;
-const PROXY = global.config.proxy;
 const DB_PATH = global.config.mongoDB;
 const PERMISSION = CONFIG.permission;
 const BEARER_TOKEN = "Bearer AAAAAAAAAAAAAAAAAAAAANRILgAAAAAAnNwIzUejRCOuH5E6I8xnZz4puTs%3D1Zv7ttfk8LF81IUq16cHjhLTvJu4FA33AGWWjCpTnA";
@@ -33,7 +31,6 @@ const POSTTYPE_MAP = {
     "all" : [1, 1, 1, 1]
 } 
 
-let axios = false;
 let guest_token = "";
 let cookie = "";
 let connection = true;
@@ -63,17 +60,6 @@ async function checkConnection() {
     });
 }
 
-function setAgent() {
-    if (PROXY.startsWith("http")) {
-        axios = Axios.create({
-            proxy: false,
-            httpsAgent : new HttpsProxyAgent(PROXY)
-        });
-    }
-    else axios = Axios;
-}
-
-
 function opt_dict(post_option) {
     let [origin, retweet, reply, pic, cook] = POSTTYPE_MAP[post_option];
     return {
@@ -99,7 +85,7 @@ function toOptNl(option) {
 function firstConnect() {
     checkConnection().then(res => {
         if (!res) {
-            console.error("Twitter无法连接，功能暂停");
+            console.error("Twitter无法连接，功能暂停\n", res);
         }
         else {
             getGuestToken();
@@ -113,12 +99,12 @@ function firstConnect() {
             }, 1*60*60*1000);
         }
     }).catch(err => {
-        console.error("Twitter无法连接，功能暂停");
+        console.error("Twitter无法连接，功能暂停\n", err);
     });
 }
 
 function httpHeader() {
-    return headers = {
+    return {
         "origin" : "https://twitter.com",
         "authorization" : BEARER_TOKEN,
         "cookie" : cookie,
@@ -363,7 +349,7 @@ function unSubscribe(name, context) {
                     let text = "";
                     if (result.value == null || !result.value.groups.includes(group_id)) {
                         console.error(result.value, group_id);
-                        replyFunc(context, "小火汁你压根就没订阅嗷", true);
+                        replyFunc(context, "并没有订阅这个人", true);
                         mongo.close();
                         return;
                     }
@@ -399,7 +385,8 @@ async function checkTwiTimeline() {
     let subscribes = await twitter_db.find({}).toArray();
     let check_interval = subscribes.length > 0 ? subscribes.length * 30 * 1000 : 5 * 60 * 1000;
     mongo.close();
-    
+    let i = 0;
+
     async function refreshTimeline() {
         await mongodb(DB_PATH, {useUnifiedTopology: true}).connect().then(async mongo => {
             const twitter_db = mongo.db('bot').collection('twitter');
@@ -848,7 +835,6 @@ function twitterAggr(context) {
     else return false;
 }
 
-setAgent();
 firstConnect();
 
-module.exports = {twitterAggr, twitterReply, checkTwiTimeline, clearSubs};
+export default {twitterAggr, twitterReply, checkTwiTimeline, clearSubs};
