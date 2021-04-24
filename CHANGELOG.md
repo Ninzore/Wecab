@@ -2,6 +2,12 @@
   
 ## 2021
 
+### 04/24 v1.8.0
+* plugin/bilibili:
+  * Fix: 订阅数量超过一定时频繁412error
+* plugin/twitter:
+  * Feat: 移动代理设置到axiosProxied
+
 ### 04/16 v1.7.9
 * main & utils/userManagement:
   * Feat: 增加取消管理员指令 `desu`
