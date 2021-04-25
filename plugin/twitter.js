@@ -74,7 +74,7 @@ function opt_dict(post_option) {
 function toOptNl(option) {
     let {post} = option;
     let opt_string = "";
-    for (key in OPTION_MAP) {
+    for (let key in OPTION_MAP) {
         if (OPTION_MAP[key] == post) opt_string = key;
     }
     if (option.bbq == true) opt_string += "; 需要烤架";
@@ -583,7 +583,7 @@ async function format(tweet, end_point = false, context = false) {
         let pics = "";
         let src = "";
         if ("extended_entities" in tweet) {
-            for (entity in tweet.extended_entities) {
+            for (let entity in tweet.extended_entities) {
                 if (entity == "media") {
                     let media = tweet.extended_entities.media;
                     for (let i = 0; i < media.length; i++) {
@@ -591,7 +591,8 @@ async function format(tweet, end_point = false, context = false) {
                         if (media[i].type == "photo") {
                             src = [media[i].media_url_https.substring(0, media[i].media_url_https.length-4),
                                 `?format=${media[i].media_url_https.substring(media[i].media_url_https.length-3, media[i].media_url_https.length)}&name=4096x4096`].join("");
-                            pics += `[CQ:image,cache=0,file=${src}]`;
+                            let f = await global.download(src);
+                            pics += `[CQ:image,file=${f}]`;
                         }
                         else if (media[i].type == "animated_gif") {
                             try {
@@ -619,7 +620,8 @@ async function format(tweet, end_point = false, context = false) {
                             mp4obj.sort((a, b) => {return b.bitrate - a.bitrate;});
                             payload.push(`[CQ:image,cache=0,file=${media[i].media_url_https}]`);
                             if (context) {
-                                replyFunc(context, `[CQ:video,file=${mp4obj[0].url}]`);
+                                let f = await global.download(mp4obj[0].url);
+                                replyFunc(context, `[CQ:video,file=${f}]`);
                             }
                             else payload.push(`视频地址: ${mp4obj[0].url}`);
                         }
@@ -650,7 +652,7 @@ async function format(tweet, end_point = false, context = false) {
                 let nchoice = parseInt(/\d/.exec(tweet.card.name)[0]);
                 let count = "";
                 let lable = "";
-                for (i = 1; i < nchoice + 1; i++) {
+                for (let i = 1; i < nchoice + 1; i++) {
                     lable = tweet.card.binding_values[`choice${i}_label`].string_value;
                     count = tweet.card.binding_values[`choice${i}_count`].string_value;
                     payload.push(`${lable}:  ${count}`);
