@@ -2,6 +2,15 @@
   
 ## 2021
 
+### 04/24 v1.8.2
+* plugin/twitter:
+  * Feat: 支持使用代理下载多媒体内容
+  * Fix: for let
+* utils/download:
+  * Fix: 路径错误，axios代理错误
+* utils/initialise:
+  * Feat: 初始化更多工具
+
 ### 04/24 v1.8.0
 * plugin/bilibili:
   * Fix: 订阅数量超过一定时频繁412error
