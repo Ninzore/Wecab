@@ -1,15 +1,18 @@
 import axios from "axios";
-import mkdirTmp from './mkdirTmp'; //创建临时文件文件夹
+import mkdirTmp from './mkdirTmp';
+import {download} from './download';
+import logger from './logger';
+import {sizeCheck} from './sizeCheck';
 
 function axiosAutoRetry() {
     axios.defaults.__retry = 2;
     let retry_delay = 500;
     
-    axios.interceptors.response.use(undefined, err => {
+    axios.interceptors.response.use(undefined, async err => {
         const status = err.response ? err.response.status : null;
         const config = err.config;
 
-        if (!config  || status == 412 || config.__retry <= 0) return Promise.reject(err);
+        if (!config || status == 429 || status == 412 || config.__retry <= 0) return Promise.reject(err);
         console.log(`Error code ${status}, retry times = ${config.__retry}`)
     
         config.__retry --;
@@ -32,7 +35,7 @@ function permissionCheck(context, permitRoles) {
 function initialise(assign2global) {
     axiosAutoRetry();
     mkdirTmp();
-    Object.assign(global, {permissionCheck, ...assign2global});
+    Object.assign(global, {logger, permissionCheck, download, sizeCheck, ...assign2global});
 }
 
 export {initialise};
