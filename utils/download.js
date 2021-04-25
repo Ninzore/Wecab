@@ -6,14 +6,14 @@ import axiosDirect from "axios";
 import {axiosProxied} from "./axiosProxied";
 
 async function download(url, useProxy = false) {
-    const axios = useProxy ? axiosDirect : axiosProxied;
+    const axios = useProxy ? axiosProxied : axiosDirect;
     let name = MD5(url);
     logger.info(["下载文件", url, "目标文件名", name].join(", "));
     
     //如果已经存在则直接返回路径
-    for (let ext of ["jpg", "mp4"]) {
-        let tmpdir = ext == "jpg" ? "./tmp/pic" : "./tmp/video";
-        if (!fs.existsSync("./tmp")) fs.mkdirSync("./tmp");
+    for (let ext of ["jpeg", "mp4"]) {
+        let tmpdir = ext == "jpeg" ? "tmp/pic" : "tmp/video";
+        if (!fs.existsSync("tmp")) fs.mkdirSync("tmp");
         if (!fs.existsSync(tmpdir)) fs.mkdirSync(tmpdir);
         
         let tmp = path.join(tmpdir, `${name}.${ext}`);
@@ -38,8 +38,8 @@ async function download(url, useProxy = false) {
         let mypath = "";
         let filename = `${name}.${mimeType}`;
 
-        if (["jpeg", "png", "gif"].some(t => t == mimeType)) mypath = path.join("./tmp/pic", filename);
-        else if (mimeType == "mp4") mypath = path.join("./tmp/video", filename);
+        if (["jpeg", "png", "gif"].some(t => t == mimeType)) mypath = path.join(__dirname, "../tmp/pic", filename);
+        else if (mimeType == "mp4") mypath = path.join(__dirname, "../tmp/video", filename);
         else {
             logger.warn("不支持下载的文件格式: " + mimeType, url);
             return false;
