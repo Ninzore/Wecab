@@ -596,20 +596,18 @@ async function format(tweet, end_point = false, context = false) {
                         }
                         else if (media[i].type == "animated_gif") {
                             try {
-                                await exec(`ffmpeg -i ${media[i].video_info.variants[0].url} -loop 0 -y ${__dirname}/temp.gif`)
+                                let gifmp4 = await global.download(media[i].video_info.variants[0].url, true);
+                                let tmpgif = `${__dirname}/../tmp/temp.gif`;
+                                await exec(`ffmpeg -i "${gifmp4}" -loop 0 -y ${tmpgif}`)
                                     .then(async ({stdout, stderr}) => {
                                         if (stdout.length == 0) {
-                                            if (fs.statSync(`${__dirname}/temp.gif`).size < MAX_SIZE) {
-                                                let gif = fs.readFileSync(`${__dirname}/temp.gif`);
-                                                let base64gif = Buffer.from(gif, 'binary').toString('base64');
-                                                pics += `[CQ:image,file=base64://${base64gif}]`;
-                                            }
-                                            else pics += `这是一张动图 [CQ:image,cache=0,file=${media[i].media_url_https}]` + `动起来看这里${media[i].video_info.variants[0].url}`;
+                                            let gif = fs.readFileSync(tmpgif, {encoding: "base64"});
+                                            pics += `[CQ:image,file=base64://${gif}]`;
                                         }
-                                    })
+                                    });
                             } catch(err) {
                                 console.error(err);
-                                pics += `这是一张动图 [CQ:image,cache=0,file=${media[i].media_url_https}]` + `动起来看这里${media[i].video_info.variants[0].url}`;
+                                pics += `这是一张动图 [CQ:image,file=${media[i].media_url_https}]` + `动起来看这里${media[i].video_info.variants[0].url}`;
                             }
                         }
                         else if (media[i].type == "video") {
@@ -618,7 +616,7 @@ async function format(tweet, end_point = false, context = false) {
                                 if (media[i].video_info.variants[j].content_type == "video/mp4") mp4obj.push(media[i].video_info.variants[j]);
                             }
                             mp4obj.sort((a, b) => {return b.bitrate - a.bitrate;});
-                            payload.push(`[CQ:image,cache=0,file=${media[i].media_url_https}]`);
+                            payload.push(`[CQ:image,file=${media[i].media_url_https}]`);
                             if (context) {
                                 let f = await global.download(mp4obj[0].url);
                                 replyFunc(context, `[CQ:video,file=${f}]`);
