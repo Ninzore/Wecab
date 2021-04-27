@@ -19,7 +19,7 @@ async function download(url, useProxy = false) {
         let tmp = path.join(tmpdir, `${name}.${ext}`);
         if (fs.existsSync(tmp)) {
             logger.info("已存在文件: " + tmp);
-            return tmp;
+            return path.join(__dirname, "../", tmp);
         }
     }
     
