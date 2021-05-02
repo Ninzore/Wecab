@@ -592,7 +592,7 @@ async function format(tweet, end_point = false, context = false) {
                             src = [media[i].media_url_https.substring(0, media[i].media_url_https.length-4),
                                 `?format=${media[i].media_url_https.substring(media[i].media_url_https.length-3, media[i].media_url_https.length)}&name=4096x4096`].join("");
                             let f = await global.download(src);
-                            pics += `[CQ:image,file=${f}]`;
+                            pics += `[CQ:image,file=file:///${f}]`;
                         }
                         else if (media[i].type == "animated_gif") {
                             try {
