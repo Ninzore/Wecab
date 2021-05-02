@@ -2,6 +2,10 @@
   
 ## 2021
 
+### 05/02 v1.8.21
+* plugin/twitter:
+  * Fix: 视频发送失败（CQ码错误）
+
 ### 04/24 v1.8.2
 * plugin/twitter:
   * Feat: 支持使用代理下载多媒体内容
