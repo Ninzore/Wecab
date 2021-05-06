@@ -27,7 +27,7 @@ async function download(url, useProxy = false) {
         url: url,
         method: "GET",
         responseType: "stream",
-        timeout: 3000,
+        timeout: 10000,
     }).catch(err => {
         logger.warn("下载资源失败:", url, err);
         return false;
