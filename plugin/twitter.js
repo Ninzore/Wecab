@@ -618,7 +618,7 @@ async function format(tweet, end_point = false, context = false) {
                             mp4obj.sort((a, b) => {return b.bitrate - a.bitrate;});
                             payload.push(`[CQ:image,file=${media[i].media_url_https}]`);
                             if (context) {
-                                let f = await global.download(mp4obj[0].url);
+                                let f = await global.download(mp4obj[0].url, true);
                                 replyFunc(context, `[CQ:video,file=file:///${f}]`);
                             }
                             else payload.push(`视频地址: ${mp4obj[0].url}`);
