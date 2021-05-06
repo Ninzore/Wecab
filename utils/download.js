@@ -27,7 +27,11 @@ async function download(url, useProxy = false) {
         url: url,
         method: "GET",
         responseType: "stream",
-        timeout: 10000,
+        timeout: 5000,
+        headers: {
+            "User-Agent": 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/90.0.4430.93 Safari/537.36',
+            "accept": "text/html,application/xhtml+xml,application/xml;q=0.9,image/avif,image/webp,image/apng,*/*;q=0.8,application/signed-exchange;v=b3;q=0.9"
+        }
     }).catch(err => {
         logger.warn("下载资源失败:", url, err);
         return false;
@@ -58,7 +62,7 @@ async function download(url, useProxy = false) {
             });
         });
     } else {
-        logger.warn("下载资源失败:", url, err);
+        logger.warn(["下载资源失败:", url].join(" "));
         return false;
     }
 }
