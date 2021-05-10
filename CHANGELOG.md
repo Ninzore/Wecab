@@ -2,6 +2,10 @@
   
 ## 2021
 
+### 05/10 v1.8.23
+* plugin/weibo:
+  * Fix: 链接格式为`m.weibo.cn/detail/\d`时id获取出错
+
 ### 05/02 v1.8.22
 * plugin/twitter:
   * Fix: 视频和图片发送失败（CQ码错误）

@@ -5,13 +5,6 @@ const CONFIG = global.config.weibo;
 const db_path = global.config.mongoDB;
 const PERMISSION = CONFIG.permission;
 
-function unEscape(str) {
-    const label = {"#44": ",", "#91": "[", "#93": "]", "amp": "&"}
-    return str.replace(/&(#44|#91|#93|amp);/g, (_, s) => {
-        return label[s];
-    })
-}
-
 // function loadFilter() {
     
 // }
@@ -422,12 +415,16 @@ function weiboText(id) {
  * @returns {} no return
  */
 function rtSingleWeibo(id, context) {
-    axios.get("https://m.weibo.cn/statuses/show?id=" + id, {headers : httpHeader().headers})
-    .then(async res => {
+    axios({
+        url: "https://m.weibo.cn/statuses/show",
+        method: "GET",
+        headers: httpHeader().headers,
+        params: {id}
+    }).then(async res => {
         let payload = await format(res.data.data, context);
         replyFunc(context, payload);
     }).catch(err => {
-        console.error(err.response);
+        console.error(err);
         replyFunc(context, "出错啦！");
     });
 }
@@ -519,7 +516,7 @@ function weiboAggr(context) {
         return true;
 	}
     else if (/^看看\s?https:\/\/(m\.weibo\.cn\/(detail|status|\d+)\/\d+$|(www\.)?weibo\.com\/\d+\/[A-Za-z0-9]{9}$)/.test(context.message)) {
-        let id = /com\/\d+\/([A-Za-z0-9]{9})|cn\/\d+\/(\d+)|detail|status\/(\d+)/.exec(context.message)
+        let id = /com\/\d+\/([A-Za-z0-9]{9})|cn\/\d+\/(\d+)|(?:detail|status)\/(\d+)/.exec(context.message)
             .filter((noEmpty) => {return noEmpty != undefined})[1];
         rtSingleWeibo(id, context);
         return true;
