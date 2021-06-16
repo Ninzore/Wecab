@@ -1,8 +1,9 @@
-import {axiosProxied as axios} from '../utils/axiosProxied';
 import {MongoClient as mongodb} from "mongodb";
 import {promisify} from "util"
 import fs from "fs-extra";
 const exec = promisify(require('child_process').exec);
+import translator from './translate';
+import {axiosProxied as axios} from '../utils/axiosProxied';
 
 const CONFIG = global.config.twitter;
 const DB_PATH = global.config.mongoDB;
@@ -18,7 +19,8 @@ const OPTION_MAP = {
     "不要回复" : "no_reply",
     "只看图" : "pic_only",
     "全部" : "all",
-    "提醒" : "notice"
+    "提醒" : "notice",
+    "翻译" : "translate"
 }
 const POSTTYPE_MAP = {
     "origin_only" : [1, 0, 0, 1],
@@ -79,6 +81,7 @@ function toOptNl(option) {
     }
     if (option.bbq == true) opt_string += "; 需要烤架";
     if (option.notice != undefined) opt_string += "; 更新时提醒:" + option.notice;
+    if (option.translate == true) opt_string += "; 带翻译";
     return opt_string;
 }
 
@@ -441,6 +444,8 @@ async function checkTwiTimeline() {
                                             if (option.notice != undefined) addon.push(`${option.notice}`);
                                             url_list.push(url);
                                         }
+					let translated = await translator.translate("auto", "zh", tweet.full_text);
+                                        addon.push(`翻译: ${translated}`);
                                         addon.push(url);
                                         const context = {group_id : group_id, message_type : "group"};
                                         format(tweet, false, context).then(payload => {
@@ -763,6 +768,7 @@ async function addSub(name, option_nl, context) {
                 }
                 option.notice = people;
             }
+	    else if (opt_inter == "translate") option.translate = true;
             else option.post = opt_inter;
         }
     }
