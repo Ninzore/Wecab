@@ -1,18 +1,17 @@
-import config from '../config';
-var admin = parseInt(config.bot.admin);
+let admin = parseInt(global.config.bot.admin);
 
 function helpZen(context, replyFunc, bot, rand) {
-    if (context.sender.role != "admin" && /^(来干我啊|口我|我超勇的).?$/.test(context.message)) {
+    if (context.sender.role == "member" && /^(来干我啊|口我|我超勇的).?$/.test(context.message)) {
         bot('set_group_ban', {group_id : context.group_id, user_id : context.user_id, duration : 60*rand.intBetween(1, 10)});
         replyFunc(context, "你很勇哦？");
         return true;
     }
-    else if (context.sender.role != "admin" && /^(我要睡了|睡了).?$/.test(context.message)) {
+    else if (context.sender.role == "member" && /^(我要睡了|睡了).?$/.test(context.message)) {
         bot('set_group_ban', {group_id : context.group_id, user_id : context.user_id, duration : 60*60*rand.intBetween(1, 7)});
         replyFunc(context, "睡眠套餐来一份");
         return true;
     }
-    else if (context.sender.role != "admin" && /^我[爱要]学习了?$/.test(context.message)) {
+    else if (context.sender.role == "member" && /^我[爱要]学习了?$/.test(context.message)) {
         bot('set_group_ban', {group_id : context.group_id, user_id : context.user_id, duration : 60*60*rand.intBetween(0.5, 2)});
         replyFunc(context, "你爱学习");
         return true;

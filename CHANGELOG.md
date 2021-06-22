@@ -2,6 +2,10 @@
   
 ## 2021
 
+### 06/22 v1.8.24
+* plugin/zen:
+  * Fix: 禁言无效
+
 ### 05/10 v1.8.23
 * plugin/weibo:
   * Fix: 链接格式为`m.weibo.cn/detail/\d`时id获取出错
