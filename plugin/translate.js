@@ -2,7 +2,7 @@ import axios from "axios";
 
 const TENCENT_TRANS_INIT = "https://fanyi.qq.com/";
 const TENCENT_TRANS_API = "https://fanyi.qq.com/api/translate";
-let reauthuri = "https://fanyi.qq.com/api/reauth1232f";
+let reauthuri = "https://fanyi.qq.com/api/reauth12f";
 
 let qtv = "";
 let qtk = "";
@@ -80,7 +80,7 @@ async function reAuth(qt = true) {
         url : reauthuri,
         method : "POST",
         headers : httpHeader(),
-        params : qt ? {
+        data : qt ? {
             qtv : qtv,
             qtk : qtk
         } : ""
@@ -112,7 +112,8 @@ async function translate(sourceLang, targetLang, sourceText) {
             "qtv" : qtv,
             "source" : sourceLang,
             "target" : targetLang,
-            "sourceText" : unescape(sourceText)
+            "sourceText" : unescape(sourceText),
+            "sessionUuid": "translate_uuid" + new Date().getTime()
         }
     }).then(res => {
         let targetText = "";

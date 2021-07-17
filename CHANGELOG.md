@@ -2,6 +2,10 @@
   
 ## 2021
 
+### 07/17 v1.8.25
+* plugin/translate:
+  * Fix: 修复reauth失效
+
 ### 06/22 v1.8.24
 * plugin/zen:
   * Fix: 禁言无效
