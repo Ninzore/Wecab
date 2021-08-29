@@ -2,6 +2,10 @@
   
 ## 2021
 
+### 08/29 v1.8.26
+* plugin/pixivImage:
+  * Fix: 多图时无法正常发送
+
 ### 07/17 v1.8.25
 * plugin/translate:
   * Fix: 修复reauth失效

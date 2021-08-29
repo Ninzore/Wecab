@@ -34,7 +34,8 @@
     "weibo": {
         "enable": true,
         "timelineCheck": true,
-        "permission": ["SU", "owner", "admin"]
+        "permission": ["SU", "owner", "admin"],
+        "autoPushfilter": []
     },
     "bilibili": {
         "enable": true,
@@ -45,6 +46,9 @@
         "enable": true,
         "timelineCheck": true,
         "permission": ["SU", "owner", "admin"]
+    },
+    "pixiv": {
+        "deleteMsg": false
     },
     "proxy": "",
     "mongoDB": "mongodb://127.0.0.1:27017"
