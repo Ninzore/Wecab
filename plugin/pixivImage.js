@@ -68,4 +68,4 @@ function sender(replyFunc, context, payload, bot, delete_flag) {
     });
 }
 
-module.exports = {pixivCheck};
+export default {pixivCheck};
