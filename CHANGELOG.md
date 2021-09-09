@@ -2,6 +2,11 @@
   
 ## 2021
 
+### 09/09 v1.8.27
+* plugin/pixivImage:
+  * Fix: 多图时无法正常发送
+  * Remove: 图片大小限制
+
 ### 08/29 v1.8.26
 * plugin/pixivImage:
   * Fix: 多图时无法正常发送

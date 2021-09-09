@@ -29,13 +29,18 @@ async function singleArtwork(pic_id, replyFunc, context, bot) {
     let delete_flag = true;
     
     if (res.status == 404) {
-        if (/這個作品ID中有多張圖片/.test(res.data)) {
+        if (/這個作品ID中有 (\d{1,2}) 張圖片/.test(res.data)) {
+            const num_img = parseInt(/這個作品ID中有 (\d{1,2}) 張圖片/.exec(res.data)[1]);
+            for (let i = 1; i < num_img + 1; i++) {
+                payload += imageCQcode(`${pic_id}-${i}`);
+            }
+        }
+        else if (/這個作品ID中有多張圖片/.test(res.data)) {
             let i = 1;
             do {
                 let url = `https://pixiv.cat/${pic_id}-${i}.jpg`;
                 res = await checkImage(url);
                 if (res.status != 200) break;
-                else if (parseInt(res.headers['content-length']) > 26214400) payload += "图太大发不出来，原图看这里" + url;
                 else payload += imageCQcode(`${pic_id}-${i}`);
                 i++;
             }
@@ -45,10 +50,6 @@ async function singleArtwork(pic_id, replyFunc, context, bot) {
             payload = "图可能被删了";
             delete_flag = false;
         }
-    }
-    else if (parseInt(res.headers['content-length']) > 26214400) {
-        payload = "图太大发不出来，原图看这里" + url;
-        delete_flag = false;
     }
     else payload = imageCQcode(pic_id);
     sender(replyFunc, context, payload, bot, delete_flag);
