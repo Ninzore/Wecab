@@ -1,44 +1,26 @@
 {
-  "name": "wecab",
-  "version": "1.8.27",
-  "description": "QQ上最好的订阅制bot",
-  "main": "index.js",
-  "dependencies": {
-    "axios": "^0.21.1",
-    "canvas": "^2.7.0",
-    "cq-websocket": "^2.1.1",
-    "esm": "^3.2.25",
-    "fs-extra": "^9.1.0",
-    "https-proxy-agent": "^5.0.0",
-    "js-md5": "^0.7.3",
-    "minimist": "^1.2.5",
-    "mongodb": "^3.6.6",
-    "random-seed": "^0.3.0",
-    "winston": "^3.3.3"
-  },
-  "scripts": {
-    "start": "pm2 start ecosystem.config.js",
-    "stop": "pm2 stop ecosystem.config.js",
-    "restart": "pm2 restart ecosystem.config.js",
-    "log": "pm2 logs wecab --lines 30"
-  },
-  "repository": {
-    "type": "git",
-    "url": "git+https://github.com/Ninzore/Wecab.git"
-  },
-  "keywords": [
-    "CoolQ",
-    "QQ",
-    "robot",
-    "subscribe",
-    "weibo",
-    "twitter",
-    "bilibili"
+  "name": "koishi-plugin-wecab",
+  "description": "",
+  "private": true,
+  "version": "1.0.0",
+  "main": "lib/index.js",
+  "typings": "lib/index.d.ts",
+  "files": [
+    "lib",
+    "dist"
   ],
-  "author": "Ninzore",
-  "license": "GPL-3.0",
-  "bugs": {
-    "url": "https://github.com/Ninzore/Wecab/issues"
+  "license": "MIT",
+  "scripts": {},
+  "keywords": [
+    "chatbot",
+    "koishi",
+    "plugin"
+  ],
+  "peerDependencies": {
+    "koishi": "^4.8.5"
   },
-  "homepage": "https://github.com/Ninzore/Wecab#readme"
+  "dependencies": {
+    "axios": "^0.27.2",
+    "https-proxy-agent": "^5.0.1"
+  }
 }
