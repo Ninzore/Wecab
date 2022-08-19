@@ -1,4 +1,5 @@
 import Axios from "axios";
+import HttpsProxyAgent from "https-proxy-agent";
 
 const PROXY = global.config.proxy;
 

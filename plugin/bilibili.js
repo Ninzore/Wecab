@@ -292,7 +292,12 @@ function rmBiliSubscribe(context, name = "") {
     }
 }
 
-function checkBiliDynamic() {
+async function checkBiliDynamic() {
+    let mongo = mongodb(db_path, {useUnifiedTopology: true});
+    mongo.connect();
+    let coll = mongo.db('bot').collection('bilibili');
+    let subscribes = await coll.find({}).toArray();
+
     setInterval(() => {
         mongodb(db_path, {useUnifiedTopology: true}).connect(async function(err, mongo) {
             if (err) console.error("bilibili update error", err);
@@ -333,12 +338,12 @@ function checkBiliDynamic() {
                     await new Promise(resolve => {
                         setTimeout(() => {
                             resolve();
-                        }, 4.5 * 60000 / subscribes.length);
+                        }, 30000);
                     });
                 }
             }
         });
-    }, 5 * 60000);
+    }, subscribes.length * 30000 + 60000);
 
     function update(subscribe, dynamic) {
         mongodb(db_path, {useUnifiedTopology: true}).connect(async function(err, mongo) {

@@ -119,11 +119,15 @@ bot.on('message.private', (e, context) => {
         replyMsg(context, `已封禁群组${bg}`);
     }
 
-    //addSuperuser
-    const {'su': su} = args;
+    //superuser management
+    const {"su": su, "desu": desu} = args;
     if (su && typeof su == 'number') {
         userManagement.addSu(su);
         replyMsg(context, `已设置管理员${su}`);
+    }
+    if (desu && typeof desu == 'number') {
+        userManagement.rmSu(desu);
+        replyMsg(context, `已取消管理员${desu}`);
     }
 
     //停止程序（利用pm2重启）

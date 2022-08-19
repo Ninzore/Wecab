@@ -2,6 +2,50 @@
   
 ## 2021
 
+### 09/09 v1.8.27
+* plugin/pixivImage:
+  * Fix: 多图时无法正常发送
+  * Remove: 图片大小限制
+
+### 08/29 v1.8.26
+* plugin/pixivImage:
+  * Fix: 多图时无法正常发送
+
+### 07/17 v1.8.25
+* plugin/translate:
+  * Fix: 修复reauth失效
+
+### 06/22 v1.8.24
+* plugin/zen:
+  * Fix: 禁言无效
+
+### 05/10 v1.8.23
+* plugin/weibo:
+  * Fix: 链接格式为`m.weibo.cn/detail/\d`时id获取出错
+
+### 05/02 v1.8.22
+* plugin/twitter:
+  * Fix: 视频和图片发送失败（CQ码错误）
+
+### 04/24 v1.8.2
+* plugin/twitter:
+  * Feat: 支持使用代理下载多媒体内容
+  * Fix: for let
+* utils/download:
+  * Fix: 路径错误，axios代理错误
+* utils/initialise:
+  * Feat: 初始化更多工具
+
+### 04/24 v1.8.0
+* plugin/bilibili:
+  * Fix: 订阅数量超过一定时频繁412error
+* plugin/twitter:
+  * Feat: 移动代理设置到axiosProxied
+
+### 04/16 v1.7.9
+* main & utils/userManagement:
+  * Feat: 增加取消管理员指令 `desu`
+
 ### 04/15 v1.7.8
 * utils/axiosProxied.js:
   * Feat: axios代理

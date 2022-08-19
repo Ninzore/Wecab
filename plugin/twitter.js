@@ -1,12 +1,11 @@
-const Axios = require('axios');
-const mongodb = require('mongodb').MongoClient;
-const promisify = require('util').promisify;
+import {MongoClient as mongodb} from "mongodb";
+import {promisify} from "util"
+import fs from "fs-extra";
 const exec = promisify(require('child_process').exec);
-const HttpsProxyAgent = require("https-proxy-agent");
-const fs = require('fs-extra');
+import translator from './translate';
+import {axiosProxied as axios} from '../utils/axiosProxied';
 
 const CONFIG = global.config.twitter;
-const PROXY = global.config.proxy;
 const DB_PATH = global.config.mongoDB;
 const PERMISSION = CONFIG.permission;
 const BEARER_TOKEN = "Bearer AAAAAAAAAAAAAAAAAAAAANRILgAAAAAAnNwIzUejRCOuH5E6I8xnZz4puTs%3D1Zv7ttfk8LF81IUq16cHjhLTvJu4FA33AGWWjCpTnA";
@@ -20,7 +19,8 @@ const OPTION_MAP = {
     "不要回复" : "no_reply",
     "只看图" : "pic_only",
     "全部" : "all",
-    "提醒" : "notice"
+    "提醒" : "notice",
+    "翻译" : "translate"
 }
 const POSTTYPE_MAP = {
     "origin_only" : [1, 0, 0, 1],
@@ -33,7 +33,6 @@ const POSTTYPE_MAP = {
     "all" : [1, 1, 1, 1]
 } 
 
-let axios = false;
 let guest_token = "";
 let cookie = "";
 let connection = true;
@@ -63,17 +62,6 @@ async function checkConnection() {
     });
 }
 
-function setAgent() {
-    if (PROXY.startsWith("http")) {
-        axios = Axios.create({
-            proxy: false,
-            httpsAgent : new HttpsProxyAgent(PROXY)
-        });
-    }
-    else axios = Axios;
-}
-
-
 function opt_dict(post_option) {
     let [origin, retweet, reply, pic, cook] = POSTTYPE_MAP[post_option];
     return {
@@ -88,18 +76,19 @@ function opt_dict(post_option) {
 function toOptNl(option) {
     let {post} = option;
     let opt_string = "";
-    for (key in OPTION_MAP) {
+    for (let key in OPTION_MAP) {
         if (OPTION_MAP[key] == post) opt_string = key;
     }
     if (option.bbq == true) opt_string += "; 需要烤架";
     if (option.notice != undefined) opt_string += "; 更新时提醒:" + option.notice;
+    if (option.translate == true) opt_string += "; 带翻译";
     return opt_string;
 }
 
 function firstConnect() {
     checkConnection().then(res => {
         if (!res) {
-            console.error("Twitter无法连接，功能暂停");
+            console.error("Twitter无法连接，功能暂停\n", res);
         }
         else {
             getGuestToken();
@@ -113,12 +102,12 @@ function firstConnect() {
             }, 1*60*60*1000);
         }
     }).catch(err => {
-        console.error("Twitter无法连接，功能暂停");
+        console.error("Twitter无法连接，功能暂停\n", err);
     });
 }
 
 function httpHeader() {
-    return headers = {
+    return {
         "origin" : "https://twitter.com",
         "authorization" : BEARER_TOKEN,
         "cookie" : cookie,
@@ -363,7 +352,7 @@ function unSubscribe(name, context) {
                     let text = "";
                     if (result.value == null || !result.value.groups.includes(group_id)) {
                         console.error(result.value, group_id);
-                        replyFunc(context, "小火汁你压根就没订阅嗷", true);
+                        replyFunc(context, "并没有订阅这个人", true);
                         mongo.close();
                         return;
                     }
@@ -399,7 +388,8 @@ async function checkTwiTimeline() {
     let subscribes = await twitter_db.find({}).toArray();
     let check_interval = subscribes.length > 0 ? subscribes.length * 30 * 1000 : 5 * 60 * 1000;
     mongo.close();
-    
+    let i = 0;
+
     async function refreshTimeline() {
         await mongodb(DB_PATH, {useUnifiedTopology: true}).connect().then(async mongo => {
             const twitter_db = mongo.db('bot').collection('twitter');
@@ -454,6 +444,8 @@ async function checkTwiTimeline() {
                                             if (option.notice != undefined) addon.push(`${option.notice}`);
                                             url_list.push(url);
                                         }
+					let translated = await translator.translate("auto", "zh", tweet.full_text);
+                                        addon.push(`翻译: ${translated}`);
                                         addon.push(url);
                                         const context = {group_id : group_id, message_type : "group"};
                                         format(tweet, false, context).then(payload => {
@@ -596,7 +588,7 @@ async function format(tweet, end_point = false, context = false) {
         let pics = "";
         let src = "";
         if ("extended_entities" in tweet) {
-            for (entity in tweet.extended_entities) {
+            for (let entity in tweet.extended_entities) {
                 if (entity == "media") {
                     let media = tweet.extended_entities.media;
                     for (let i = 0; i < media.length; i++) {
@@ -604,24 +596,23 @@ async function format(tweet, end_point = false, context = false) {
                         if (media[i].type == "photo") {
                             src = [media[i].media_url_https.substring(0, media[i].media_url_https.length-4),
                                 `?format=${media[i].media_url_https.substring(media[i].media_url_https.length-3, media[i].media_url_https.length)}&name=4096x4096`].join("");
-                            pics += `[CQ:image,cache=0,file=${src}]`;
+                            let f = await global.download(src, true);
+                            pics += `[CQ:image,file=file:///${f}]`;
                         }
                         else if (media[i].type == "animated_gif") {
                             try {
-                                await exec(`ffmpeg -i ${media[i].video_info.variants[0].url} -loop 0 -y ${__dirname}/temp.gif`)
+                                let gifmp4 = await global.download(media[i].video_info.variants[0].url, true);
+                                let tmpgif = `${__dirname}/../tmp/temp.gif`;
+                                await exec(`ffmpeg -i "${gifmp4}" -loop 0 -y ${tmpgif}`)
                                     .then(async ({stdout, stderr}) => {
                                         if (stdout.length == 0) {
-                                            if (fs.statSync(`${__dirname}/temp.gif`).size < MAX_SIZE) {
-                                                let gif = fs.readFileSync(`${__dirname}/temp.gif`);
-                                                let base64gif = Buffer.from(gif, 'binary').toString('base64');
-                                                pics += `[CQ:image,file=base64://${base64gif}]`;
-                                            }
-                                            else pics += `这是一张动图 [CQ:image,cache=0,file=${media[i].media_url_https}]` + `动起来看这里${media[i].video_info.variants[0].url}`;
+                                            let gif = fs.readFileSync(tmpgif, {encoding: "base64"});
+                                            pics += `[CQ:image,file=base64://${gif}]`;
                                         }
-                                    })
+                                    });
                             } catch(err) {
                                 console.error(err);
-                                pics += `这是一张动图 [CQ:image,cache=0,file=${media[i].media_url_https}]` + `动起来看这里${media[i].video_info.variants[0].url}`;
+                                pics += `这是一张动图 [CQ:image,file=${media[i].media_url_https}]` + `动起来看这里${media[i].video_info.variants[0].url}`;
                             }
                         }
                         else if (media[i].type == "video") {
@@ -630,9 +621,10 @@ async function format(tweet, end_point = false, context = false) {
                                 if (media[i].video_info.variants[j].content_type == "video/mp4") mp4obj.push(media[i].video_info.variants[j]);
                             }
                             mp4obj.sort((a, b) => {return b.bitrate - a.bitrate;});
-                            payload.push(`[CQ:image,cache=0,file=${media[i].media_url_https}]`);
+                            payload.push(`[CQ:image,file=${media[i].media_url_https}]`);
                             if (context) {
-                                replyFunc(context, `[CQ:video,file=${mp4obj[0].url}]`);
+                                let f = await global.download(mp4obj[0].url, true);
+                                replyFunc(context, `[CQ:video,file=file:///${f}]`);
                             }
                             else payload.push(`视频地址: ${mp4obj[0].url}`);
                         }
@@ -663,7 +655,7 @@ async function format(tweet, end_point = false, context = false) {
                 let nchoice = parseInt(/\d/.exec(tweet.card.name)[0]);
                 let count = "";
                 let lable = "";
-                for (i = 1; i < nchoice + 1; i++) {
+                for (let i = 1; i < nchoice + 1; i++) {
                     lable = tweet.card.binding_values[`choice${i}_label`].string_value;
                     count = tweet.card.binding_values[`choice${i}_count`].string_value;
                     payload.push(`${lable}:  ${count}`);
@@ -776,6 +768,7 @@ async function addSub(name, option_nl, context) {
                 }
                 option.notice = people;
             }
+	    else if (opt_inter == "translate") option.translate = true;
             else option.post = opt_inter;
         }
     }
@@ -848,7 +841,6 @@ function twitterAggr(context) {
     else return false;
 }
 
-setAgent();
 firstConnect();
 
-module.exports = {twitterAggr, twitterReply, checkTwiTimeline, clearSubs};
+export default {twitterAggr, twitterReply, checkTwiTimeline, clearSubs};
